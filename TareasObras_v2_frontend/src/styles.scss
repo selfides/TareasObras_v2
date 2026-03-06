@@ -1,0 +1,99 @@
+@use 'tailwindcss/base';
+@use 'tailwindcss/components';
+@use 'tailwindcss/utilities';
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --font-sans: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { font-family: var(--font-sans); }
+code, pre { font-family: var(--font-mono); }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: var(--font-sans);
+}
+
+.dark body, .dark html {
+  background-color: #020617;
+  color: #f1f5f9;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.dark ::-webkit-scrollbar-track { background: #1e293b; }
+.dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+/* Animations */
+@keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp  { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.animate-fade-in  { animation: fadeIn  0.3s ease-in-out; }
+.animate-slide-up { animation: slideUp 0.3s ease-out; }
+
+/* PrimeNG dark mode */
+.dark .p-datatable .p-datatable-thead > tr > th {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+.dark .p-datatable .p-datatable-tbody > tr {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+.dark .p-datatable .p-datatable-tbody > tr:hover { background: #1e293b; }
+.dark .p-card { background: #0f172a; }
+.dark .p-dialog .p-dialog-content { background: #0f172a; }
+.dark .p-inputtext { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+.dark .p-dropdown { background: #1e293b; border-color: #334155; }
+
+/* Kanban */
+.kanban-col {
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  min-height: 24rem;
+  background-color: #f1f5f9;
+}
+.dark .kanban-col { background-color: #1e293b; }
+.kanban-card {
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  cursor: grab;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  transition: box-shadow 0.2s;
+}
+.kanban-card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.07); }
+.kanban-card:active { cursor: grabbing; }
+.dark .kanban-card { background: #0f172a; border-color: #334155; }
+
+/* Status badges */
+.badge-planificada { background: #f1f5f9; color: #475569; }
+.badge-encurso     { background: #dbeafe; color: #1d4ed8; }
+.badge-pausada     { background: #fef3c7; color: #b45309; }
+.badge-completada  { background: #dcfce7; color: #15803d; }
+.badge-cancelada   { background: #fee2e2; color: #b91c1c; }
+.badge-pendiente   { background: #f1f5f9; color: #64748b; }
+.badge-enprogreso  { background: #dbeafe; color: #1d4ed8; }
+.badge-bloqueada   { background: #fee2e2; color: #b91c1c; }
+.badge-critica     { background: #fee2e2; color: #b91c1c; }
+.badge-alta        { background: #ffedd5; color: #c2410c; }
+.badge-media       { background: #fef9c3; color: #a16207; }
+.badge-baja        { background: #dcfce7; color: #15803d; }
+
+.dark .badge-planificada { background: #1e293b; color: #94a3b8; }
+.dark .badge-encurso     { background: #1e3a5f; color: #93c5fd; }
+.dark .badge-pausada     { background: #3d2b00; color: #fcd34d; }
+.dark .badge-completada  { background: #052e16; color: #86efac; }
+.dark .badge-cancelada   { background: #3d0000; color: #fca5a5; }

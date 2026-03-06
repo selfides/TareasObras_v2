@@ -1,0 +1,17 @@
+{
+	"output": {
+		"filePath": "contexto-proyecto-fullstack.md",
+		"style": "markdown"
+	},
+	"ignore": {
+		"customPatterns": [
+			"**/node_modules/**",
+			"**/bin/**",
+			"**/obj/**",
+			"**/*.exe",
+			"**/*.dll",
+			"**/dist/**",
+			"**/.git/**"
+		]
+	}
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["obra-form.component.ts"],
+  "sourcesContent": ["\n      .label-form {\n        @apply block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5;\n      }\n      .error-msg {\n        @apply text-red-500 text-xs mt-1;\n      }\n    "],
+  "mappings": ";AAEQ,CAAA;AAAA,iBAAA;AAAA,WAAA;AAAA,aAAA;AAAA,eAAA;AAAA,eAAA;AAAA,qBAAA;AAAA,SAAA,IAAA,GAAA,GAAA,GAAA,EAAA,IAAA,iBAAA,EAAA;AAA8E;AAA9E,CAAA,UAAA,IAAA,CAAA,KAAA;AAAA,qBAAA;AAAA,SAAA,IAAA,IAAA,IAAA,IAAA,EAAA,IAAA,iBAAA,EAAA;AAA8E;AAG9E,CAAA;AAAA,cAAA;AAAA,aAAA;AAAA,eAAA;AAAA,qBAAA;AAAA,SAAA,IAAA,IAAA,GAAA,GAAA,EAAA,IAAA,iBAAA,EAAA;AAAgC;",
+  "names": []
+}
