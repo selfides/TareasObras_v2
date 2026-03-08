@@ -1,0 +1,105 @@
+<div class="space-y-6 animate-fade-in">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-50">Dashboard</h1>
+      <p class="text-surface-500 dark:text-surface-400 text-sm mt-0.5">Resumen general del proyecto</p>
+    </div>
+    <a routerLink="/obras/nueva">
+      <p-button label="Nueva Obra" icon="pi pi-plus" size="small" />
+    </a>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    @for (kpi of kpis(); track kpi.label) {
+      <div class="bg-white dark:bg-surface-900 rounded-xl p-5 border border-surface-200 dark:border-surface-700 hover:shadow-md transition-shadow">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm text-surface-500 dark:text-surface-400">{{ kpi.label }}</p>
+            <p class="text-3xl font-bold text-surface-900 dark:text-surface-50 mt-1">{{ kpi.value }}</p>
+            @if (kpi.sub) {
+              <p class="text-xs text-surface-400 dark:text-surface-500 mt-1">{{ kpi.sub }}</p>
+            }
+          </div>
+          <div [class]="'w-10 h-10 rounded-lg flex items-center justify-center ' + kpi.color">
+            <i [class]="kpi.icon + ' text-white'"></i>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Charts row -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Estado obras -->
+    <div class="bg-white dark:bg-surface-900 rounded-xl p-6 border border-surface-200 dark:border-surface-700">
+      <h3 class="font-semibold text-surface-900 dark:text-surface-100 mb-4">Estado de Obras</h3>
+      @if (loading()) {
+        <p-skeleton height="240px" />
+      } @else {
+        <p-chart type="doughnut" [data]="estadoData()" [options]="doughnutOptions" height="240px" />
+      }
+    </div>
+
+    <!-- Presupuesto por obra -->
+    <div class="bg-white dark:bg-surface-900 rounded-xl p-6 border border-surface-200 dark:border-surface-700">
+      <h3 class="font-semibold text-surface-900 dark:text-surface-100 mb-4">Presupuesto por Obra (€)</h3>
+      @if (loading()) {
+        <p-skeleton height="240px" />
+      } @else {
+        <p-chart type="bar" [data]="presupuestoData()" [options]="barOptions" height="240px" />
+      }
+    </div>
+  </div>
+
+  <!-- Obras recientes -->
+  <div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700">
+    <div class="flex items-center justify-between p-5 border-b border-surface-200 dark:border-surface-700">
+      <h3 class="font-semibold text-surface-900 dark:text-surface-100">Obras Recientes</h3>
+      <a routerLink="/obras" class="text-primary-600 dark:text-primary-400 text-sm hover:underline">Ver todas →</a>
+    </div>
+    <div class="overflow-x-auto">
+      @if (loading()) {
+        <div class="p-4 space-y-3">
+          @for (i of [1,2,3]; track i) { <p-skeleton height="40px" /> }
+        </div>
+      } @else {
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-surface-50 dark:bg-surface-800 text-left">
+              <th class="px-4 py-3 font-semibold text-surface-600 dark:text-surface-400">Código</th>
+              <th class="px-4 py-3 font-semibold text-surface-600 dark:text-surface-400">Nombre</th>
+              <th class="px-4 py-3 font-semibold text-surface-600 dark:text-surface-400">Estado</th>
+              <th class="px-4 py-3 font-semibold text-surface-600 dark:text-surface-400">Tareas</th>
+              <th class="px-4 py-3 font-semibold text-surface-600 dark:text-surface-400">Presupuesto</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (obra of obras().slice(0, 5); track obra.id) {
+              <tr class="border-t border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800 cursor-pointer"
+                  [routerLink]="['/obras', obra.id]">
+                <td class="px-4 py-3 font-mono text-xs text-surface-500">{{ obra.codigo }}</td>
+                <td class="px-4 py-3 font-medium text-surface-900 dark:text-surface-100">{{ obra.nombre }}</td>
+                <td class="px-4 py-3">
+                  <span [class]="'px-2 py-0.5 rounded-full text-xs font-medium ' + estadoBadge(obra.estado)">
+                    {{ obra.estadoNombre }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="text-surface-700 dark:text-surface-300">{{ obra.tareasPendientes }}</span>
+                  <span class="text-surface-400"> / {{ obra.totalTareas }}</span>
+                </td>
+                <td class="px-4 py-3 font-medium text-surface-900 dark:text-surface-100">
+                  {{ obra.presupuestoEstimado | number:'1.0-0' }} €
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+</div>
