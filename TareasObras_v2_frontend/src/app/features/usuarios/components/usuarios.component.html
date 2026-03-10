@@ -1,0 +1,158 @@
+<div class="space-y-5 animate-fade-in">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-50">
+        Usuarios
+      </h1>
+      <p class="text-surface-500 dark:text-surface-400 text-sm mt-0.5">
+        Gestión de accesos y roles
+      </p>
+    </div>
+    <p-button
+      label="Nuevo Usuario"
+      icon="pi pi-user-plus"
+      size="small"
+      (onClick)="dialogVisible = true"
+    />
+  </div>
+
+  <div
+    class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden"
+  >
+    <p-table
+      [value]="usuarios()"
+      [loading]="loading()"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Alta</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-u>
+        <tr>
+          <td class="font-medium text-surface-900 dark:text-surface-100">
+            {{ u.nombre }} {{ u.apellidos }}
+          </td>
+          <td class="text-surface-500 dark:text-surface-400 text-sm">
+            {{ u.email }}
+          </td>
+          <td>
+            <span
+              [class]="
+                'px-2 py-0.5 rounded-full text-xs font-medium ' + rolBadge(u.rol)
+              "
+              >{{ u.rol }}</span
+            >
+          </td>
+          <td>
+            <span
+              [class]="
+                'px-2 py-0.5 rounded-full text-xs font-medium ' +
+                (u.activo
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                  : 'bg-red-100 text-red-700')
+              "
+            >
+              {{ u.activo ? "Activo" : "Inactivo" }}
+            </span>
+          </td>
+          <td class="text-sm text-surface-400">
+            {{ u.createdAt | date: "dd/MM/yyyy" }}
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="text-center py-10 text-surface-400">
+            <i class="pi pi-users text-3xl block mb-2"></i>No hay usuarios
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<!-- Dialog nuevo usuario -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  header="Nuevo Usuario"
+  [modal]="true"
+  [style]="{ width: '480px' }"
+  [draggable]="false"
+>
+  <form [formGroup]="form" class="space-y-4 pt-2">
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label
+          class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+          >Nombre *</label
+        >
+        <input pInputText formControlName="nombre" class="w-full" />
+      </div>
+      <div>
+        <label
+          class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+          >Apellidos *</label
+        >
+        <input pInputText formControlName="apellidos" class="w-full" />
+      </div>
+    </div>
+    <div>
+      <label
+        class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+        >Email *</label
+      >
+      <input pInputText formControlName="email" type="email" class="w-full" />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label
+          class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+          >Contraseña *</label
+        >
+        <p-password
+          formControlName="password"
+          [feedback]="true"
+          [toggleMask]="true"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+        />
+      </div>
+      <div>
+        <label
+          class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+          >Rol *</label
+        >
+        <p-select
+          formControlName="rol"
+          appendTo="body"
+          [options]="rolOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full"
+          placeholder="Selecciona rol"
+        />
+      </div>
+    </div>
+  </form>
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancelar"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="dialogVisible = false"
+    />
+    <p-button
+      label="Crear Usuario"
+      icon="pi pi-check"
+      (onClick)="crear()"
+      [disabled]="form.invalid"
+      [loading]="saving()"
+    />
+  </ng-template>
+</p-dialog>

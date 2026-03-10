@@ -1,0 +1,162 @@
+<div class="max-w-2xl mx-auto space-y-5 animate-fade-in">
+  <!-- Header -->
+  <div class="flex items-center gap-3">
+    <a routerLink="/obras">
+      <p-button
+        icon="pi pi-arrow-left"
+        [text]="true"
+        severity="secondary"
+        size="small"
+      />
+    </a>
+    <div>
+      <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-50">
+        {{ isEdit() ? "Editar Obra" : "Nueva Obra" }}
+      </h1>
+      <p class="text-surface-500 dark:text-surface-400 text-sm">
+        {{
+          isEdit()
+            ? "Modifica los datos de la obra"
+            : "Rellena los datos para crear una nueva obra"
+        }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div
+    class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 p-6"
+  >
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Código -->
+        @if (!isEdit()) {
+          <div>
+            <label class="label-form">Código *</label>
+            <input
+              pInputText
+              formControlName="codigo"
+              placeholder="OBR-001"
+              class="w-full"
+            />
+            @if (invalid("codigo")) {
+              <p class="error-msg">
+                Código obligatorio (máx. 20 caracteres)
+              </p>
+            }
+          </div>
+        }
+        <!-- Nombre -->
+        <div [class.sm:col-span-2]="isEdit()">
+          <label class="label-form">Nombre *</label>
+          <input
+            pInputText
+            formControlName="nombre"
+            placeholder="Nombre de la obra"
+            class="w-full"
+          />
+          @if (invalid("nombre")) {
+            <p class="error-msg">Nombre obligatorio</p>
+          }
+        </div>
+      </div>
+
+      <!-- Descripción -->
+      <div>
+        <label class="label-form">Descripción</label>
+        <textarea
+          pTextarea
+          formControlName="descripcion"
+          rows="3"
+          class="w-full"
+          placeholder="Descripción opcional..."
+        ></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Cliente -->
+        <div>
+          <label class="label-form">Cliente</label>
+          <input
+            pInputText
+            formControlName="cliente"
+            placeholder="Nombre del cliente"
+            class="w-full"
+          />
+        </div>
+        <!-- Dirección -->
+        <div>
+          <label class="label-form">Dirección</label>
+          <input
+            pInputText
+            formControlName="direccion"
+            placeholder="Dirección de la obra"
+            class="w-full"
+          />
+        </div>
+        <!-- Fecha inicio -->
+        <div>
+          <label class="label-form">Fecha Inicio *</label>
+          <p-datepicker
+            formControlName="fechaInicio"
+            appendTo="body"
+            dateFormat="dd/mm/yy"
+            styleClass="w-full"
+            [showIcon]="true"
+            placeholder="Selecciona fecha"
+          />
+          @if (invalid("fechaInicio")) {
+            <p class="error-msg">Fecha de inicio obligatoria</p>
+          }
+        </div>
+        <!-- Fecha fin prevista -->
+        <div>
+          <label class="label-form">Fecha Fin Prevista</label>
+          <p-datepicker
+            formControlName="fechaFinPrevista"
+            appendTo="body"
+            dateFormat="dd/mm/yy"
+            styleClass="w-full"
+            [showIcon]="true"
+            placeholder="Selecciona fecha"
+          />
+        </div>
+        <!-- Presupuesto -->
+        <div>
+          <label class="label-form">Presupuesto Estimado (€) *</label>
+          <p-inputNumber
+            formControlName="presupuestoEstimado"
+            mode="currency"
+            currency="EUR"
+            locale="es-ES"
+            styleClass="w-full"
+            placeholder="0,00"
+          />
+          @if (invalid("presupuestoEstimado")) {
+            <p class="error-msg">Presupuesto inválido</p>
+          }
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div
+        class="flex justify-end gap-3 pt-2 border-t border-surface-100 dark:border-surface-700"
+      >
+        <a routerLink="/obras">
+          <p-button
+            label="Cancelar"
+            severity="secondary"
+            [outlined]="true"
+          />
+        </a>
+        <p-button
+          type="submit"
+          [label]="isEdit() ? 'Guardar cambios' : 'Crear Obra'"
+          icon="pi pi-check"
+          [loading]="loading()"
+          [disabled]="form.invalid"
+        />
+      </div>
+    </form>
+  </div>
+</div>
