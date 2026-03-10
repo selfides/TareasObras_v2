@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/core/services/theme.service.ts"],
-  "sourcesContent": ["import { Injectable, signal, effect } from '@angular/core';\n\n@Injectable({ providedIn: 'root' })\nexport class ThemeService {\n  readonly isDark = signal<boolean>(localStorage.getItem('theme') === 'dark');\n\n  constructor() {\n    effect(() => {\n      const dark = this.isDark();\n      document.documentElement.classList.toggle('dark', dark);\n      localStorage.setItem('theme', dark ? 'dark' : 'light');\n    });\n    // Apply on init\n    document.documentElement.classList.toggle('dark', this.isDark());\n  }\n\n  toggle() { this.isDark.update(v => !v); }\n}\n"],
-  "mappings": ";;;;;;;;;AAGM,IAAO,eAAP,MAAO,cAAY;EACd,SAAS,OAAgB,aAAa,QAAQ,OAAO,MAAM,MAAM;EAE1E,cAAA;AACE,WAAO,MAAK;AACV,YAAM,OAAO,KAAK,OAAM;AACxB,eAAS,gBAAgB,UAAU,OAAO,QAAQ,IAAI;AACtD,mBAAa,QAAQ,SAAS,OAAO,SAAS,OAAO;IACvD,CAAC;AAED,aAAS,gBAAgB,UAAU,OAAO,QAAQ,KAAK,OAAM,CAAE;EACjE;EAEA,SAAM;AAAK,SAAK,OAAO,OAAO,OAAK,CAAC,CAAC;EAAG;;qCAb7B,eAAY;EAAA;4EAAZ,eAAY,SAAZ,cAAY,WAAA,YADC,OAAM,CAAA;;;sEACnB,cAAY,CAAA;UADxB;WAAW,EAAE,YAAY,OAAM,CAAE;;;",
-  "names": []
-}

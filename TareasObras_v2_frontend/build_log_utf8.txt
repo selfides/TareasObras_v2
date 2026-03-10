@@ -1,0 +1,749 @@
+﻿
+> tareas-obras@0.0.1 build
+> ng build
+
+[33m❯[39m Building...
+[32m✔[39m Building...
+Application bundle generation failed. [6.026 seconds]
+
+node.exe : 
+[1m[31m[31mX [41;31
+m[[41;97mERROR[41;31m
+][0m [1mNG9: 
+Property 'filtroTerm' 
+does not exist on type 
+'{ obras: 
+Signal<ObraListDto[]>; 
+selectedObra: 
+Signal<ObraDetailDto | 
+null>; loading: 
+Signal<boolean>; 
+error: Signal<string | 
+null>; ... 12 more 
+...; clearSelected: () 
+=> void; } & 
+StateSource<...>'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+En línea: 1 Carácter: 1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: ([1m[31m[31   
+ mX...r-compiler][    
+0m:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:29:25
+:
+[37m      29 │        
+ [ngModel]="store.[32m
+filtroTerm[37m()"
+         ╵             
+             
+[32m~~~~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG4: Expected 0 
+arguments, but got 
+1.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:30:34
+:
+[37m      30 │        
+ (ngModelChange)="onSea
+rch([32m$event[37m)"
+         ╵             
+                      
+[32m~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG9: Property 
+'filtroTerm' does not 
+exist on type '{ 
+obras: 
+Signal<ObraListDto[]>; 
+selectedObra: 
+Signal<ObraDetailDto | 
+null>; loading: 
+Signal<boolean>; 
+error: Signal<string | 
+null>; ... 12 more 
+...; clearSelected: () 
+=> void; } & 
+StateSource<...>'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:34:17
+:
+[37m      34 │       
+@if (store.[32mfiltroT
+erm[37m()) {
+         ╵             
+     
+[32m~~~~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG4: Expected 0 
+arguments, but got 
+1.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:37:28
+:
+[37m      37 │        
+   (click)="onSearch([
+32m''[37m)"
+         ╵             
+                
+[32m~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG9: Property 
+'filtroEstado' does 
+not exist on type '{ 
+obras: 
+Signal<ObraListDto[]>; 
+selectedObra: 
+Signal<ObraDetailDto | 
+null>; loading: 
+Signal<boolean>; 
+error: Signal<string | 
+null>; ... 12 more 
+...; clearSelected: () 
+=> void; } & 
+StateSource<...>'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:45:23
+:
+[37m      45 │       [
+ngModel]="store.[32mfi
+ltroEstado[37m()"
+         ╵             
+           
+[32m~~~~~~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG9: Property 
+'setFiltroEstado' does 
+not exist on type '{ 
+obras: 
+Signal<ObraListDto[]>; 
+selectedObra: 
+Signal<ObraDetailDto | 
+null>; loading: 
+Signal<boolean>; 
+error: Signal<string | 
+null>; ... 12 more 
+...; clearSelected: () 
+=> void; } & 
+StateSource<...>'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:46:29
+:
+[37m      46 │       (
+ngModelChange)="store.
+[32msetFiltroEstado[37
+m($event)"
+         ╵             
+                 [32m~
+~~~~~~~~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG9: Property 
+'estados' does not 
+exist on type 'ObrasLis
+tComponent'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:47:17
+:
+[37m      47 │       [
+options]="[32mestados
+[37m"
+         ╵             
+     [32m~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG9: Property 
+'filtroTerm' does not 
+exist on type '{ 
+obras: 
+Signal<ObraListDto[]>; 
+selectedObra: 
+Signal<ObraDetailDto | 
+null>; loading: 
+Signal<boolean>; 
+error: Signal<string | 
+null>; ... 12 more 
+...; clearSelected: () 
+=> void; } & 
+StateSource<...>'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:96:17
+:
+[37m      96 │       
+@if (store.[32mfiltroT
+erm[37m() || 
+store.filtroEstado()) {
+         ╵             
+     
+[32m~~~~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG9: Property 
+'filtroEstado' does 
+not exist on type '{ 
+obras: 
+Signal<ObraListDto[]>; 
+selectedObra: 
+Signal<ObraDetailDto | 
+null>; loading: 
+Signal<boolean>; 
+error: Signal<string | 
+null>; ... 12 more 
+...; clearSelected: () 
+=> void; } & 
+StateSource<...>'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:96:39
+:
+[37m      96 │       
+@if 
+(store.filtroTerm() || 
+store.[32mfiltroEstado
+[37m()) {
+         ╵             
+                       
+    
+[32m~~~~~~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG9: Property 
+'setFiltroTerm' does 
+not exist on type '{ 
+obras: 
+Signal<ObraListDto[]>; 
+selectedObra: 
+Signal<ObraDetailDto | 
+null>; loading: 
+Signal<boolean>; 
+error: Signal<string | 
+null>; ... 12 more 
+...; clearSelected: () 
+=> void; } & 
+StateSource<...>'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:101:2
+7:
+[37m      101 │       
+    (onClick)="store.[
+32msetFiltroTerm[37m('
+'); 
+store.setFiltroEsta...
+          ╵            
+                
+[32m~~~~~~~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG9: Property 
+'setFiltroEstado' does 
+not exist on type '{ 
+obras: 
+Signal<ObraListDto[]>; 
+selectedObra: 
+Signal<ObraDetailDto | 
+null>; loading: 
+Signal<boolean>; 
+error: Signal<string | 
+null>; ... 12 more 
+...; clearSelected: () 
+=> void; } & 
+StateSource<...>'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:101:5
+2:
+[37m      101 │ ... (o
+nClick)="store.setFiltr
+oTerm(''); store.[32ms
+etFiltroEstado[37m(nul
+l)"
+          ╵            
+                       
+            [32m~~~~~~
+~~~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG1: Property 
+'toggle' does not 
+exist on type 
+'HTMLElement'. Did you 
+mean 'ontoggle'?[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:147:5
+8:
+[37m      147 │ ...   
+     (onClick)="$event.
+stopPropagation(); menu
+.[32mtoggle[37m($even
+t)"
+          ╵            
+                       
+                   
+[32m~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG8001: 'p-menu' 
+is not a known element:
+1. If 'p-menu' is an 
+Angular component, 
+then verify that it is 
+included in the 
+'@Component.imports' 
+of this component.
+2. If 'p-menu' is a 
+Web Component then add 
+'CUSTOM_ELEMENTS_SCHEMA
+' to the 
+'@Component.schemas' 
+of this component to 
+suppress this 
+message.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:150:1
+4:
+[37m      150 │       
+        
+[32m<p-menu[37m
+          ╵            
+   [32m~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG8002: Can't bind 
+to 'popup' since it 
+isn't a known property 
+of 'p-menu'.
+1. If 'p-menu' is an 
+Angular component and 
+it has 'popup' input, 
+then verify that it is 
+included in the 
+'@Component.imports' 
+of this component.
+2. If 'p-menu' is a 
+Web Component then add 
+'CUSTOM_ELEMENTS_SCHEMA
+' to the 
+'@Component.schemas' 
+of this component to 
+suppress this message.
+3. To allow any 
+property add 
+'NO_ERRORS_SCHEMA' to 
+the 
+'@Component.schemas' 
+of this component.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:152:1
+6:
+[37m      152 │       
+          [32m[popup]=
+"true"[37m
+          ╵            
+     
+[32m~~~~~~~~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG8002: Can't bind 
+to 'model' since it 
+isn't a known property 
+of 'p-menu'.
+1. If 'p-menu' is an 
+Angular component and 
+it has 'model' input, 
+then verify that it is 
+included in the 
+'@Component.imports' 
+of this component.
+2. If 'p-menu' is a 
+Web Component then add 
+'CUSTOM_ELEMENTS_SCHEMA
+' to the 
+'@Component.schemas' 
+of this component to 
+suppress this message.
+3. To allow any 
+property add 
+'NO_ERRORS_SCHEMA' to 
+the 
+'@Component.schemas' 
+of this component.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:153:1
+6:
+[37m      153 │       
+          [32m[model]=
+"getMenuOptions(obra)"
+[37m
+          ╵            
+     [32m~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97
+mERROR[41;31m][0m 
+[1mNG9: Property 
+'getMenuOptions' does 
+not exist on type 'Obra
+sListComponent'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.html:153:2
+5:
+[37m      153 │       
+          [model]="[32
+mgetMenuOptions[37m(ob
+ra)"
+          ╵            
+              
+[32m~~~~~~~~~~~~~~[0m
+
+  Error occurs in the 
+template of component 
+ObrasListComponent.
+
+    src/app/features/ob
+ras/components/obras-li
+st.component.ts:23:15:
+[37m      23 │   
+templateUrl: [32m'./ob
+ras-list.component.html
+'[37m
+         ╵             
+   [32m~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~[0m
+
+[39m[22m
