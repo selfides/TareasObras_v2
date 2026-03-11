@@ -47,6 +47,10 @@ export const routes: Routes = [
         path: 'operarios',
         loadComponent: () => import('./features/operarios/components/operarios.component').then(m => m.OperariosComponent)
       },
+      {
+        path: 'proveedores',
+        loadComponent: () => import('./features/proveedores/components/proveedores.component').then(m => m.ProveedoresComponent)
+      },
     ]
   },
   { path: '**', redirectTo: 'dashboard' }

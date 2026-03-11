@@ -9,8 +9,9 @@ import { RegistroHorasService } from '../../../core/services/registro-horas.serv
 import { MaterialesObraService } from '../../../core/services/materiales-obra.service';
 import { OperariosService } from '../../../core/services/operarios.service';
 import { CategoriasOperarioService } from '../../../core/services/categorias-operario.service';
+import { ProveedoresService } from '../../../core/services/proveedores.service';
 import { PartidasService, PartidaDto, LineaPartidaDto } from '../../../core/services/partidas.service';
-import { PresupuestoDto, RegistroHorasDto, MaterialObraDto, OperarioDto, CategoriaOperarioDto } from '../../../core/models';
+import { PresupuestoDto, RegistroHorasDto, MaterialObraDto, OperarioDto, CategoriaOperarioDto, ProveedorDto } from '../../../core/models';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -45,6 +46,7 @@ export class ObraDetailComponent implements OnInit {
   private materialesSvc    = inject(MaterialesObraService);
   private operariosSvc     = inject(OperariosService);
   private categoriasSvc    = inject(CategoriasOperarioService);
+  private proveedoresSvc   = inject(ProveedoresService);
   private partidasSvc      = inject(PartidasService);
 
   activeTab = signal('info');
@@ -58,6 +60,7 @@ export class ObraDetailComponent implements OnInit {
   materiales              = signal<MaterialObraDto[]>([]);
   operarios               = signal<OperarioDto[]>([]);
   categorias              = signal<CategoriaOperarioDto[]>([]);
+  proveedores             = signal<ProveedorDto[]>([]);
 
   // dialogs
   dlgPresupuesto = false;
@@ -79,7 +82,7 @@ export class ObraDetailComponent implements OnInit {
   partidaForm: any     = { nombre: '', descripcion: '', orden: 1 };
   lineaForm: any       = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, categoriaOperarioId: null };
   horasForm: any       = { operarioId: null, categoriaOperarioId: null, fecha: new Date(), horas: 8, costeHoraAplicado: 0, observaciones: '' };
-  materialForm: any    = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), observaciones: '' };
+  materialForm: any    = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), proveedorId: null, numeroAlbaran: '', numeroFactura: '', observaciones: '' };
 
   // computed
   presupuestoAprobado         = computed(() => this.presupuestos().find(p => p.esAprobado));
@@ -105,6 +108,7 @@ export class ObraDetailComponent implements OnInit {
     this.materialesSvc.getByObra(id).subscribe(m => this.materiales.set(m));
     this.operariosSvc.getAll().subscribe(o => this.operarios.set(o));
     this.categoriasSvc.getAll().subscribe(c => this.categorias.set(c));
+    this.proveedoresSvc.getAll().subscribe(p => this.proveedores.set(p));
   }
 
   // ── Presupuesto ──────────────────────────────────────────────────────────
@@ -281,14 +285,14 @@ export class ObraDetailComponent implements OnInit {
   // ── Materiales ───────────────────────────────────────────────────────────
   abrirNuevoMaterial() {
     this.editandoMaterialId.set(null);
-    this.materialForm = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), observaciones: '' };
+    this.materialForm = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), proveedorId: null, numeroAlbaran: '', numeroFactura: '', observaciones: '' };
     this.dlgMaterial = true;
   }
 
   abrirEditarMaterial(m: MaterialObraDto) {
     this.editandoMaterialId.set(m.id);
     this.materialForm = { descripcion: m.descripcion, unidad: m.unidad, cantidad: m.cantidad,
-      precioUnitario: m.precioUnitario, fecha: new Date(m.fecha), observaciones: m.observaciones ?? '' };
+      precioUnitario: m.precioUnitario, fecha: new Date(m.fecha), proveedorId: m.proveedorId, numeroAlbaran: m.numeroAlbaran ?? '', numeroFactura: m.numeroFactura ?? '', observaciones: m.observaciones ?? '' };
     this.dlgMaterial = true;
   }
 
@@ -326,5 +330,10 @@ export class ObraDetailComponent implements OnInit {
       2: 'bg-amber-100 text-amber-700', 3: 'bg-green-100 text-green-700', 4: 'bg-red-100 text-red-700'
     };
     return map[estado] ?? '';
+  }
+
+  getProveedorNombre(id?: string): string {
+    if (!id) return '';
+    return this.proveedores().find(p => p.id === id)?.nombre || '';
   }
 }

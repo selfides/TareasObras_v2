@@ -30,7 +30,7 @@ public class MaterialesObraController : ControllerBase
     [Authorize(Roles = "Admin,Supervisor")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateMaterialObraRequest request, CancellationToken ct)
     {
-        var result = await _mediator.Send(new UpdateMaterialObraCommand(id, request.Descripcion, request.Unidad, request.Cantidad, request.PrecioUnitario, request.Fecha, request.Observaciones), ct);
+        var result = await _mediator.Send(new UpdateMaterialObraCommand(id, request.Descripcion, request.Unidad, request.Cantidad, request.PrecioUnitario, request.Fecha, request.ProveedorId, request.NumeroAlbaran, request.NumeroFactura, request.Observaciones), ct);
         return result ? NoContent() : NotFound();
     }
 
@@ -43,4 +43,4 @@ public class MaterialesObraController : ControllerBase
     }
 }
 
-public record UpdateMaterialObraRequest(string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario, DateTime Fecha, string? Observaciones);
+public record UpdateMaterialObraRequest(string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario, DateTime Fecha, Guid? ProveedorId, string? NumeroAlbaran, string? NumeroFactura, string? Observaciones);

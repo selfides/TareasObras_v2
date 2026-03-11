@@ -4,8 +4,8 @@ using TareasObras.Domain.Entities;
 
 namespace TareasObras.Application.Features.MaterialesObra.Commands;
 
-public record CreateMaterialObraCommand(Guid ObraId, string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario, DateTime Fecha, string? Observaciones) : IRequest<Guid>;
-public record UpdateMaterialObraCommand(Guid Id, string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario, DateTime Fecha, string? Observaciones) : IRequest<bool>;
+public record CreateMaterialObraCommand(Guid ObraId, string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario, DateTime Fecha, Guid? ProveedorId, string? NumeroAlbaran, string? NumeroFactura, string? Observaciones) : IRequest<Guid>;
+public record UpdateMaterialObraCommand(Guid Id, string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario, DateTime Fecha, Guid? ProveedorId, string? NumeroAlbaran, string? NumeroFactura, string? Observaciones) : IRequest<bool>;
 public record DeleteMaterialObraCommand(Guid Id) : IRequest<bool>;
 
 public class CreateMaterialObraHandler : IRequestHandler<CreateMaterialObraCommand, Guid>
@@ -14,7 +14,7 @@ public class CreateMaterialObraHandler : IRequestHandler<CreateMaterialObraComma
     public CreateMaterialObraHandler(IUnitOfWork uow) => _uow = uow;
     public async Task<Guid> Handle(CreateMaterialObraCommand r, CancellationToken ct)
     {
-        var mat = MaterialObra.Create(r.ObraId, r.Descripcion, r.Unidad, r.Cantidad, r.PrecioUnitario, r.Fecha, r.Observaciones);
+        var mat = MaterialObra.Create(r.ObraId, r.Descripcion, r.Unidad, r.Cantidad, r.PrecioUnitario, r.Fecha, r.ProveedorId, r.NumeroAlbaran, r.NumeroFactura, r.Observaciones);
         await _uow.MaterialesObra.AddAsync(mat, ct);
         await _uow.SaveChangesAsync(ct);
         return mat.Id;
@@ -29,7 +29,7 @@ public class UpdateMaterialObraHandler : IRequestHandler<UpdateMaterialObraComma
     {
         var mat = await _uow.MaterialesObra.GetByIdAsync(r.Id, ct);
         if (mat is null) return false;
-        mat.Update(r.Descripcion, r.Unidad, r.Cantidad, r.PrecioUnitario, r.Fecha, r.Observaciones);
+        mat.Update(r.Descripcion, r.Unidad, r.Cantidad, r.PrecioUnitario, r.Fecha, r.ProveedorId, r.NumeroAlbaran, r.NumeroFactura, r.Observaciones);
         await _uow.SaveChangesAsync(ct);
         return true;
     }

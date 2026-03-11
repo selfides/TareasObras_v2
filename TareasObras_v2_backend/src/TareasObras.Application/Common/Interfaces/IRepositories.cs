@@ -1,4 +1,4 @@
-﻿using TareasObras.Domain.Entities;
+using TareasObras.Domain.Entities;
 
 namespace TareasObras.Application.Common.Interfaces;
 
@@ -108,6 +108,15 @@ public interface ILineaPartidaRepository
     void Delete(LineaPartida linea);
 }
 
+public interface IProveedorRepository
+{
+    Task<Proveedor?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IEnumerable<Proveedor>> GetAllAsync(CancellationToken ct = default);
+    Task AddAsync(Proveedor proveedor, CancellationToken ct = default);
+    void Update(Proveedor proveedor);
+    void Delete(Proveedor proveedor);
+}
+
 public interface IUnitOfWork
 {
     IObraRepository Obras { get; }
@@ -122,6 +131,7 @@ public interface IUnitOfWork
     IMaterialObraRepository MaterialesObra { get; }
     IPartidaPresupuestoRepository PartidasPresupuesto { get; }
     ILineaPartidaRepository LineasPartida { get; }
+    IProveedorRepository Proveedores { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 

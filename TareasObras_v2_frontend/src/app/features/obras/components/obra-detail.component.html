@@ -272,13 +272,22 @@
               <p-table [value]="materiales()" styleClass="p-datatable-sm">
                 <ng-template pTemplate="header">
                   <tr>
-                    <th>Descripcion</th><th>Unidad</th><th>Fecha</th>
+                    <th>Descripcion / Prov</th><th>Refs</th><th>Unidad</th><th>Fecha</th>
                     <th class="text-right">Cantidad</th><th class="text-right">Precio</th><th class="text-right">Importe</th><th></th>
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-m>
                   <tr>
-                    <td class="font-medium">{{ m.descripcion }}</td>
+                    <td>
+                      <div class="font-medium">{{ m.descripcion }}</div>
+                      @if (m.proveedorId) {
+                        <div class="text-xs text-surface-500 mt-0.5"><i class="pi pi-building text-xs mr-1"></i>{{ getProveedorNombre(m.proveedorId) }}</div>
+                      }
+                    </td>
+                    <td class="text-xs text-surface-500 space-y-0.5">
+                      @if (m.numeroAlbaran) { <div>Alb: <span class="font-mono text-surface-700">{{ m.numeroAlbaran }}</span></div> }
+                      @if (m.numeroFactura) { <div>Fact: <span class="font-mono text-surface-700">{{ m.numeroFactura }}</span></div> }
+                    </td>
                     <td class="text-surface-500 text-sm">{{ m.unidad }}</td>
                     <td class="text-sm">{{ m.fecha | date:'dd/MM/yyyy' }}</td>
                     <td class="text-right">{{ m.cantidad | number:'1.0-3' }}</td>
@@ -455,6 +464,21 @@
       <div>
         <label class="block text-sm font-medium mb-1.5">Precio unitario (euros) *</label>
         <p-inputNumber [(ngModel)]="materialForm.precioUnitario" [minFractionDigits]="2" styleClass="w-full" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Proveedor</label>
+      <p-select [(ngModel)]="materialForm.proveedorId" appendTo="body" [options]="proveedores()" optionLabel="nombre" optionValue="id"
+                placeholder="Selecciona proveedor" styleClass="w-full" [showClear]="true" />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Num. Albaran</label>
+        <input pInputText [(ngModel)]="materialForm.numeroAlbaran" class="w-full" placeholder="Opcional" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Num. Factura</label>
+        <input pInputText [(ngModel)]="materialForm.numeroFactura" class="w-full" placeholder="Opcional" />
       </div>
     </div>
     <div>

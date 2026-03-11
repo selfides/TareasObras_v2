@@ -148,11 +148,34 @@ export interface PresupuestoDto {
 export interface MaterialObraDto {
   id: string;
   obraId: string;
+  proveedorId?: string;
   descripcion: string;
   unidad: string;
   cantidad: number;
   precioUnitario: number;
   importeReal: number;
   fecha: string;
+  numeroAlbaran?: string;
+  numeroFactura?: string;
+  observaciones?: string;
+}
+
+// ─── Proveedores ────────────────────────────────────────────────────────
+export interface ProveedorDto {
+  id: string;
+  nombre: string;
+  cifNif?: string;
+  direccion?: string;
+  telefono?: string;
+  email?: string;
+  observaciones?: string;
+}
+
+export interface CreateProveedorRequest {
+  nombre: string;
+  cifNif?: string;
+  direccion?: string;
+  telefono?: string;
+  email?: string;
   observaciones?: string;
 }

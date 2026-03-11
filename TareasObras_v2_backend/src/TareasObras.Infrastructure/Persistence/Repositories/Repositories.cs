@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
 
@@ -216,6 +216,22 @@ public class LineaPartidaRepository : ILineaPartidaRepository
     public void Delete(LineaPartida l) => _ctx.LineasPartida.Remove(l);
 }
 
+public class ProveedorRepository : IProveedorRepository
+{
+    private readonly AppDbContext _ctx;
+    public ProveedorRepository(AppDbContext ctx) => _ctx = ctx;
+
+    public async Task<Proveedor?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => await _ctx.Proveedores.FirstOrDefaultAsync(p => p.Id == id, ct);
+
+    public async Task<IEnumerable<Proveedor>> GetAllAsync(CancellationToken ct = default)
+        => await _ctx.Proveedores.OrderBy(p => p.Nombre).ToListAsync(ct);
+
+    public async Task AddAsync(Proveedor p, CancellationToken ct = default) => await _ctx.Proveedores.AddAsync(p, ct);
+    public void Update(Proveedor p) => _ctx.Proveedores.Update(p);
+    public void Delete(Proveedor p) => _ctx.Proveedores.Remove(p);
+}
+
 public class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _ctx;
@@ -232,6 +248,7 @@ public class UnitOfWork : IUnitOfWork
     public IMaterialObraRepository MaterialesObra { get; }
     public IPartidaPresupuestoRepository PartidasPresupuesto { get; }
     public ILineaPartidaRepository LineasPartida { get; }
+    public IProveedorRepository Proveedores { get; }
 
     public UnitOfWork(AppDbContext ctx)
     {
@@ -248,6 +265,7 @@ public class UnitOfWork : IUnitOfWork
         MaterialesObra = new MaterialObraRepository(ctx);
         PartidasPresupuesto = new PartidaPresupuestoRepository(ctx);
         LineasPartida = new LineaPartidaRepository(ctx);
+        Proveedores = new ProveedorRepository(ctx);
     }
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default) => _ctx.SaveChangesAsync(ct);

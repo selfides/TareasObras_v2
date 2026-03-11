@@ -7,12 +7,15 @@ public record MaterialObraDto
 {
     public Guid Id { get; init; }
     public Guid ObraId { get; init; }
+    public Guid? ProveedorId { get; init; }
     public string Descripcion { get; init; } = "";
     public string Unidad { get; init; } = "";
     public decimal Cantidad { get; init; }
     public decimal PrecioUnitario { get; init; }
     public decimal ImporteReal { get; init; }
     public DateTime Fecha { get; init; }
+    public string? NumeroAlbaran { get; init; }
+    public string? NumeroFactura { get; init; }
     public string? Observaciones { get; init; }
 }
 
@@ -27,9 +30,10 @@ public class GetMaterialesByObraHandler : IRequestHandler<GetMaterialesByObraQue
         var mats = await _uow.MaterialesObra.GetByObraIdAsync(r.ObraId, ct);
         return mats.Select(m => new MaterialObraDto
         {
-            Id = m.Id, ObraId = m.ObraId, Descripcion = m.Descripcion,
+            Id = m.Id, ObraId = m.ObraId, ProveedorId = m.ProveedorId, Descripcion = m.Descripcion,
             Unidad = m.Unidad, Cantidad = m.Cantidad, PrecioUnitario = m.PrecioUnitario,
-            ImporteReal = m.ImporteReal, Fecha = m.Fecha, Observaciones = m.Observaciones
+            ImporteReal = m.ImporteReal, Fecha = m.Fecha, 
+            NumeroAlbaran = m.NumeroAlbaran, NumeroFactura = m.NumeroFactura, Observaciones = m.Observaciones
         });
     }
 }

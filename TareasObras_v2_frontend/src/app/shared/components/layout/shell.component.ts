@@ -99,6 +99,7 @@ export class ShellComponent {
   private navItems: NavItem[] = [
     { label: 'Dashboard',  icon: 'pi pi-chart-bar',  route: '/dashboard' },
     { label: 'Obras',      icon: 'pi pi-building',   route: '/obras' },
+    { label: 'Proveedores',icon: 'pi pi-truck',      route: '/proveedores', roles: ['Admin', 'Supervisor'] },
     { label: 'Usuarios',   icon: 'pi pi-users',      route: '/usuarios',  roles: ['Admin'] },
     { label: 'Operarios',  icon: 'pi pi-id-card',   route: '/operarios', roles: ['Admin', 'Supervisor'] },
   ];

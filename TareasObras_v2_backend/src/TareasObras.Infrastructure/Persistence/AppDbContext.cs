@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TareasObras.Application.Common.Interfaces;
@@ -33,6 +33,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<LineaPresupuestoMaterial> LineasPresupuestoMaterial => Set<LineaPresupuestoMaterial>();
     public DbSet<LineaPresupuestoHoras> LineasPresupuestoHoras => Set<LineaPresupuestoHoras>();
     public DbSet<MaterialObra> MaterialesObra => Set<MaterialObra>();
+    public DbSet<Proveedor> Proveedores => Set<Proveedor>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserService currentUser)
         : base(options)
@@ -62,6 +63,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
         builder.Entity<Presupuesto>().HasQueryFilter(p => !p.IsDeleted);
         builder.Entity<RegistroHoras>().HasQueryFilter(r => !r.IsDeleted);
         builder.Entity<MaterialObra>().HasQueryFilter(m => !m.IsDeleted);
+        builder.Entity<Proveedor>().HasQueryFilter(p => !p.IsDeleted);
 
         // Presupuesto → Obra
         builder.Entity<Presupuesto>()
@@ -129,6 +131,13 @@ public class AppDbContext : IdentityDbContext<AppUser>
             .WithMany(o => o.Materiales)
             .HasForeignKey(m => m.ObraId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // MaterialObra → Proveedor
+        builder.Entity<MaterialObra>()
+            .HasOne(m => m.Proveedor)
+            .WithMany()
+            .HasForeignKey(m => m.ProveedorId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Presupuesto: versión única por obra en estado Aprobado
         builder.Entity<Presupuesto>()
