@@ -386,11 +386,11 @@
       </div>
       <div>
         <label class="block text-sm font-medium mb-1.5">Cantidad</label>
-        <p-inputNumber [(ngModel)]="lineaForm.cantidad" [minFractionDigits]="0" [maxFractionDigits]="3" styleClass="w-full" />
+        <p-inputNumber [(ngModel)]="lineaForm.cantidad" [minFractionDigits]="0" [maxFractionDigits]="3" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
       </div>
       <div>
         <label class="block text-sm font-medium mb-1.5">Precio (euros)</label>
-        <p-inputNumber [(ngModel)]="lineaForm.precioUnitario" [minFractionDigits]="2" styleClass="w-full" />
+        <p-inputNumber [(ngModel)]="lineaForm.precioUnitario" [minFractionDigits]="2" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
       </div>
     </div>
     <div class="bg-surface-50 dark:bg-surface-800 rounded-lg p-3 flex justify-between items-center">
@@ -399,8 +399,10 @@
     </div>
   </div>
   <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgLinea = false" />
-    <p-button [label]="editandoLineaId() ? 'Guardar' : 'Anadir linea'" icon="pi pi-check" (onClick)="guardarLinea()" [loading]="saving()" />
+    <div class="flex justify-end gap-2 w-full">
+      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgLinea = false" class="w-full sm:w-40" styleClass="w-full sm:w-40 justify-center" />
+      <p-button [label]="editandoLineaId() ? 'Guardar' : 'Anadir linea'" icon="pi pi-check" (onClick)="guardarLinea()" [loading]="saving()" class="w-full sm:w-40" styleClass="w-full sm:w-40 justify-center" />
+    </div>
   </ng-template>
 </p-dialog>
 
@@ -416,16 +418,16 @@
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label class="block text-sm font-medium mb-1.5">Fecha *</label>
-        <p-datepicker [(ngModel)]="horasForm.fecha" appendTo="body" dateFormat="dd/mm/yy" styleClass="w-full" [showIcon]="true" />
+        <p-datepicker [(ngModel)]="horasForm.fecha" appendTo="body" dateFormat="dd/mm/yy" class="w-full block" styleClass="w-full" inputStyleClass="w-full" [showIcon]="true" />
       </div>
       <div>
         <label class="block text-sm font-medium mb-1.5">Horas *</label>
-        <p-inputNumber [(ngModel)]="horasForm.horas" [minFractionDigits]="1" [min]="0.5" [max]="24" styleClass="w-full" />
+        <p-inputNumber [(ngModel)]="horasForm.horas" [minFractionDigits]="1" [min]="0.5" [max]="24" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
       </div>
     </div>
     <div>
       <label class="block text-sm font-medium mb-1.5">Coste euros/hora</label>
-      <p-inputNumber [(ngModel)]="horasForm.costeHoraAplicado" [minFractionDigits]="2" styleClass="w-full" />
+      <p-inputNumber [(ngModel)]="horasForm.costeHoraAplicado" [minFractionDigits]="2" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
     </div>
     <div>
       <label class="block text-sm font-medium mb-1.5">Observaciones</label>
@@ -433,8 +435,10 @@
     </div>
   </div>
   <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="cerrarDlgHoras()" />
-    <p-button [label]="editandoHorasId() ? 'Guardar cambios' : 'Registrar'" icon="pi pi-check" (onClick)="guardarHoras()" [loading]="saving()" />
+    <div class="flex justify-end gap-2 w-full">
+      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="cerrarDlgHoras()" class="w-full sm:w-44" styleClass="w-full sm:w-44 justify-center" />
+      <p-button [label]="editandoHorasId() ? 'Guardar cambios' : 'Registrar'" icon="pi pi-check" (onClick)="guardarHoras()" [loading]="saving()" class="w-full sm:w-44" styleClass="w-full sm:w-44 justify-center" />
+    </div>
   </ng-template>
 </p-dialog>
 
@@ -453,17 +457,17 @@
       </div>
       <div>
         <label class="block text-sm font-medium mb-1.5">Fecha *</label>
-        <p-datepicker [(ngModel)]="materialForm.fecha" appendTo="body" dateFormat="dd/mm/yy" styleClass="w-full" [showIcon]="true" />
+        <p-datepicker [(ngModel)]="materialForm.fecha" appendTo="body" dateFormat="dd/mm/yy" class="w-full block" styleClass="w-full" inputStyleClass="w-full" [showIcon]="true" />
       </div>
     </div>
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label class="block text-sm font-medium mb-1.5">Cantidad *</label>
-        <p-inputNumber [(ngModel)]="materialForm.cantidad" [minFractionDigits]="0" [maxFractionDigits]="3" styleClass="w-full" />
+        <p-inputNumber [(ngModel)]="materialForm.cantidad" [minFractionDigits]="0" [maxFractionDigits]="3" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
       </div>
       <div>
         <label class="block text-sm font-medium mb-1.5">Precio unitario (euros) *</label>
-        <p-inputNumber [(ngModel)]="materialForm.precioUnitario" [minFractionDigits]="2" styleClass="w-full" />
+        <p-inputNumber [(ngModel)]="materialForm.precioUnitario" [minFractionDigits]="2" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
       </div>
     </div>
     <div>
@@ -487,7 +491,9 @@
     </div>
   </div>
   <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="cerrarDlgMaterial()" />
-    <p-button [label]="editandoMaterialId() ? 'Guardar cambios' : 'Anadir'" icon="pi pi-check" (onClick)="guardarMaterial()" [loading]="saving()" />
+    <div class="flex justify-end gap-2 w-full">
+      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="cerrarDlgMaterial()" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
+      <p-button [label]="editandoMaterialId() ? 'Guardar' : 'Anadir'" icon="pi pi-check" (onClick)="guardarMaterial()" [loading]="saving()" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
+    </div>
   </ng-template>
 </p-dialog>
