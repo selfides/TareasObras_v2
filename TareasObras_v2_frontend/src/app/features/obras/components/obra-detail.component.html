@@ -82,7 +82,7 @@
             <div class="flex justify-between items-center">
               <h3 class="font-semibold text-surface-900 dark:text-surface-50">Versiones de presupuesto</h3>
               @if (auth.isSupervisor()) {
-                <p-button label="Nuevo presupuesto" icon="pi pi-plus" size="small" (onClick)="dlgPresupuesto = true" />
+                <p-button label="Nuevo presupuesto" icon="pi pi-plus" size="small" (onClick)="abrirNuevoPresupuesto()" />
               }
             </div>
 
@@ -96,10 +96,12 @@
                     <span class="text-xs text-surface-400">{{ p.fecha | date:'dd/MM/yyyy' }}</span>
                     @if (p.descripcion) { <span class="text-xs text-surface-500 italic">{{ p.descripcion }}</span> }
                   </div>
-                  <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2">
                     <span class="font-bold text-blue-600 text-sm">{{ p.total | number:'1.0-0' }} €</span>
                     @if (!p.esAprobado && auth.isSupervisor()) {
                       <p-button label="Aprobar" icon="pi pi-check" size="small" severity="success" (onClick)="aprobarPresupuesto(p.id)" />
+                      <p-button icon="pi pi-pencil" [text]="true" size="small" severity="info" pTooltip="Editar" (onClick)="abrirEditarPresupuesto(p)" />
+                      <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Eliminar" (onClick)="confirmarEliminarPresupuesto(p.id)" />
                     }
                     <p-button [label]="presupuestoSeleccionado() === p.id ? 'Cerrar' : 'Ver partidas'"
                               [icon]="presupuestoSeleccionado() === p.id ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
@@ -129,7 +131,7 @@
                   <div class="p-4 space-y-3 bg-surface-50 dark:bg-surface-800">
                     <div class="flex justify-between items-center">
                       <p class="text-sm font-semibold text-surface-700 dark:text-surface-300">Partidas</p>
-                      @if (auth.isSupervisor() && !p.esAprobado) {
+                      @if (auth.isSupervisor()) {
                         <p-button label="Nueva partida" icon="pi pi-plus" size="small" [text]="true" (onClick)="abrirNuevaPartida()" />
                       }
                     </div>
@@ -144,7 +146,7 @@
                           </div>
                           <div class="flex items-center gap-1">
                             <span class="text-sm font-bold text-blue-600 mr-2">{{ partida.total | number:'1.2-2' }} €</span>
-                            @if (auth.isSupervisor() && !p.esAprobado) {
+                            @if (auth.isSupervisor()) {
                               <p-button icon="pi pi-pencil" [text]="true" size="small" pTooltip="Editar partida" (onClick)="abrirEditarPartida(partida)" />
                               <p-button icon="pi pi-plus" [text]="true" size="small" severity="success" pTooltip="Anadir material" (onClick)="abrirNuevaLinea(partida.id, 'Material')" />
                               <p-button icon="pi pi-user" [text]="true" size="small" severity="info" pTooltip="Anadir mano de obra" (onClick)="abrirNuevaLinea(partida.id, 'ManoObra')" />
@@ -163,7 +165,7 @@
                                 <th class="py-1.5 text-right">Cantidad</th>
                                 <th class="py-1.5 text-right">Precio</th>
                                 <th class="py-1.5 text-right pr-3">Importe</th>
-                                @if (auth.isSupervisor() && !p.esAprobado) { <th class="py-1.5 pr-1"></th> }
+                                @if (auth.isSupervisor()) { <th class="py-1.5 pr-1"></th> }
                               </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-surface-900">
@@ -181,7 +183,7 @@
                                   <td class="py-1.5 text-right">{{ linea.cantidad | number:'1.0-3' }}</td>
                                   <td class="py-1.5 text-right text-surface-500">{{ linea.precioUnitario | number:'1.2-2' }} €</td>
                                   <td class="py-1.5 text-right font-medium pr-3">{{ linea.importe | number:'1.2-2' }} €</td>
-                                  @if (auth.isSupervisor() && !p.esAprobado) {
+                                  @if (auth.isSupervisor()) {
                                     <td class="py-1.5 pr-1 text-right">
                                       <p-button icon="pi pi-pencil" [text]="true" size="small" (onClick)="abrirEditarLinea(linea, partida.id)" />
                                       <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="confirmarEliminarLinea(linea.id)" />
@@ -317,7 +319,7 @@
 <p-confirmdialog />
 
 <!-- Dialog Presupuesto -->
-<p-dialog [(visible)]="dlgPresupuesto" header="Nuevo Presupuesto" [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false">
+<p-dialog [(visible)]="dlgPresupuesto" [header]="editandoPresupuestoId() ? 'Editar Presupuesto' : 'Nuevo Presupuesto'" [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false">
   <div class="space-y-4 pt-2">
     <div>
       <label class="block text-sm font-medium mb-1.5">Numero de presupuesto *</label>
@@ -333,11 +335,13 @@
         <input pInputText [(ngModel)]="presupuestoForm.descripcion" class="w-full" placeholder="Ej: Revision inicial" />
       </div>
     </div>
-    <p class="text-xs text-surface-400">Tras crear el presupuesto podras anadir partidas con materiales y mano de obra.</p>
+    @if (!editandoPresupuestoId()) {
+      <p class="text-xs text-surface-400">Tras crear el presupuesto podras anadir partidas con materiales y mano de obra.</p>
+    }
   </div>
   <ng-template pTemplate="footer">
     <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgPresupuesto = false" />
-    <p-button label="Crear presupuesto" icon="pi pi-check" (onClick)="guardarPresupuesto()" [loading]="saving()" />
+    <p-button [label]="editandoPresupuestoId() ? 'Guardar Cambios' : 'Crear presupuesto'" icon="pi pi-check" (onClick)="guardarPresupuesto()" [loading]="saving()" />
   </ng-template>
 </p-dialog>
 

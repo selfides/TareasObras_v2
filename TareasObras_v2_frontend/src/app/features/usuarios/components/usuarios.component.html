@@ -12,7 +12,7 @@
       label="Nuevo Usuario"
       icon="pi pi-user-plus"
       size="small"
-      (onClick)="dialogVisible = true"
+      (onClick)="openNew()"
     />
   </div>
 
@@ -31,6 +31,7 @@
           <th>Rol</th>
           <th>Estado</th>
           <th>Alta</th>
+          <th class="text-center" style="width: 120px">Acciones</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-u>
@@ -55,7 +56,7 @@
                 'px-2 py-0.5 rounded-full text-xs font-medium ' +
                 (u.activo
                   ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                  : 'bg-red-100 text-red-700')
+                  : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300')
               "
             >
               {{ u.activo ? "Activo" : "Inactivo" }}
@@ -64,11 +65,34 @@
           <td class="text-sm text-surface-400">
             {{ u.createdAt | date: "dd/MM/yyyy" }}
           </td>
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-1">
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                size="small"
+                pTooltip="Editar"
+                (onClick)="openEdit(u)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                size="small"
+                pTooltip="Eliminar"
+                (onClick)="confirmDelete(u)"
+                [disabled]="!u.activo"
+              />
+            </div>
+          </td>
         </tr>
       </ng-template>
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="5" class="text-center py-10 text-surface-400">
+          <td colspan="6" class="text-center py-10 text-surface-400">
             <i class="pi pi-users text-3xl block mb-2"></i>No hay usuarios
           </td>
         </tr>
@@ -77,10 +101,10 @@
   </div>
 </div>
 
-<!-- Dialog nuevo usuario -->
+<!-- Dialog crear / editar usuario -->
 <p-dialog
   [(visible)]="dialogVisible"
-  header="Nuevo Usuario"
+  [header]="editMode ? 'Editar Usuario' : 'Nuevo Usuario'"
   [modal]="true"
   [style]="{ width: '480px' }"
   [draggable]="false"
@@ -113,7 +137,7 @@
       <div>
         <label
           class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
-          >Contraseña *</label
+          >{{ editMode ? 'Nueva Contraseña (dejar vacío para no cambiar)' : 'Contraseña *' }}</label
         >
         <p-password
           formControlName="password"
@@ -139,6 +163,14 @@
         />
       </div>
     </div>
+    @if (editMode) {
+      <div class="flex items-center gap-3">
+        <p-toggleSwitch formControlName="activo" />
+        <label class="text-sm font-medium text-surface-700 dark:text-surface-300">
+          Usuario activo
+        </label>
+      </div>
+    }
   </form>
   <ng-template pTemplate="footer">
     <p-button
@@ -148,11 +180,14 @@
       (onClick)="dialogVisible = false"
     />
     <p-button
-      label="Crear Usuario"
+      [label]="editMode ? 'Guardar Cambios' : 'Crear Usuario'"
       icon="pi pi-check"
-      (onClick)="crear()"
+      (onClick)="guardar()"
       [disabled]="form.invalid"
       [loading]="saving()"
     />
   </ng-template>
 </p-dialog>
+
+<!-- Confirm dialog para eliminar -->
+<p-confirmDialog />

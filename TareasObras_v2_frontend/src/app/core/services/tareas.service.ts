@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { TareaDto, CreateTareaRequest, UpdateTareaRequest, CambiarEstadoRequest } from '../models';
 
 const API = '/api';
@@ -9,6 +9,11 @@ export class TareasService {
   private http = inject(HttpClient);
   private base = `${API}/tareas`;
 
+  getAll(fecha?: string) {
+    let params = new HttpParams();
+    if (fecha) params = params.set('fecha', fecha);
+    return this.http.get<any[]>(this.base, { params });
+  }
   getByObra(obraId: string) { return this.http.get<TareaDto[]>(`${this.base}/obra/${obraId}`); }
   getMisTareas() { return this.http.get<TareaDto[]>(`${this.base}/mis-tareas`); }
   getById(id: string) { return this.http.get<TareaDto>(`${this.base}/${id}`); }

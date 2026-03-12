@@ -14,6 +14,29 @@ public class MaterialesObraController : ControllerBase
     private readonly IMediator _mediator;
     public MaterialesObraController(IMediator mediator) => _mediator = mediator;
 
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] DateTime? fecha, CancellationToken ct)
+    {
+        var uow = HttpContext.RequestServices.GetRequiredService<TareasObras.Application.Common.Interfaces.IUnitOfWork>();
+        IEnumerable<Domain.Entities.MaterialObra> materiales;
+        if (fecha.HasValue)
+            materiales = await uow.MaterialesObra.GetByFechaAsync(fecha.Value, ct);
+        else
+            materiales = await uow.MaterialesObra.GetAllAsync(ct);
+
+        var result = materiales.Select(m => new {
+            id = m.Id, obraId = m.ObraId,
+            obraNombre = m.Obra?.Nombre ?? "",
+            obraCodigo = m.Obra?.Codigo ?? "",
+            proveedorId = m.ProveedorId, descripcion = m.Descripcion,
+            unidad = m.Unidad, cantidad = m.Cantidad,
+            precioUnitario = m.PrecioUnitario, importeReal = m.ImporteReal,
+            fecha = m.Fecha, numeroAlbaran = m.NumeroAlbaran,
+            numeroFactura = m.NumeroFactura, observaciones = m.Observaciones
+        });
+        return Ok(result);
+    }
+
     [HttpGet("obra/{obraId:guid}")]
     public async Task<IActionResult> GetByObra(Guid obraId, CancellationToken ct)
         => Ok(await _mediator.Send(new GetMaterialesByObraQuery(obraId), ct));

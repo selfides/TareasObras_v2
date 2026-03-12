@@ -31,6 +31,37 @@ namespace TareasObras.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>Obtener todas las tareas (opcionalmente filtradas por fecha)</summary>
+        [HttpGet]
+        public async Task<IActionResult> GetAll([FromQuery] DateTime? fecha, CancellationToken ct)
+        {
+            IEnumerable<Domain.Entities.Tarea> tareas;
+            if (fecha.HasValue)
+            {
+                var uow = HttpContext.RequestServices.GetRequiredService<TareasObras.Application.Common.Interfaces.IUnitOfWork>();
+                tareas = await uow.Tareas.GetByFechaAsync(fecha.Value, ct);
+            }
+            else
+            {
+                var uow = HttpContext.RequestServices.GetRequiredService<TareasObras.Application.Common.Interfaces.IUnitOfWork>();
+                tareas = await uow.Tareas.GetAllAsync(ct);
+            }
+            var mapper = HttpContext.RequestServices.GetRequiredService<AutoMapper.IMapper>();
+            var result = tareas.Select(t => new {
+                id = t.Id, obraId = t.ObraId,
+                obraNombre = t.Obra?.Nombre ?? "",
+                obraCodigo = t.Obra?.Codigo ?? "",
+                titulo = t.Titulo, descripcion = t.Descripcion,
+                estadoNombre = t.Estado.ToString(), estado = t.Estado,
+                prioridadNombre = t.Prioridad.ToString(), prioridad = t.Prioridad,
+                fechaLimite = t.FechaLimite, horasEstimadas = t.HorasEstimadas,
+                horasReales = t.HorasReales, cuadrillaId = t.CuadrillaId,
+                usuarioAsignadoId = t.UsuarioAsignadoId, observaciones = t.Observaciones,
+                createdAt = t.CreatedAt
+            });
+            return Ok(result);
+        }
+
         /// <summary>Obtener tareas de una obra</summary>
         [HttpGet("obra/{obraId:guid}")]
         public async Task<IActionResult> GetByObra(Guid obraId, CancellationToken ct)

@@ -39,6 +39,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/tareas/components/tareas-kanban.component').then(m => m.TareasKanbanComponent)
       },
       {
+        path: 'tareas',
+        loadComponent: () => import('./features/tareas/components/tareas-global.component').then(m => m.TareasGlobalComponent)
+      },
+      {
+        path: 'materiales',
+        loadComponent: () => import('./features/materiales/components/materiales-global.component').then(m => m.MaterialesGlobalComponent)
+      },
+      {
+        path: 'partes-trabajo',
+        loadComponent: () => import('./features/diario/components/partes-trabajo.component').then(m => m.PartesTrabajoComponent)
+      },
+      {
         path: 'usuarios',
         loadComponent: () => import('./features/usuarios/components/usuarios.component').then(m => m.UsuariosComponent),
         canActivate: [adminGuard]

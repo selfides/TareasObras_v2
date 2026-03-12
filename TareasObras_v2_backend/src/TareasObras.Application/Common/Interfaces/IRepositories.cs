@@ -16,8 +16,10 @@ public interface IObraRepository
 public interface ITareaRepository
 {
     Task<Tarea?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IEnumerable<Tarea>> GetAllAsync(CancellationToken ct = default);
     Task<IEnumerable<Tarea>> GetByObraIdAsync(Guid obraId, CancellationToken ct = default);
     Task<IEnumerable<Tarea>> GetByUsuarioIdAsync(string usuarioId, CancellationToken ct = default);
+    Task<IEnumerable<Tarea>> GetByFechaAsync(DateTime fecha, CancellationToken ct = default);
     Task AddAsync(Tarea tarea, CancellationToken ct = default);
     void Update(Tarea tarea);
     void Delete(Tarea tarea);
@@ -53,7 +55,9 @@ public interface IOperarioRepository
 public interface IRegistroHorasRepository
 {
     Task<RegistroHoras?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IEnumerable<RegistroHoras>> GetAllAsync(CancellationToken ct = default);
     Task<IEnumerable<RegistroHoras>> GetByObraIdAsync(Guid obraId, CancellationToken ct = default);
+    Task<IEnumerable<RegistroHoras>> GetByFechaAsync(DateTime fecha, CancellationToken ct = default);
     Task AddAsync(RegistroHoras registro, CancellationToken ct = default);
     void Update(RegistroHoras registro);
     void Delete(RegistroHoras registro);
@@ -85,7 +89,9 @@ public interface ILineaPresupuestoHorasRepository
 public interface IMaterialObraRepository
 {
     Task<MaterialObra?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IEnumerable<MaterialObra>> GetAllAsync(CancellationToken ct = default);
     Task<IEnumerable<MaterialObra>> GetByObraIdAsync(Guid obraId, CancellationToken ct = default);
+    Task<IEnumerable<MaterialObra>> GetByFechaAsync(DateTime fecha, CancellationToken ct = default);
     Task AddAsync(MaterialObra material, CancellationToken ct = default);
     void Update(MaterialObra material);
     void Delete(MaterialObra material);

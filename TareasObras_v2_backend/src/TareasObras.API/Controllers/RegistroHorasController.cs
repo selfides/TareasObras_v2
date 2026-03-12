@@ -14,6 +14,31 @@ public class RegistroHorasController : ControllerBase
     private readonly IMediator _mediator;
     public RegistroHorasController(IMediator mediator) => _mediator = mediator;
 
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] DateTime? fecha, CancellationToken ct)
+    {
+        var uow = HttpContext.RequestServices.GetRequiredService<TareasObras.Application.Common.Interfaces.IUnitOfWork>();
+        IEnumerable<Domain.Entities.RegistroHoras> registros;
+        if (fecha.HasValue)
+            registros = await uow.RegistrosHoras.GetByFechaAsync(fecha.Value, ct);
+        else
+            registros = await uow.RegistrosHoras.GetAllAsync(ct);
+
+        var result = registros.Select(r => new {
+            id = r.Id, obraId = r.ObraId,
+            obraNombre = r.Obra?.Nombre ?? "",
+            obraCodigo = r.Obra?.Codigo ?? "",
+            operarioId = r.OperarioId,
+            operarioNombre = $"{r.Operario?.Nombre} {r.Operario?.Apellidos}".Trim(),
+            categoriaNombre = r.Categoria?.Nombre ?? "",
+            fecha = r.Fecha, horas = r.Horas,
+            costeHoraAplicado = r.CosteHoraAplicado,
+            costeTotal = r.CosteTotal,
+            observaciones = r.Observaciones
+        });
+        return Ok(result);
+    }
+
     [HttpGet("obra/{obraId:guid}")]
     public async Task<IActionResult> GetByObra(Guid obraId, CancellationToken ct)
         => Ok(await _mediator.Send(new GetRegistroHorasByObraQuery(obraId), ct));

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
 
@@ -8,8 +8,24 @@ public record LineaMaterialRequest(string Descripcion, string Unidad, decimal Ca
 public record LineaHorasRequest(Guid CategoriaOperarioId, decimal HorasEstimadas, decimal CosteHoraEstimado);
 
 public record CreatePresupuestoCommand(Guid ObraId, string? Numero, DateTime Fecha, string? Descripcion, List<LineaMaterialRequest> LineasMaterial, List<LineaHorasRequest> LineasHoras) : IRequest<Guid>;
+public record UpdatePresupuestoCommand(Guid Id, string? Numero, DateTime Fecha, string? Descripcion) : IRequest<bool>;
 public record AprobarPresupuestoCommand(Guid Id) : IRequest<bool>;
 public record DeletePresupuestoCommand(Guid Id) : IRequest<bool>;
+
+public class UpdatePresupuestoHandler : IRequestHandler<UpdatePresupuestoCommand, bool>
+{
+    private readonly IUnitOfWork _uow;
+    public UpdatePresupuestoHandler(IUnitOfWork uow) => _uow = uow;
+    public async Task<bool> Handle(UpdatePresupuestoCommand r, CancellationToken ct)
+    {
+        var p = await _uow.Presupuestos.GetByIdAsync(r.Id, ct);
+        if (p is null) return false;
+        
+        p.Update(r.Numero, r.Fecha, r.Descripcion);
+        await _uow.SaveChangesAsync(ct);
+        return true;
+    }
+}
 
 public class CreatePresupuestoHandler : IRequestHandler<CreatePresupuestoCommand, Guid>
 {

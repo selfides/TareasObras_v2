@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Enums;
 
@@ -77,9 +77,9 @@ internal static class PresupuestoDtoMapper
         Descripcion = p.Descripcion,
         EstadoNombre = p.Estado.ToString(),
         EsAprobado = p.Estado == EstadoPresupuesto.Aprobado,
-        TotalMaterial = p.LineasMaterial?.Sum(l => l.ImporteEstimado) ?? 0,
-        TotalHoras = p.LineasHoras?.Sum(l => l.ImporteEstimado) ?? 0,
-        Total = (p.LineasMaterial?.Sum(l => l.ImporteEstimado) ?? 0) + (p.LineasHoras?.Sum(l => l.ImporteEstimado) ?? 0),
+        TotalMaterial = p.TotalMaterial,
+        TotalHoras = p.TotalHoras,
+        Total = p.Total,
         LineasMaterial = p.LineasMaterial?.Select(l => new LineaMaterialDto
         {
             Id = l.Id, Descripcion = l.Descripcion, Unidad = l.Unidad,

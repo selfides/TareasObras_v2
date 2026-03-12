@@ -70,6 +70,7 @@ export class ObraDetailComponent implements OnInit {
   dlgMaterial    = false;
 
   // signals de edicion
+  editandoPresupuestoId = signal<string | null>(null);
   editandoHorasId    = signal<string | null>(null);
   editandoMaterialId = signal<string | null>(null);
   editandoPartidaId  = signal<string | null>(null);
@@ -112,18 +113,65 @@ export class ObraDetailComponent implements OnInit {
   }
 
   // ── Presupuesto ──────────────────────────────────────────────────────────
+  abrirNuevoPresupuesto() {
+    this.editandoPresupuestoId.set(null);
+    this.presupuestoForm = { numero: '', fecha: new Date(), descripcion: '' };
+    this.dlgPresupuesto = true;
+  }
+
+  abrirEditarPresupuesto(p: any) {
+    this.editandoPresupuestoId.set(p.id);
+    this.presupuestoForm = { numero: p.numero ?? '', fecha: new Date(p.fecha), descripcion: p.descripcion ?? '' };
+    this.dlgPresupuesto = true;
+  }
+
   guardarPresupuesto() {
     this.saving.set(true);
-    this.presupuestosSvc.create({ obraId: this.obraId(), numero: this.presupuestoForm.numero,
-      fecha: this.presupuestoForm.fecha, descripcion: this.presupuestoForm.descripcion,
-      lineasMaterial: [], lineasHoras: [] }).subscribe({
-      next: () => {
-        this.dlgPresupuesto = false; this.saving.set(false);
-        this.presupuestoForm = { numero: '', fecha: new Date(), descripcion: '' };
-        this.presupuestosSvc.getByObra(this.obraId()).subscribe(p => this.presupuestos.set(p));
-        this.msg.add({ severity: 'success', summary: 'Presupuesto creado' });
-      },
-      error: () => { this.saving.set(false); this.msg.add({ severity: 'error', summary: 'Error al guardar' }); }
+    const editId = this.editandoPresupuestoId();
+    if (editId) {
+      this.presupuestosSvc.update(editId, {
+        numero: this.presupuestoForm.numero,
+        fecha: this.presupuestoForm.fecha,
+        descripcion: this.presupuestoForm.descripcion
+      }).subscribe({
+        next: () => {
+          this.dlgPresupuesto = false; this.saving.set(false);
+          this.presupuestosSvc.getByObra(this.obraId()).subscribe(p => this.presupuestos.set(p));
+          this.msg.add({ severity: 'success', summary: 'Presupuesto actualizado' });
+        },
+        error: () => { this.saving.set(false); this.msg.add({ severity: 'error', summary: 'Error al modificar' }); }
+      });
+    } else {
+      this.presupuestosSvc.create({ obraId: this.obraId(), numero: this.presupuestoForm.numero,
+        fecha: this.presupuestoForm.fecha, descripcion: this.presupuestoForm.descripcion,
+        lineasMaterial: [], lineasHoras: [] }).subscribe({
+        next: () => {
+          this.dlgPresupuesto = false; this.saving.set(false);
+          this.presupuestosSvc.getByObra(this.obraId()).subscribe(p => this.presupuestos.set(p));
+          this.msg.add({ severity: 'success', summary: 'Presupuesto creado' });
+        },
+        error: () => { this.saving.set(false); this.msg.add({ severity: 'error', summary: 'Error al crear' }); }
+      });
+    }
+  }
+
+  confirmarEliminarPresupuesto(id: string) {
+    this.confirm.confirm({
+      message: '¿Eliminar este presupuesto y todas sus partidas?', header: 'Confirmar eliminación',
+      icon: 'pi pi-exclamation-triangle', acceptLabel: 'Eliminar', rejectLabel: 'Cancelar', acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.presupuestosSvc.delete(id).subscribe({
+          next: () => {
+            this.msg.add({ severity: 'success', summary: 'Presupuesto eliminado' });
+            if (this.presupuestoSeleccionado() === id) {
+              this.presupuestoSeleccionado.set(null);
+              this.partidas.set([]);
+            }
+            this.presupuestosSvc.getByObra(this.obraId()).subscribe(p => this.presupuestos.set(p));
+          },
+          error: () => this.msg.add({ severity: 'error', summary: 'Error' })
+        });
+      }
     });
   }
 

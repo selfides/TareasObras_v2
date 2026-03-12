@@ -34,8 +34,16 @@ public class Presupuesto : BaseEntity
     public void Aprobar() { Estado = EstadoPresupuesto.Aprobado; UpdatedAt = DateTime.UtcNow; }
     public void Anular()  { Estado = EstadoPresupuesto.Anulado;  UpdatedAt = DateTime.UtcNow; }
 
-    public decimal TotalMaterial => LineasMaterial.Sum(l => l.ImporteEstimado);
-    public decimal TotalHoras    => LineasHoras.Sum(l => l.ImporteEstimado);
+    public void Update(string? numero, DateTime fecha, string? descripcion)
+    {
+        Numero = numero?.Trim();
+        Fecha = fecha.Date;
+        Descripcion = descripcion?.Trim();
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public decimal TotalMaterial => (Partidas?.Where(p => !p.IsDeleted).Sum(p => p.TotalMaterial) ?? 0) + (LineasMaterial?.Sum(l => l.ImporteEstimado) ?? 0);
+    public decimal TotalHoras    => (Partidas?.Where(p => !p.IsDeleted).Sum(p => p.TotalManoObra) ?? 0) + (LineasHoras?.Sum(l => l.ImporteEstimado) ?? 0);
     public decimal Total         => TotalMaterial + TotalHoras;
 }
 

@@ -41,11 +41,21 @@ public class PresupuestosController : ControllerBase
         return result ? NoContent() : NotFound();
     }
 
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin,Supervisor")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePresupuestoRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new UpdatePresupuestoCommand(id, request.Numero, request.Fecha, request.Descripcion), ct);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Supervisor")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var result = await _mediator.Send(new DeletePresupuestoCommand(id), ct);
         return result ? NoContent() : NotFound();
     }
 }
+
+public record UpdatePresupuestoRequest(string? Numero, DateTime Fecha, string? Descripcion);
