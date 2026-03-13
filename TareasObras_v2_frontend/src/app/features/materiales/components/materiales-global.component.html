@@ -1,6 +1,9 @@
+ddd
 <div class="space-y-5 animate-fade-in">
   <!-- Header -->
-  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+  <div
+    class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+  >
     <div>
       <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-50">
         Materiales
@@ -20,15 +23,29 @@
   </div>
 
   <!-- Filtro de fecha -->
-  <div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 p-4">
+  <div
+    class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 p-4"
+  >
     <div class="flex flex-wrap items-center gap-4">
       <div class="flex items-center gap-2">
-        <p-toggleSwitch [(ngModel)]="filterByDate" (onChange)="onFilterToggle()" />
-        <span class="text-sm font-medium text-surface-700 dark:text-surface-300">Filtrar por día</span>
+        <p-toggleSwitch
+          [(ngModel)]="filterByDate"
+          (onChange)="onFilterToggle()"
+        />
+        <span class="text-sm font-medium text-surface-700 dark:text-surface-300"
+          >Filtrar por día</span
+        >
       </div>
       @if (filterByDate()) {
         <div class="flex items-center gap-2">
-          <p-button icon="pi pi-chevron-left" [text]="true" [rounded]="true" size="small" (onClick)="goDay(-1)" pTooltip="Día anterior" />
+          <p-button
+            icon="pi pi-chevron-left"
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            (onClick)="goDay(-1)"
+            pTooltip="Día anterior"
+          />
           <p-datepicker
             [ngModel]="selectedDate()"
             (ngModelChange)="onDateChange($event)"
@@ -38,11 +55,26 @@
             styleClass="w-44"
             inputStyleClass="text-center text-sm"
           />
-          <p-button icon="pi pi-chevron-right" [text]="true" [rounded]="true" size="small" (onClick)="goDay(1)" pTooltip="Día siguiente" />
-          <p-button label="Hoy" size="small" [outlined]="true" severity="secondary" (onClick)="goToday()" />
+          <p-button
+            icon="pi pi-chevron-right"
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            (onClick)="goDay(1)"
+            pTooltip="Día siguiente"
+          />
+          <p-button
+            label="Hoy"
+            size="small"
+            [outlined]="true"
+            severity="secondary"
+            (onClick)="goToday()"
+          />
         </div>
       }
-      <div class="h-6 w-px bg-surface-200 dark:bg-surface-700 mx-1 hidden sm:block"></div>
+      <div
+        class="h-6 w-px bg-surface-200 dark:bg-surface-700 mx-1 hidden sm:block"
+      ></div>
       <p-select
         [options]="obras()"
         [(ngModel)]="selectedObraFilter"
@@ -55,39 +87,62 @@
       >
         <ng-template let-item pTemplate="item">
           <div class="flex items-center gap-2">
-            <span class="font-mono text-xs text-surface-400">{{ item.codigo }}</span>
+            <span class="font-mono text-xs text-surface-400">{{
+              item.codigo
+            }}</span>
             <span class="text-sm">{{ item.nombre }}</span>
           </div>
         </ng-template>
         <ng-template let-item pTemplate="selectedItem">
           <div class="flex items-center gap-2">
-            <span class="font-mono text-xs text-surface-400">{{ item.codigo }}</span>
-            <span class="text-sm truncate max-w-[120px]">{{ item.nombre }}</span>
+            <span class="font-mono text-xs text-surface-400">{{
+              item.codigo
+            }}</span>
+            <span class="text-sm truncate max-w-[120px]">{{
+              item.nombre
+            }}</span>
           </div>
         </ng-template>
       </p-select>
       <span class="text-sm text-surface-500 ml-auto">
-        {{ totalMateriales() }} {{ totalMateriales() === 1 ? 'material' : 'materiales' }}
-        @if (filterByDate()) { <span>del {{ selectedDate() | date:'dd/MM/yyyy' }}</span> }
+        {{ totalMateriales() }}
+        {{ totalMateriales() === 1 ? "material" : "materiales" }}
+        @if (filterByDate()) {
+          <span>del {{ selectedDate() | date: "dd/MM/yyyy" }}</span>
+        }
       </span>
     </div>
   </div>
 
   <!-- KPIs -->
   <div class="grid grid-cols-2 gap-4">
-    <div class="bg-white dark:bg-surface-900 rounded-xl p-4 border border-surface-200 dark:border-surface-700">
+    <div
+      class="bg-white dark:bg-surface-900 rounded-xl p-4 border border-surface-200 dark:border-surface-700"
+    >
       <p class="text-xs text-surface-500">Total materiales</p>
-      <p class="text-xl font-bold text-surface-900 dark:text-surface-50 mt-1">{{ totalMateriales() }}</p>
+      <p class="text-xl font-bold text-surface-900 dark:text-surface-50 mt-1">
+        {{ totalMateriales() }}
+      </p>
     </div>
-    <div class="bg-white dark:bg-surface-900 rounded-xl p-4 border border-surface-200 dark:border-surface-700">
+    <div
+      class="bg-white dark:bg-surface-900 rounded-xl p-4 border border-surface-200 dark:border-surface-700"
+    >
       <p class="text-xs text-surface-500">Importe total</p>
-      <p class="text-xl font-bold text-blue-600 mt-1">{{ totalImporte() | number:'1.2-2' }} €</p>
+      <p class="text-xl font-bold text-blue-600 mt-1">
+        {{ totalImporte() | number: "1.2-2" }} €
+      </p>
     </div>
   </div>
 
   <!-- Table -->
-  <div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
-    <p-table [value]="filteredMateriales()" [loading]="loading()" styleClass="p-datatable-sm">
+  <div
+    class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden"
+  >
+    <p-table
+      [value]="filteredMateriales()"
+      [loading]="loading()"
+      styleClass="p-datatable-sm"
+    >
       <ng-template pTemplate="header">
         <tr>
           <th>Obra</th>
@@ -105,34 +160,83 @@
         <tr>
           <td>
             <div class="flex items-center gap-2">
-              <span class="font-mono text-xs text-surface-400 bg-surface-100 dark:bg-surface-800 px-1.5 py-0.5 rounded">{{ m.obraCodigo }}</span>
-              <span class="text-sm text-surface-700 dark:text-surface-300">{{ m.obraNombre }}</span>
+              <span
+                class="font-mono text-xs text-surface-400 bg-surface-100 dark:bg-surface-800 px-1.5 py-0.5 rounded"
+                >{{ m.obraCodigo }}</span
+              >
+              <span class="text-sm text-surface-700 dark:text-surface-300">{{
+                m.obraNombre
+              }}</span>
             </div>
           </td>
           <td>
-            <div class="font-medium text-surface-900 dark:text-surface-100">{{ m.descripcion }}</div>
+            <div class="font-medium text-surface-900 dark:text-surface-100">
+              {{ m.descripcion }}
+            </div>
             @if (m.proveedorId) {
-              <div class="text-xs text-surface-500 mt-0.5"><i class="pi pi-truck text-xs mr-1"></i>{{ getProveedorNombre(m.proveedorId) }}</div>
+              <div class="text-xs text-surface-500 mt-0.5">
+                <i class="pi pi-truck text-xs mr-1"></i
+                >{{ getProveedorNombre(m.proveedorId) }}
+              </div>
             }
             @if (m.lineaPartidaId) {
-              <div class="text-[10px] text-blue-500 mt-1 uppercase font-semibold">
-                <i class="pi pi-tag text-[10px] mr-1"></i>Partida: {{ m.lineaPartidaNombre }}
+              <div
+                class="text-[10px] text-blue-500 mt-1 uppercase font-semibold"
+              >
+                <i class="pi pi-tag text-[10px] mr-1"></i>Partida:
+                {{ m.lineaPartidaNombre }}
               </div>
             }
           </td>
           <td class="text-xs text-surface-500 space-y-0.5">
-            @if (m.numeroAlbaran) { <div>Alb: <span class="font-mono text-surface-700 dark:text-surface-300">{{ m.numeroAlbaran }}</span></div> }
-            @if (m.numeroFactura) { <div>Fact: <span class="font-mono text-surface-700 dark:text-surface-300">{{ m.numeroFactura }}</span></div> }
+            @if (m.numeroAlbaran) {
+              <div>
+                Alb:
+                <span
+                  class="font-mono text-surface-700 dark:text-surface-300"
+                  >{{ m.numeroAlbaran }}</span
+                >
+              </div>
+            }
+            @if (m.numeroFactura) {
+              <div>
+                Fact:
+                <span
+                  class="font-mono text-surface-700 dark:text-surface-300"
+                  >{{ m.numeroFactura }}</span
+                >
+              </div>
+            }
           </td>
           <td class="text-surface-500 text-sm">{{ m.unidad }}</td>
-          <td class="text-sm">{{ m.fecha | date:'dd/MM/yyyy' }}</td>
-          <td class="text-right">{{ m.cantidad | number:'1.0-3' }}</td>
-          <td class="text-right text-surface-500">{{ m.precioUnitario | number:'1.2-2' }} €</td>
-          <td class="text-right font-medium text-blue-600">{{ m.importeReal | number:'1.2-2' }} €</td>
+          <td class="text-sm">{{ m.fecha | date: "dd/MM/yyyy" }}</td>
+          <td class="text-right">{{ m.cantidad | number: "1.0-3" }}</td>
+          <td class="text-right text-surface-500">
+            {{ m.precioUnitario | number: "1.2-2" }} €
+          </td>
+          <td class="text-right font-medium text-blue-600">
+            {{ m.importeReal | number: "1.2-2" }} €
+          </td>
           <td class="text-center">
             <div class="flex items-center justify-center gap-1">
-              <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="info" size="small" pTooltip="Editar" (onClick)="openEdit(m)" />
-              <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger" size="small" pTooltip="Eliminar" (onClick)="confirmDelete(m)" />
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                size="small"
+                pTooltip="Editar"
+                (onClick)="openEdit(m)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                size="small"
+                pTooltip="Eliminar"
+                (onClick)="confirmDelete(m)"
+              />
             </div>
           </td>
         </tr>
@@ -142,7 +246,8 @@
           <td colspan="9" class="text-center py-10 text-surface-400">
             <i class="pi pi-box text-3xl block mb-2"></i>
             @if (filterByDate()) {
-              No hay materiales registrados el {{ selectedDate() | date:'dd/MM/yyyy' }}
+              No hay materiales registrados el
+              {{ selectedDate() | date: "dd/MM/yyyy" }}
             } @else {
               No hay materiales registrados
             }
@@ -157,11 +262,16 @@
 <p-dialog
   [(visible)]="dialogVisible"
   [header]="editingMaterialId() ? 'Editar Material' : 'Añadir Material'"
-  [modal]="true" [style]="{ width: '520px' }" [draggable]="false"
+  [modal]="true"
+  [style]="{ width: '520px' }"
+  [draggable]="false"
 >
   <div class="space-y-4 pt-2">
     <div>
-      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Obra *</label>
+      <label
+        class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+        >Obra *</label
+      >
       <p-select
         [(ngModel)]="materialForm.obraId"
         (ngModelChange)="onObraChange()"
@@ -175,93 +285,222 @@
       >
         <ng-template let-item pTemplate="item">
           <div class="flex items-center gap-2">
-            <span class="font-mono text-xs text-surface-400">{{ item.codigo }}</span>
+            <span class="font-mono text-xs text-surface-400">{{
+              item.codigo
+            }}</span>
             <span class="text-sm">{{ item.nombre }}</span>
           </div>
         </ng-template>
         <ng-template let-item pTemplate="selectedItem">
           <div class="flex items-center gap-2">
-            <span class="font-mono text-xs text-surface-400">{{ item.codigo }}</span>
+            <span class="font-mono text-xs text-surface-400">{{
+              item.codigo
+            }}</span>
             <span class="text-sm">{{ item.nombre }}</span>
           </div>
         </ng-template>
       </p-select>
     </div>
     <div>
-      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Descripción *</label>
-      <input pInputText [(ngModel)]="materialForm.descripcion" class="w-full" placeholder="Ej: Cemento Portland" />
+      <label
+        class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+        >Descripción *</label
+      >
+      <input
+        pInputText
+        [(ngModel)]="materialForm.descripcion"
+        class="w-full"
+        placeholder="Ej: Cemento Portland"
+      />
     </div>
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Unidad *</label>
-        <input pInputText [(ngModel)]="materialForm.unidad" class="w-full" placeholder="kg, m2, ud..." />
+        <label
+          class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+          >Unidad *</label
+        >
+        <input
+          pInputText
+          [(ngModel)]="materialForm.unidad"
+          class="w-full"
+          placeholder="kg, m2, ud..."
+        />
       </div>
       <div>
-        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Fecha *</label>
-        <p-datepicker [(ngModel)]="materialForm.fecha" appendTo="body" dateFormat="dd/mm/yy"
-                      class="w-full block" styleClass="w-full" inputStyleClass="w-full" [showIcon]="true" />
+        <label
+          class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+          >Fecha *</label
+        >
+        <p-datepicker
+          [(ngModel)]="materialForm.fecha"
+          appendTo="body"
+          dateFormat="dd/mm/yy"
+          class="w-full block"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+          [showIcon]="true"
+        />
       </div>
     </div>
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Cantidad *</label>
-        <p-inputNumber [(ngModel)]="materialForm.cantidad" [minFractionDigits]="0" [maxFractionDigits]="3"
-                       class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
+        <label
+          class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+          >Cantidad *</label
+        >
+        <p-inputNumber
+          [(ngModel)]="materialForm.cantidad"
+          [minFractionDigits]="0"
+          [maxFractionDigits]="3"
+          class="w-full block"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+        />
       </div>
       <div>
-        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Precio unitario (€) *</label>
-        <p-inputNumber [(ngModel)]="materialForm.precioUnitario" [minFractionDigits]="2"
-                       class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
+        <label
+          class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+          >Precio unitario (€) *</label
+        >
+        <p-inputNumber
+          [(ngModel)]="materialForm.precioUnitario"
+          [minFractionDigits]="2"
+          class="w-full block"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+        />
       </div>
     </div>
     <div>
-      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Proveedor</label>
+      <label
+        class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+        >Proveedor</label
+      >
       <div class="flex gap-2">
-        <p-select [(ngModel)]="materialForm.proveedorId" appendTo="body" [options]="proveedores()"
-                  optionLabel="nombre" optionValue="id" placeholder="Selecciona proveedor"
-                  styleClass="w-full flex-1" [showClear]="true" />
-        <p-button icon="pi pi-plus" [text]="true" [outlined]="true" (onClick)="abrirNuevoProveedor()" pTooltip="Crear nuevo proveedor" />
+        <p-select
+          [(ngModel)]="materialForm.proveedorId"
+          appendTo="body"
+          [options]="proveedores()"
+          optionLabel="nombre"
+          optionValue="id"
+          placeholder="Selecciona proveedor"
+          styleClass="w-full flex-1"
+          [showClear]="true"
+        />
+        <p-button
+          icon="pi pi-plus"
+          [text]="true"
+          [outlined]="true"
+          (onClick)="abrirNuevoProveedor()"
+          pTooltip="Crear nuevo proveedor"
+        />
       </div>
     </div>
     <div>
-      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Asociar a partida de presupuesto</label>
-      <p-select [(ngModel)]="materialForm.lineaPartidaId" appendTo="body" [options]="availableMaterialBudgetLines()" 
-                optionLabel="label" optionValue="value"
-                placeholder="Selecciona una partida (opcional)" styleClass="w-full" [showClear]="true" />
+      <label
+        class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+        >Asociar a partida de presupuesto</label
+      >
+      <p-select
+        [(ngModel)]="materialForm.lineaPartidaId"
+        appendTo="body"
+        [options]="availableMaterialBudgetLines()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Selecciona una partida (opcional)"
+        styleClass="w-full"
+        [showClear]="true"
+      />
     </div>
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Núm. Albarán</label>
-        <input pInputText [(ngModel)]="materialForm.numeroAlbaran" class="w-full" placeholder="Opcional" />
+        <label
+          class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+          >Núm. Albarán</label
+        >
+        <input
+          pInputText
+          [(ngModel)]="materialForm.numeroAlbaran"
+          class="w-full"
+          placeholder="Opcional"
+        />
       </div>
       <div>
-        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Núm. Factura</label>
-        <input pInputText [(ngModel)]="materialForm.numeroFactura" class="w-full" placeholder="Opcional" />
+        <label
+          class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+          >Núm. Factura</label
+        >
+        <input
+          pInputText
+          [(ngModel)]="materialForm.numeroFactura"
+          class="w-full"
+          placeholder="Opcional"
+        />
       </div>
     </div>
     <div>
-      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Observaciones</label>
-      <textarea pTextarea [(ngModel)]="materialForm.observaciones" rows="2" class="w-full"></textarea>
+      <label
+        class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5"
+        >Observaciones</label
+      >
+      <textarea
+        pTextarea
+        [(ngModel)]="materialForm.observaciones"
+        rows="2"
+        class="w-full"
+      ></textarea>
     </div>
-    <div class="bg-surface-50 dark:bg-surface-800 rounded-lg p-3 flex justify-between items-center">
+    <div
+      class="bg-surface-50 dark:bg-surface-800 rounded-lg p-3 flex justify-between items-center"
+    >
       <span class="text-sm text-surface-500">Importe total:</span>
-      <span class="font-bold text-blue-600">{{ materialForm.cantidad * materialForm.precioUnitario | number:'1.2-2' }} €</span>
+      <span class="font-bold text-blue-600"
+        >{{
+          materialForm.cantidad * materialForm.precioUnitario | number: "1.2-2"
+        }}
+        €</span
+      >
     </div>
   </div>
   <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dialogVisible = false" />
-    <p-button [label]="editingMaterialId() ? 'Guardar Cambios' : 'Añadir Material'" icon="pi pi-check" (onClick)="guardar()" [disabled]="!materialForm.descripcion || !materialForm.obraId" [loading]="saving()" />
+    <p-button
+      label="Cancelar"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="dialogVisible = false"
+    />
+    <p-button
+      [label]="editingMaterialId() ? 'Guardar Cambios' : 'Añadir Material'"
+      icon="pi pi-check"
+      (onClick)="guardar()"
+      [disabled]="!materialForm.descripcion || !materialForm.obraId"
+      [loading]="saving()"
+    />
   </ng-template>
 </p-dialog>
 
 <p-confirmDialog />
 
 <!-- Dialog Proveedor -->
-<p-dialog [(visible)]="dlgProveedor" header="Nuevo Proveedor" [modal]="true" appendTo="body" [style]="{width:'min(440px, 95vw)'}" [draggable]="false">
+<p-dialog
+  [(visible)]="dlgProveedor"
+  header="Nuevo Proveedor"
+  [modal]="true"
+  appendTo="body"
+  [style]="{ width: 'min(440px, 95vw)' }"
+  [draggable]="false"
+>
   <div class="space-y-4 pt-2">
     <div>
-      <label class="block text-sm font-medium mb-1.5">Nombre comercial / Razon social *</label>
-      <input pInputText [(ngModel)]="proveedorForm.nombre" class="w-full" placeholder="Ej: Materiales Hermanos SL" />
+      <label class="block text-sm font-medium mb-1.5"
+        >Nombre comercial / Razon social *</label
+      >
+      <input
+        pInputText
+        [(ngModel)]="proveedorForm.nombre"
+        class="w-full"
+        placeholder="Ej: Materiales Hermanos SL"
+      />
     </div>
     <div class="grid grid-cols-2 gap-4">
       <div>
@@ -275,7 +514,12 @@
     </div>
     <div>
       <label class="block text-sm font-medium mb-1.5">Email</label>
-      <input pInputText [(ngModel)]="proveedorForm.email" class="w-full" type="email" />
+      <input
+        pInputText
+        [(ngModel)]="proveedorForm.email"
+        class="w-full"
+        type="email"
+      />
     </div>
     <div>
       <label class="block text-sm font-medium mb-1.5">Direccion</label>
@@ -283,13 +527,33 @@
     </div>
     <div>
       <label class="block text-sm font-medium mb-1.5">Observaciones</label>
-      <textarea pTextarea [(ngModel)]="proveedorForm.observaciones" rows="2" class="w-full"></textarea>
+      <textarea
+        pTextarea
+        [(ngModel)]="proveedorForm.observaciones"
+        rows="2"
+        class="w-full"
+      ></textarea>
     </div>
   </div>
   <ng-template pTemplate="footer">
     <div class="flex justify-end gap-2 w-full">
-      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgProveedor = false" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
-      <p-button label="Crear" icon="pi pi-check" (onClick)="guardarProveedor()" [loading]="saving()" [disabled]="!proveedorForm.nombre" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="dlgProveedor = false"
+        class="w-full sm:w-32"
+        styleClass="w-full sm:w-32 justify-center"
+      />
+      <p-button
+        label="Crear"
+        icon="pi pi-check"
+        (onClick)="guardarProveedor()"
+        [loading]="saving()"
+        [disabled]="!proveedorForm.nombre"
+        class="w-full sm:w-32"
+        styleClass="w-full sm:w-32 justify-center"
+      />
     </div>
   </ng-template>
 </p-dialog>
