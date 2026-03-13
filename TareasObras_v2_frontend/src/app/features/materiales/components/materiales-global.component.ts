@@ -48,6 +48,7 @@ export class MaterialesGlobalComponent implements OnInit {
   loading = signal(true);
   saving = signal(false);
   dialogVisible = false;
+  dlgProveedor = false;
   editingMaterialId = signal<string | null>(null);
 
   // Filtros
@@ -65,6 +66,10 @@ export class MaterialesGlobalComponent implements OnInit {
     obraId: null, descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0,
     fecha: new Date(), proveedorId: null, numeroAlbaran: '',
     numeroFactura: '', observaciones: ''
+  };
+
+  proveedorForm: any = {
+    nombre: '', cifNif: '', direccion: '', telefono: '', email: '', observaciones: ''
   };
 
   // Stats
@@ -180,6 +185,32 @@ export class MaterialesGlobalComponent implements OnInit {
   getProveedorNombre(id?: string): string {
     if (!id) return '';
     return this.proveedores().find(p => p.id === id)?.nombre || '';
+  }
+
+  // ── Proveedores ──────────────────────────────────────────────────────────
+  abrirNuevoProveedor() {
+    this.proveedorForm = { nombre: '', cifNif: '', direccion: '', telefono: '', email: '', observaciones: '' };
+    this.dlgProveedor = true;
+  }
+
+  guardarProveedor() {
+    if (!this.proveedorForm.nombre) return;
+    this.saving.set(true);
+    this.proveedoresService.create(this.proveedorForm).subscribe({
+      next: (prov) => {
+        this.msg.add({ severity: 'success', summary: 'Proveedor creado' });
+        this.dlgProveedor = false;
+        this.saving.set(false);
+        this.proveedoresService.getAll().subscribe(p => {
+          this.proveedores.set(p);
+          this.materialForm.proveedorId = prov.id;
+        });
+      },
+      error: () => {
+        this.saving.set(false);
+        this.msg.add({ severity: 'error', summary: 'Error al crear proveedor' });
+      }
+    });
   }
 
   private formatDate(d: Date): string {

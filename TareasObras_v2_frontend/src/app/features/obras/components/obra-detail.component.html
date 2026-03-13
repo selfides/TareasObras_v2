@@ -68,7 +68,32 @@
               <div><span class="text-surface-500">Direccion:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.direccion || '-' }}</span></div>
               <div><span class="text-surface-500">Inicio:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.fechaInicio | date:'dd/MM/yyyy' }}</span></div>
               <div><span class="text-surface-500">Fin previsto:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.fechaFinPrevista ? (store.selectedObra()!.fechaFinPrevista | date:'dd/MM/yyyy') : '-' }}</span></div>
-              <div><span class="text-surface-500">Creado por:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.createdBy || '-' }}</span></div>
+              <div class="flex items-center">
+                <span class="text-surface-500 mr-2">Estado:</span>
+                @if (auth.isSupervisor()) {
+                  <p-select [options]="estadoOptions" [ngModel]="store.selectedObra()!.estado" 
+                            (ngModelChange)="cambiarEstado($event)"
+                            optionLabel="label" optionValue="value" 
+                            styleClass="w-36 text-sm"
+                            appendTo="body">
+                     <ng-template pTemplate="selectedItem" let-item>
+                       <span [class]="'px-2 py-0.5 rounded-full text-[11px] font-medium ' + estadoBadge(item.value)">
+                         {{ item.label }}
+                       </span>
+                     </ng-template>
+                     <ng-template pTemplate="item" let-item>
+                       <span [class]="'px-2 py-0.5 rounded-full text-[11px] font-medium ' + estadoBadge(item.value)">
+                         {{ item.label }}
+                       </span>
+                     </ng-template>
+                  </p-select>
+                } @else {
+                  <span [class]="'px-2 py-0.5 rounded-full text-xs font-medium ' + estadoBadge(store.selectedObra()!.estado)">
+                    {{ store.selectedObra()!.estadoNombre }}
+                  </span>
+                }
+              </div>
+              <div><span class="text-surface-500 line-height-3">Creado por:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.createdBy || '-' }}</span></div>
             </div>
             @if (store.selectedObra()!.descripcion) {
               <p class="text-surface-600 dark:text-surface-300 text-sm">{{ store.selectedObra()!.descripcion }}</p>
@@ -230,14 +255,14 @@
               <p-table [value]="registrosHoras()" styleClass="p-datatable-sm">
                 <ng-template pTemplate="header">
                   <tr>
-                    <th>Operario</th><th>Categoria</th><th>Fecha</th>
+                    <th>Operario</th><th>Observaciones</th><th>Fecha</th>
                     <th class="text-right">Horas</th><th class="text-right">Euros/h</th><th class="text-right">Coste</th><th></th>
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-r>
                   <tr>
                     <td class="font-medium">{{ r.operarioNombre }}</td>
-                    <td class="text-surface-500 text-sm">{{ r.categoriaNombre }}</td>
+                    <td class="text-surface-500 text-sm truncate max-w-[150px]" [pTooltip]="r.observaciones">{{ r.observaciones || '-' }}</td>
                     <td class="text-sm">{{ r.fecha | date:'dd/MM/yyyy' }}</td>
                     <td class="text-right font-medium">{{ r.horas | number:'1.0-1' }} h</td>
                     <td class="text-right text-surface-500">{{ r.costeHoraAplicado | number:'1.2-2' }} €</td>
@@ -476,8 +501,11 @@
     </div>
     <div>
       <label class="block text-sm font-medium mb-1.5">Proveedor</label>
-      <p-select [(ngModel)]="materialForm.proveedorId" appendTo="body" [options]="proveedores()" optionLabel="nombre" optionValue="id"
-                placeholder="Selecciona proveedor" styleClass="w-full" [showClear]="true" />
+      <div class="flex gap-2">
+        <p-select [(ngModel)]="materialForm.proveedorId" appendTo="body" [options]="proveedores()" optionLabel="nombre" optionValue="id"
+                  placeholder="Selecciona proveedor" styleClass="w-full flex-1" [showClear]="true" />
+        <p-button icon="pi pi-plus" [text]="true" [outlined]="true" (onClick)="abrirNuevoProveedor()" pTooltip="Crear nuevo proveedor" />
+      </div>
     </div>
     <div class="grid grid-cols-2 gap-4">
       <div>
@@ -498,6 +526,44 @@
     <div class="flex justify-end gap-2 w-full">
       <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="cerrarDlgMaterial()" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
       <p-button [label]="editandoMaterialId() ? 'Guardar' : 'Anadir'" icon="pi pi-check" (onClick)="guardarMaterial()" [loading]="saving()" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog Proveedor -->
+<p-dialog [(visible)]="dlgProveedor" header="Nuevo Proveedor" [modal]="true" appendTo="body" [style]="{width:'min(440px, 95vw)'}" [draggable]="false">
+  <div class="space-y-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Nombre comercial / Razon social *</label>
+      <input pInputText [(ngModel)]="proveedorForm.nombre" class="w-full" placeholder="Ej: Materiales Hermanos SL" />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1.5">CIF/NIF</label>
+        <input pInputText [(ngModel)]="proveedorForm.cifNif" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Telefono</label>
+        <input pInputText [(ngModel)]="proveedorForm.telefono" class="w-full" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Email</label>
+      <input pInputText [(ngModel)]="proveedorForm.email" class="w-full" type="email" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Direccion</label>
+      <input pInputText [(ngModel)]="proveedorForm.direccion" class="w-full" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Observaciones</label>
+      <textarea pTextarea [(ngModel)]="proveedorForm.observaciones" rows="2" class="w-full"></textarea>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2 w-full">
+      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgProveedor = false" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
+      <p-button label="Crear" icon="pi pi-check" (onClick)="guardarProveedor()" [loading]="saving()" [disabled]="!proveedorForm.nombre" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
     </div>
   </ng-template>
 </p-dialog>

@@ -184,11 +184,13 @@
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Fecha *</label>
-        <p-datepicker [(ngModel)]="form.fecha" appendTo="body" dateFormat="dd/mm/yy" class="w-full block" [showIcon]="true" />
+        <p-datepicker [(ngModel)]="form.fecha" appendTo="body" dateFormat="dd/mm/yy" 
+                      class="w-full block" styleClass="w-full" inputStyleClass="w-full" [showIcon]="true" />
       </div>
       <div>
         <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Horas *</label>
-        <p-inputNumber [(ngModel)]="form.horas" [min]="0.5" [max]="24" suffix=" h" styleClass="w-full" />
+        <p-inputNumber [(ngModel)]="form.horas" [min]="0.5" [max]="24" suffix=" h" 
+                       class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
       </div>
     </div>
 

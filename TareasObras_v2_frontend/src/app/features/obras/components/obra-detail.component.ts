@@ -62,12 +62,21 @@ export class ObraDetailComponent implements OnInit {
   categorias              = signal<CategoriaOperarioDto[]>([]);
   proveedores             = signal<ProveedorDto[]>([]);
 
+  estadoOptions = [
+    { label: 'Planificada', value: 1 },
+    { label: 'En Curso',    value: 2 },
+    { label: 'Pausada',     value: 3 },
+    { label: 'Completada',  value: 4 },
+    { label: 'Cancelada',   value: 5 },
+  ];
+
   // dialogs
   dlgPresupuesto = false;
   dlgPartida     = false;
   dlgLinea       = false;
   dlgHoras       = false;
   dlgMaterial    = false;
+  dlgProveedor   = false;
 
   // signals de edicion
   editandoPresupuestoId = signal<string | null>(null);
@@ -84,6 +93,7 @@ export class ObraDetailComponent implements OnInit {
   lineaForm: any       = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, categoriaOperarioId: null };
   horasForm: any       = { operarioId: null, categoriaOperarioId: null, fecha: new Date(), horas: 8, costeHoraAplicado: 0, observaciones: '' };
   materialForm: any    = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), proveedorId: null, numeroAlbaran: '', numeroFactura: '', observaciones: '' };
+  proveedorForm: any   = { nombre: '', cifNif: '', direccion: '', telefono: '', email: '', observaciones: '' };
 
   // computed
   presupuestoAprobado         = computed(() => this.presupuestos().find(p => p.esAprobado));
@@ -370,6 +380,38 @@ export class ObraDetailComponent implements OnInit {
           this.msg.add({ severity: 'success', summary: 'Material eliminado' }); }
       }); }
     });
+  }
+
+  // ── Proveedores ──────────────────────────────────────────────────────────
+  abrirNuevoProveedor() {
+    this.proveedorForm = { nombre: '', cifNif: '', direccion: '', telefono: '', email: '', observaciones: '' };
+    this.dlgProveedor = true;
+  }
+
+  guardarProveedor() {
+    if (!this.proveedorForm.nombre) return;
+    this.saving.set(true);
+    this.proveedoresSvc.create(this.proveedorForm).subscribe({
+      next: (prov) => {
+        this.msg.add({ severity: 'success', summary: 'Proveedor creado' });
+        this.dlgProveedor = false;
+        this.saving.set(false);
+        // Recargar proveedores y seleccionar el nuevo
+        this.proveedoresSvc.getAll().subscribe(p => {
+          this.proveedores.set(p);
+          this.materialForm.proveedorId = prov.id;
+        });
+      },
+      error: () => {
+        this.saving.set(false);
+        this.msg.add({ severity: 'error', summary: 'Error al crear proveedor' });
+      }
+    });
+  }
+
+  cambiarEstado(nuevoEstado: number) {
+    this.store.cambiarEstadoObra(this.obraId(), nuevoEstado);
+    this.msg.add({ severity: 'success', summary: 'Estado actualizado correctamente' });
   }
 
   estadoBadge(estado: number): string {

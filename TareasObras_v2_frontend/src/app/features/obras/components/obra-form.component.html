@@ -136,6 +136,19 @@
             <p class="error-msg">Presupuesto inválido</p>
           }
         </div>
+        <!-- Estado -->
+        <div>
+          <label class="label-form">Estado *</label>
+          <p-select
+            formControlName="estado"
+            [options]="estadoOptions"
+            optionLabel="label"
+            optionValue="value"
+            appendTo="body"
+            styleClass="w-full"
+            placeholder="Selecciona estado"
+          />
+        </div>
       </div>
 
       <!-- Actions -->

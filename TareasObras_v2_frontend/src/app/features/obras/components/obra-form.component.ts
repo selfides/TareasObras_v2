@@ -9,6 +9,7 @@ import { InputTextModule } from "primeng/inputtext";
 import { InputNumberModule } from "primeng/inputnumber";
 import { DatePickerModule } from "primeng/datepicker";
 import { TextareaModule } from "primeng/textarea";
+import { SelectModule } from "primeng/select";
 import { CardModule } from "primeng/card";
 
 @Component({
@@ -24,6 +25,7 @@ import { CardModule } from "primeng/card";
     DatePickerModule,
     TextareaModule,
     CardModule,
+    SelectModule
   ],
   templateUrl: './obra-form.component.html',
   styles: [
@@ -47,6 +49,13 @@ export class ObraFormComponent implements OnInit {
   isEdit = signal(false);
   loading = signal(false);
   obraId = signal<string | null>(null);
+  estadoOptions = [
+    { label: 'Planificada', value: 1 },
+    { label: 'En Curso',    value: 2 },
+    { label: 'Pausada',     value: 3 },
+    { label: 'Completada',  value: 4 },
+    { label: 'Cancelada',   value: 5 },
+  ];
 
   form = this.fb.group({
     codigo: ["", [Validators.required, Validators.maxLength(20)]],
@@ -57,6 +66,7 @@ export class ObraFormComponent implements OnInit {
     fechaInicio: [null as Date | null, Validators.required],
     fechaFinPrevista: [null as Date | null],
     presupuestoEstimado: [0, [Validators.required, Validators.min(0)]],
+    estado: [2, Validators.required]
   });
 
   ngOnInit() {
@@ -79,6 +89,7 @@ export class ObraFormComponent implements OnInit {
             fechaFinPrevista: obra.fechaFinPrevista
               ? new Date(obra.fechaFinPrevista)
               : null,
+            estado: obra.estado
           });
         }
       }, 500);
@@ -106,13 +117,17 @@ export class ObraFormComponent implements OnInit {
 
     if (this.isEdit()) {
       this.store.updateObra({ id: this.obraId()!, data: payload });
+      const currentEstado = this.store.selectedObra()?.estado;
+      if (v.estado && v.estado !== currentEstado) {
+        this.store.cambiarEstadoObra(this.obraId()!, v.estado);
+      }
       this.msg.add({
         severity: "success",
         summary: "Guardado",
         detail: "Obra actualizada",
       });
     } else {
-      this.store.createObra({ codigo: v.codigo!, ...payload });
+      this.store.createObra({ data: { codigo: v.codigo!, ...payload }, estado: v.estado! });
       this.msg.add({
         severity: "success",
         summary: "Creada",

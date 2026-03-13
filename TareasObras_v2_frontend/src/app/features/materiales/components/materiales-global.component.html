@@ -210,9 +210,12 @@
     </div>
     <div>
       <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Proveedor</label>
-      <p-select [(ngModel)]="materialForm.proveedorId" appendTo="body" [options]="proveedores()"
-                optionLabel="nombre" optionValue="id" placeholder="Selecciona proveedor"
-                styleClass="w-full" [showClear]="true" />
+      <div class="flex gap-2">
+        <p-select [(ngModel)]="materialForm.proveedorId" appendTo="body" [options]="proveedores()"
+                  optionLabel="nombre" optionValue="id" placeholder="Selecciona proveedor"
+                  styleClass="w-full flex-1" [showClear]="true" />
+        <p-button icon="pi pi-plus" [text]="true" [outlined]="true" (onClick)="abrirNuevoProveedor()" pTooltip="Crear nuevo proveedor" />
+      </div>
     </div>
     <div class="grid grid-cols-2 gap-4">
       <div>
@@ -240,3 +243,41 @@
 </p-dialog>
 
 <p-confirmDialog />
+
+<!-- Dialog Proveedor -->
+<p-dialog [(visible)]="dlgProveedor" header="Nuevo Proveedor" [modal]="true" appendTo="body" [style]="{width:'min(440px, 95vw)'}" [draggable]="false">
+  <div class="space-y-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Nombre comercial / Razon social *</label>
+      <input pInputText [(ngModel)]="proveedorForm.nombre" class="w-full" placeholder="Ej: Materiales Hermanos SL" />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1.5">CIF/NIF</label>
+        <input pInputText [(ngModel)]="proveedorForm.cifNif" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Telefono</label>
+        <input pInputText [(ngModel)]="proveedorForm.telefono" class="w-full" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Email</label>
+      <input pInputText [(ngModel)]="proveedorForm.email" class="w-full" type="email" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Direccion</label>
+      <input pInputText [(ngModel)]="proveedorForm.direccion" class="w-full" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Observaciones</label>
+      <textarea pTextarea [(ngModel)]="proveedorForm.observaciones" rows="2" class="w-full"></textarea>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2 w-full">
+      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgProveedor = false" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
+      <p-button label="Crear" icon="pi pi-check" (onClick)="guardarProveedor()" [loading]="saving()" [disabled]="!proveedorForm.nombre" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
+    </div>
+  </ng-template>
+</p-dialog>

@@ -66,6 +66,29 @@
           </div>
         </ng-template>
       </p-select>
+
+      <p-select
+        [options]="prioridadOptions"
+        [(ngModel)]="selectedPrioridadFilter"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Prioridad"
+        [showClear]="true"
+        appendTo="body"
+        styleClass="w-36"
+      />
+
+      <p-select
+        [options]="estadoOptions"
+        [(ngModel)]="selectedEstadoFilter"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Estado"
+        [showClear]="true"
+        appendTo="body"
+        styleClass="w-36"
+      />
+
       <span class="text-sm text-surface-500 ml-auto">
         {{ totalTareas() }} {{ totalTareas() === 1 ? 'tarea' : 'tareas' }}
         @if (filterByDate()) { <span>del {{ selectedDate() | date:'dd/MM/yyyy' }}</span> }

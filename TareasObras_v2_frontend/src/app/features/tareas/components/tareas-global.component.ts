@@ -54,11 +54,20 @@ export class TareasGlobalComponent implements OnInit {
   selectedDate = signal<Date>(new Date());
   filterByDate = signal(true);
   selectedObraFilter = signal<string | null>(null);
+  selectedPrioridadFilter = signal<PrioridadTarea | null>(null);
+  selectedEstadoFilter = signal<EstadoTarea | null>(null);
 
   filteredTareas = computed(() => {
     const obraId = this.selectedObraFilter();
-    const all = this.tareas();
-    return obraId ? all.filter(t => t.obraId === obraId) : all;
+    const priority = this.selectedPrioridadFilter();
+    const status = this.selectedEstadoFilter();
+    let all = this.tareas();
+    
+    if (obraId) all = all.filter(t => t.obraId === obraId);
+    if (priority !== null) all = all.filter(t => t.prioridad === priority);
+    if (status !== null) all = all.filter(t => t.estado === status);
+    
+    return all;
   });
 
   prioridadOptions = [

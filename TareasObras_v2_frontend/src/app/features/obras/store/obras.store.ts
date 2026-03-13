@@ -53,9 +53,15 @@ export const ObrasStore = signalStore(
         });
       },
 
-      createObra(data: CreateObraRequest) {
-        service.create(data).subscribe({
-          next: () => _loadObras(),
+      createObra(payload: { data: CreateObraRequest, estado?: number }) {
+        service.create(payload.data).subscribe({
+          next: (res) => {
+            if (payload.estado && payload.estado !== 1) { // 1 = Planificada (default)
+              service.cambiarEstado(res.id, payload.estado).subscribe(() => _loadObras());
+            } else {
+              _loadObras();
+            }
+          },
           error: () => patchState(store, { error: 'Error al crear obra' })
         });
       },
@@ -64,6 +70,18 @@ export const ObrasStore = signalStore(
         service.update(payload.id, payload.data).subscribe({
           next: () => _loadObras(),
           error: () => patchState(store, { error: 'Error al actualizar obra' })
+        });
+      },
+
+      cambiarEstadoObra(id: string, nuevoEstado: number) {
+        service.cambiarEstado(id, nuevoEstado).subscribe({
+          next: () => {
+            _loadObras();
+            if (store.selectedObra()?.id === id) {
+              service.getById(id).subscribe(obra => patchState(store, { selectedObra: obra }));
+            }
+          },
+          error: () => patchState(store, { error: 'Error al cambiar estado' })
         });
       },
 
