@@ -28,7 +28,10 @@ public class MaterialesObraController : ControllerBase
             id = m.Id, obraId = m.ObraId,
             obraNombre = m.Obra?.Nombre ?? "",
             obraCodigo = m.Obra?.Codigo ?? "",
-            proveedorId = m.ProveedorId, descripcion = m.Descripcion,
+            proveedorId = m.ProveedorId, 
+            lineaPartidaId = m.LineaPartidaId,
+            lineaPartidaNombre = m.LineaPartida?.Descripcion ?? "",
+            descripcion = m.Descripcion,
             unidad = m.Unidad, cantidad = m.Cantidad,
             precioUnitario = m.PrecioUnitario, importeReal = m.ImporteReal,
             fecha = m.Fecha, numeroAlbaran = m.NumeroAlbaran,
@@ -53,7 +56,7 @@ public class MaterialesObraController : ControllerBase
     [Authorize(Roles = "Admin,Supervisor")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateMaterialObraRequest request, CancellationToken ct)
     {
-        var result = await _mediator.Send(new UpdateMaterialObraCommand(id, request.Descripcion, request.Unidad, request.Cantidad, request.PrecioUnitario, request.Fecha, request.ProveedorId, request.NumeroAlbaran, request.NumeroFactura, request.Observaciones), ct);
+        var result = await _mediator.Send(new UpdateMaterialObraCommand(id, request.Descripcion, request.Unidad, request.Cantidad, request.PrecioUnitario, request.Fecha, request.ProveedorId, request.NumeroAlbaran, request.NumeroFactura, request.Observaciones, request.LineaPartidaId), ct);
         return result ? NoContent() : NotFound();
     }
 
@@ -66,4 +69,4 @@ public class MaterialesObraController : ControllerBase
     }
 }
 
-public record UpdateMaterialObraRequest(string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario, DateTime Fecha, Guid? ProveedorId, string? NumeroAlbaran, string? NumeroFactura, string? Observaciones);
+public record UpdateMaterialObraRequest(string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario, DateTime Fecha, Guid? ProveedorId, string? NumeroAlbaran, string? NumeroFactura, string? Observaciones, Guid? LineaPartidaId);

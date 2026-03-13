@@ -125,6 +125,12 @@ public class AppDbContext : IdentityDbContext<AppUser>
             .HasForeignKey(r => r.CategoriaOperarioId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Entity<RegistroHoras>()
+            .HasOne(r => r.Tarea)
+            .WithMany()
+            .HasForeignKey(r => r.TareaId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // MaterialObra → Obra
         builder.Entity<MaterialObra>()
             .HasOne(m => m.Obra)
@@ -138,6 +144,13 @@ public class AppDbContext : IdentityDbContext<AppUser>
             .WithMany()
             .HasForeignKey(m => m.ProveedorId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // MaterialObra → LineaPartida
+        builder.Entity<MaterialObra>()
+            .HasOne(m => m.LineaPartida)
+            .WithMany()
+            .HasForeignKey(m => m.LineaPartidaId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         // Presupuesto: versión única por obra en estado Aprobado
         builder.Entity<Presupuesto>()

@@ -107,8 +107,15 @@
           <td class="text-sm text-surface-500">{{ r.categoriaNombre }}</td>
           <td class="text-right font-bold">{{ r.horas }}h</td>
           <td class="text-sm">{{ r.fecha | date:'dd/MM/yyyy' }}</td>
-          <td class="text-sm italic text-surface-600 dark:text-surface-400">
-            {{ r.observaciones || '—' }}
+          <td class="text-sm">
+            @if (r.tareaTitulo) {
+              <div class="mb-1 text-primary-600 dark:text-primary-400 font-medium text-xs border border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded inline-block w-full truncate" [pTooltip]="r.tareaTitulo">
+                <i class="pi pi-briefcase text-[10px] mr-1"></i>{{ r.tareaTitulo }}
+              </div>
+            }
+            <div class="italic text-surface-600 dark:text-surface-400 text-xs">
+              {{ r.observaciones || (r.tareaTitulo ? '' : 'Sin observaciones') }}
+            </div>
           </td>
           <td class="text-center">
             <div class="flex items-center justify-center gap-1">
@@ -148,6 +155,7 @@
         placeholder="Selecciona obra"
         styleClass="w-full"
         [disabled]="!!editingId()"
+        (onChange)="onObraChange()"
       >
         <ng-template let-item pTemplate="item">
           <div class="flex items-center gap-2">
@@ -158,6 +166,28 @@
       </p-select>
     </div>
     
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Tarea (Opcional)</label>
+      <p-select
+        [(ngModel)]="form.tareaId"
+        appendTo="body"
+        [options]="tareas()"
+        optionLabel="titulo"
+        optionValue="id"
+        placeholder="Selecciona tarea vinculada..."
+        styleClass="w-full"
+        [showClear]="true"
+        [disabled]="tareas().length === 0"
+      >
+        <ng-template let-item pTemplate="item">
+          <div class="flex items-center justify-between w-full pr-2">
+            <span class="text-sm truncate max-w-[250px]">{{ item.titulo }}</span>
+            <span class="text-xs text-surface-500 whitespace-nowrap ml-2">{{ item.horasReales }}h / {{ item.horasEstimadas }}h</span>
+          </div>
+        </ng-template>
+      </p-select>
+    </div>
+
     <div>
       <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Operario *</label>
       <p-select

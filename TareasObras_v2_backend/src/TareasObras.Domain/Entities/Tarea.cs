@@ -15,11 +15,13 @@ public class Tarea : BaseEntity
     public decimal HorasReales { get; private set; }
     public Guid? CuadrillaId { get; private set; }
     public Guid? UsuarioAsignadoId { get; private set; }
+    public Guid? LineaPartidaId { get; private set; }
     public string? Observaciones { get; private set; }
 
     // Navigation
     public Obra Obra { get; private set; } = null!;
     public Cuadrilla? Cuadrilla { get; private set; }
+    public LineaPartida? LineaPartida { get; private set; }
 
     private Tarea() { } // EF Core
 
@@ -31,7 +33,8 @@ public class Tarea : BaseEntity
         DateTime? fechaLimite,
         decimal horasEstimadas,
         Guid? cuadrillaId = null,
-        Guid? usuarioAsignadoId = null)
+        Guid? usuarioAsignadoId = null,
+        Guid? lineaPartidaId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(titulo);
 
@@ -44,7 +47,8 @@ public class Tarea : BaseEntity
             FechaLimite = fechaLimite,
             HorasEstimadas = horasEstimadas,
             CuadrillaId = cuadrillaId,
-            UsuarioAsignadoId = usuarioAsignadoId
+            UsuarioAsignadoId = usuarioAsignadoId,
+            LineaPartidaId = lineaPartidaId
         };
     }
 
@@ -72,6 +76,12 @@ public class Tarea : BaseEntity
         Estado = nuevoEstado;
         if (observaciones is not null)
             Observaciones = observaciones;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void CambiarPrioridad(PrioridadTarea nuevaPrioridad)
+    {
+        Prioridad = nuevaPrioridad;
         UpdatedAt = DateTime.UtcNow;
     }
 

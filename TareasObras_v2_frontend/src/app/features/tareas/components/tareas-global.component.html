@@ -145,14 +145,46 @@
             }
           </td>
           <td>
-            <span [class]="'px-2 py-0.5 rounded-full text-xs font-medium ' + prioridadBadge(t.prioridad)">
-              {{ t.prioridadNombre }}
-            </span>
+            @if (auth.isSupervisor()) {
+              <p-select [options]="prioridadOptions" [ngModel]="t.prioridad" 
+                        (ngModelChange)="cambiarPrioridad(t, $event)"
+                        optionLabel="label" optionValue="value" 
+                        styleClass="w-28 text-sm"
+                        appendTo="body">
+                <ng-template pTemplate="selectedItem" let-item>
+                  <span [class]="'px-2 py-0.5 rounded-full text-[11px] font-medium ' + prioridadBadge(item.value)">
+                    {{ item.label }}
+                  </span>
+                </ng-template>
+                <ng-template pTemplate="item" let-item>
+                  <span [class]="'px-2 py-0.5 rounded-full text-[11px] font-medium ' + prioridadBadge(item.value)">
+                    {{ item.label }}
+                  </span>
+                </ng-template>
+              </p-select>
+            } @else {
+              <span [class]="'px-2 py-0.5 rounded-full text-xs font-medium ' + prioridadBadge(t.prioridad)">
+                {{ t.prioridadNombre }}
+              </span>
+            }
           </td>
           <td>
-            <span [class]="'px-2 py-0.5 rounded-full text-xs font-medium ' + estadoBadge(t.estado)">
-              {{ t.estadoNombre }}
-            </span>
+            <p-select [options]="estadoOptions" [ngModel]="t.estado" 
+                      (ngModelChange)="cambiarEstado(t, $event)"
+                      optionLabel="label" optionValue="value" 
+                      styleClass="w-32 text-sm"
+                      appendTo="body">
+              <ng-template pTemplate="selectedItem" let-item>
+                <span [class]="'px-2 py-0.5 rounded-full text-[11px] font-medium ' + estadoBadge(item.value)">
+                  {{ item.label }}
+                </span>
+              </ng-template>
+              <ng-template pTemplate="item" let-item>
+                <span [class]="'px-2 py-0.5 rounded-full text-[11px] font-medium ' + estadoBadge(item.value)">
+                  {{ item.label }}
+                </span>
+              </ng-template>
+            </p-select>
           </td>
           <td class="text-right text-sm">
             <span class="font-medium">{{ t.horasReales }}h</span>

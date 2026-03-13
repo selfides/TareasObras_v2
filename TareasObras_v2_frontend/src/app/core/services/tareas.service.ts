@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { TareaDto, CreateTareaRequest, UpdateTareaRequest, CambiarEstadoRequest } from '../models';
+import { TareaDto, CreateTareaRequest, UpdateTareaRequest, CambiarEstadoRequest, CambiarPrioridadRequest } from '../models';
 
 const API = '/api';
 
@@ -20,5 +20,6 @@ export class TareasService {
   create(data: CreateTareaRequest) { return this.http.post<{ id: string }>(this.base, data); }
   update(id: string, data: UpdateTareaRequest) { return this.http.put(`${this.base}/${id}`, data); }
   cambiarEstado(id: string, data: CambiarEstadoRequest) { return this.http.patch(`${this.base}/${id}/estado`, data); }
+  cambiarPrioridad(id: string, data: CambiarPrioridadRequest) { return this.http.patch(`${this.base}/${id}/prioridad`, data); }
   delete(id: string) { return this.http.delete(`${this.base}/${id}`); }
 }

@@ -120,18 +120,18 @@ public class RegistroHorasRepository : IRegistroHorasRepository
     public RegistroHorasRepository(AppDbContext ctx) => _ctx = ctx;
 
     public async Task<Domain.Entities.RegistroHoras?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => await _ctx.RegistrosHoras.Include(r => r.Operario).Include(r => r.Categoria).FirstOrDefaultAsync(r => r.Id == id, ct);
+        => await _ctx.RegistrosHoras.Include(r => r.Operario).Include(r => r.Categoria).Include(r => r.Tarea).FirstOrDefaultAsync(r => r.Id == id, ct);
 
     public async Task<IEnumerable<Domain.Entities.RegistroHoras>> GetAllAsync(CancellationToken ct = default)
-        => await _ctx.RegistrosHoras.Include(r => r.Operario).Include(r => r.Categoria).Include(r => r.Obra)
+        => await _ctx.RegistrosHoras.Include(r => r.Operario).Include(r => r.Categoria).Include(r => r.Obra).Include(r => r.Tarea)
             .OrderByDescending(r => r.Fecha).ToListAsync(ct);
 
     public async Task<IEnumerable<Domain.Entities.RegistroHoras>> GetByObraIdAsync(Guid obraId, CancellationToken ct = default)
-        => await _ctx.RegistrosHoras.Include(r => r.Operario).Include(r => r.Categoria)
+        => await _ctx.RegistrosHoras.Include(r => r.Operario).Include(r => r.Categoria).Include(r => r.Tarea)
             .Where(r => r.ObraId == obraId).OrderByDescending(r => r.Fecha).ToListAsync(ct);
 
     public async Task<IEnumerable<Domain.Entities.RegistroHoras>> GetByFechaAsync(DateTime fecha, CancellationToken ct = default)
-        => await _ctx.RegistrosHoras.Include(r => r.Operario).Include(r => r.Categoria).Include(r => r.Obra)
+        => await _ctx.RegistrosHoras.Include(r => r.Operario).Include(r => r.Categoria).Include(r => r.Obra).Include(r => r.Tarea)
             .Where(r => r.Fecha.Date == fecha.Date).OrderByDescending(r => r.Fecha).ToListAsync(ct);
 
     public async Task AddAsync(Domain.Entities.RegistroHoras reg, CancellationToken ct = default) => await _ctx.RegistrosHoras.AddAsync(reg, ct);
@@ -197,14 +197,14 @@ public class MaterialObraRepository : IMaterialObraRepository
         => await _ctx.MaterialesObra.FirstOrDefaultAsync(m => m.Id == id, ct);
 
     public async Task<IEnumerable<MaterialObra>> GetAllAsync(CancellationToken ct = default)
-        => await _ctx.MaterialesObra.Include(m => m.Obra)
+        => await _ctx.MaterialesObra.Include(m => m.Obra).Include(m => m.LineaPartida)
             .OrderByDescending(m => m.Fecha).ToListAsync(ct);
 
     public async Task<IEnumerable<MaterialObra>> GetByObraIdAsync(Guid obraId, CancellationToken ct = default)
-        => await _ctx.MaterialesObra.Where(m => m.ObraId == obraId).OrderByDescending(m => m.Fecha).ToListAsync(ct);
+        => await _ctx.MaterialesObra.Include(m => m.LineaPartida).Where(m => m.ObraId == obraId).OrderByDescending(m => m.Fecha).ToListAsync(ct);
 
     public async Task<IEnumerable<MaterialObra>> GetByFechaAsync(DateTime fecha, CancellationToken ct = default)
-        => await _ctx.MaterialesObra.Include(m => m.Obra)
+        => await _ctx.MaterialesObra.Include(m => m.Obra).Include(m => m.LineaPartida)
             .Where(m => m.Fecha.Date == fecha.Date)
             .OrderByDescending(m => m.Fecha).ToListAsync(ct);
 

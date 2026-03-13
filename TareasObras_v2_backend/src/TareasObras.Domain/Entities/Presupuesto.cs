@@ -120,6 +120,7 @@ public class MaterialObra : BaseEntity
 {
     public Guid ObraId { get; private set; }
     public Guid? ProveedorId { get; private set; }
+    public Guid? LineaPartidaId { get; private set; }
     public string Descripcion { get; private set; } = string.Empty;
     public string Unidad { get; private set; } = string.Empty;
     public decimal Cantidad { get; private set; }
@@ -131,15 +132,17 @@ public class MaterialObra : BaseEntity
 
     public Obra Obra { get; private set; } = null!;
     public Proveedor? Proveedor { get; private set; }
+    public LineaPartida? LineaPartida { get; private set; }
 
     private MaterialObra() { }
 
-    public static MaterialObra Create(Guid obraId, string descripcion, string unidad, decimal cantidad, decimal precioUnitario, DateTime fecha, Guid? proveedorId = null, string? numeroAlbaran = null, string? numeroFactura = null, string? observaciones = null)
+    public static MaterialObra Create(Guid obraId, string descripcion, string unidad, decimal cantidad, decimal precioUnitario, DateTime fecha, Guid? proveedorId = null, string? numeroAlbaran = null, string? numeroFactura = null, string? observaciones = null, Guid? lineaPartidaId = null)
     {
         return new MaterialObra
         {
             ObraId = obraId,
             ProveedorId = proveedorId,
+            LineaPartidaId = lineaPartidaId,
             Descripcion = descripcion.Trim(),
             Unidad = unidad.Trim(),
             Cantidad = cantidad,
@@ -151,7 +154,7 @@ public class MaterialObra : BaseEntity
         };
     }
 
-    public void Update(string descripcion, string unidad, decimal cantidad, decimal precioUnitario, DateTime fecha, Guid? proveedorId, string? numeroAlbaran, string? numeroFactura, string? observaciones)
+    public void Update(string descripcion, string unidad, decimal cantidad, decimal precioUnitario, DateTime fecha, Guid? proveedorId, string? numeroAlbaran, string? numeroFactura, string? observaciones, Guid? lineaPartidaId)
     {
         Descripcion = descripcion.Trim();
         Unidad = unidad.Trim();
@@ -162,6 +165,7 @@ public class MaterialObra : BaseEntity
         NumeroAlbaran = numeroAlbaran?.Trim();
         NumeroFactura = numeroFactura?.Trim();
         Observaciones = observaciones?.Trim();
+        LineaPartidaId = lineaPartidaId;
         UpdatedAt = DateTime.UtcNow;
     }
 

@@ -7,6 +7,7 @@ public class RegistroHoras : BaseEntity
     public Guid ObraId { get; private set; }
     public Guid OperarioId { get; private set; }
     public Guid CategoriaOperarioId { get; private set; }
+    public Guid? TareaId { get; private set; }
     public DateTime Fecha { get; private set; }
     public decimal Horas { get; private set; }
     public decimal CosteHoraAplicado { get; private set; }
@@ -15,16 +16,18 @@ public class RegistroHoras : BaseEntity
     public Obra Obra { get; private set; } = null!;
     public Operario Operario { get; private set; } = null!;
     public CategoriaOperario Categoria { get; private set; } = null!;
+    public Tarea? Tarea { get; private set; }
 
     private RegistroHoras() { }
 
-    public static RegistroHoras Create(Guid obraId, Guid operarioId, Guid categoriaOperarioId, DateTime fecha, decimal horas, decimal costeHoraAplicado, string? observaciones = null)
+    public static RegistroHoras Create(Guid obraId, Guid operarioId, Guid categoriaOperarioId, Guid? tareaId, DateTime fecha, decimal horas, decimal costeHoraAplicado, string? observaciones = null)
     {
         return new RegistroHoras
         {
             ObraId = obraId,
             OperarioId = operarioId,
             CategoriaOperarioId = categoriaOperarioId,
+            TareaId = tareaId,
             Fecha = fecha.Date,
             Horas = horas,
             CosteHoraAplicado = costeHoraAplicado,
@@ -32,8 +35,9 @@ public class RegistroHoras : BaseEntity
         };
     }
 
-    public void Update(DateTime fecha, decimal horas, decimal costeHoraAplicado, string? observaciones)
+    public void Update(Guid? tareaId, DateTime fecha, decimal horas, decimal costeHoraAplicado, string? observaciones)
     {
+        TareaId = tareaId;
         Fecha = fecha.Date;
         Horas = horas;
         CosteHoraAplicado = costeHoraAplicado;

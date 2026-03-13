@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TareasObras.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using TareasObras.Infrastructure.Persistence;
 namespace TareasObras.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260313100958_AddTareaAssociationAndPartidas")]
+    partial class AddTareaAssociationAndPartidas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -436,9 +439,6 @@ namespace TareasObras.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("LineaPartidaId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("NumeroAlbaran")
                         .HasColumnType("nvarchar(max)");
 
@@ -469,8 +469,6 @@ namespace TareasObras.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("LineaPartidaId");
 
                     b.HasIndex("ObraId");
 
@@ -1033,11 +1031,6 @@ namespace TareasObras.Infrastructure.Migrations
 
             modelBuilder.Entity("TareasObras.Domain.Entities.MaterialObra", b =>
                 {
-                    b.HasOne("TareasObras.Domain.Entities.LineaPartida", "LineaPartida")
-                        .WithMany()
-                        .HasForeignKey("LineaPartidaId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("TareasObras.Domain.Entities.Obra", "Obra")
                         .WithMany("Materiales")
                         .HasForeignKey("ObraId")
@@ -1048,8 +1041,6 @@ namespace TareasObras.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("ProveedorId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("LineaPartida");
 
                     b.Navigation("Obra");
 

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TareasService } from '../../../core/services/tareas.service';
 import { ObrasService } from '../../../core/services/obras.service';
 import { ObraListDto, EstadoTarea, PrioridadTarea, CreateTareaRequest, UpdateTareaRequest } from '../../../core/models';
+import { AuthService } from '../../../core/auth/auth.service';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -42,6 +43,7 @@ export class TareasGlobalComponent implements OnInit {
   private obrasService = inject(ObrasService);
   private msg = inject(MessageService);
   private confirmService = inject(ConfirmationService);
+  auth = inject(AuthService);
 
   obras = signal<ObraListDto[]>([]);
   tareas = signal<TareaGlobalDto[]>([]);
@@ -206,6 +208,16 @@ export class TareasGlobalComponent implements OnInit {
     this.tareasService.cambiarEstado(tarea.id, { nuevoEstado }).subscribe({
       next: () => { this.msg.add({ severity: 'success', summary: 'Estado actualizado' }); this.loadTareas(); },
       error: () => this.msg.add({ severity: 'error', summary: 'Error al cambiar estado' })
+    });
+  }
+
+  cambiarPrioridad(tarea: TareaGlobalDto, nuevaPrioridad: PrioridadTarea) {
+    this.tareasService.cambiarPrioridad(tarea.id, { nuevaPrioridad }).subscribe({
+      next: () => { 
+        this.msg.add({ severity: 'success', summary: 'Prioridad actualizada', detail: tarea.titulo }); 
+        this.loadTareas(); 
+      },
+      error: () => this.msg.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cambiar la prioridad' })
     });
   }
 

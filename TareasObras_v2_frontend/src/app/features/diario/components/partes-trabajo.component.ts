@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RegistroHorasService } from '../../../core/services/registro-horas.service';
 import { ObrasService } from '../../../core/services/obras.service';
 import { OperariosService } from '../../../core/services/operarios.service';
-import { ObraListDto, OperarioDto } from '../../../core/models';
+import { TareasService } from '../../../core/services/tareas.service';
+import { ObraListDto, OperarioDto, TareaDto } from '../../../core/models';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -22,7 +23,7 @@ interface RegistroHorasGlobalDto {
   id: string; obraId: string; obraNombre: string; obraCodigo: string;
   operarioId: string; operarioNombre: string; categoriaNombre: string;
   fecha: string; horas: number; costeHoraAplicado: number;
-  costeTotal: number; observaciones?: string;
+  costeTotal: number; tareaId?: string; tareaTitulo?: string; observaciones?: string;
 }
 
 @Component({
@@ -38,12 +39,14 @@ export class PartesTrabajoComponent implements OnInit {
   private registroService = inject(RegistroHorasService);
   private obrasService = inject(ObrasService);
   private operariosService = inject(OperariosService);
+  private tareasService = inject(TareasService);
   private msg = inject(MessageService);
   private confirmService = inject(ConfirmationService);
 
   obras = signal<ObraListDto[]>([]);
   operarios = signal<OperarioDto[]>([]);
   registros = signal<RegistroHorasGlobalDto[]>([]);
+  tareas = signal<TareaDto[]>([]);
   loading = signal(true);
   saving = signal(false);
   dialogVisible = false;
@@ -61,7 +64,7 @@ export class PartesTrabajoComponent implements OnInit {
   });
 
   form: any = {
-    obraId: null, operarioId: null, fecha: new Date(),
+    obraId: null, operarioId: null, tareaId: null, fecha: new Date(),
     horas: 0, observaciones: ''
   };
 
@@ -110,10 +113,22 @@ export class PartesTrabajoComponent implements OnInit {
     this.form = {
       obraId: this.obras().length ? this.obras()[0].id : null,
       operarioId: this.operarios().length ? this.operarios()[0].id : null,
+      tareaId: null,
       fecha: this.selectedDate(),
       horas: 8, observaciones: ''
     };
+    if (this.form.obraId) this.loadTareas(this.form.obraId);
     this.dialogVisible = true;
+  }
+
+  onObraChange() {
+    this.form.tareaId = null;
+    if (this.form.obraId) this.loadTareas(this.form.obraId);
+    else this.tareas.set([]);
+  }
+
+  private loadTareas(obraId: string) {
+    this.tareasService.getByObra(obraId).subscribe(t => this.tareas.set(t));
   }
 
   openEdit(reg: RegistroHorasGlobalDto) {
@@ -121,10 +136,12 @@ export class PartesTrabajoComponent implements OnInit {
     this.form = {
       obraId: reg.obraId,
       operarioId: reg.operarioId,
+      tareaId: reg.tareaId,
       fecha: new Date(reg.fecha),
       horas: reg.horas,
       observaciones: reg.observaciones ?? ''
     };
+    this.loadTareas(reg.obraId);
     this.dialogVisible = true;
   }
 
@@ -137,6 +154,7 @@ export class PartesTrabajoComponent implements OnInit {
       const data = {
         fecha: this.form.fecha,
         horas: this.form.horas,
+        tareaId: this.form.tareaId,
         costeHoraAplicado: original?.costeHoraAplicado ?? 0,
         observaciones: this.form.observaciones
       };
@@ -153,6 +171,7 @@ export class PartesTrabajoComponent implements OnInit {
         obraId: this.form.obraId,
         operarioId: this.form.operarioId,
         categoriaOperarioId: op?.categoriaOperarioId,
+        tareaId: this.form.tareaId,
         fecha: this.form.fecha,
         horas: this.form.horas,
         costeHoraAplicado: op?.costeHoraBase ?? 0,

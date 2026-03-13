@@ -114,6 +114,11 @@
             @if (m.proveedorId) {
               <div class="text-xs text-surface-500 mt-0.5"><i class="pi pi-truck text-xs mr-1"></i>{{ getProveedorNombre(m.proveedorId) }}</div>
             }
+            @if (m.lineaPartidaId) {
+              <div class="text-[10px] text-blue-500 mt-1 uppercase font-semibold">
+                <i class="pi pi-tag text-[10px] mr-1"></i>Partida: {{ m.lineaPartidaNombre }}
+              </div>
+            }
           </td>
           <td class="text-xs text-surface-500 space-y-0.5">
             @if (m.numeroAlbaran) { <div>Alb: <span class="font-mono text-surface-700 dark:text-surface-300">{{ m.numeroAlbaran }}</span></div> }
@@ -159,6 +164,7 @@
       <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Obra *</label>
       <p-select
         [(ngModel)]="materialForm.obraId"
+        (ngModelChange)="onObraChange()"
         appendTo="body"
         [options]="obras()"
         optionLabel="nombre"
@@ -216,6 +222,12 @@
                   styleClass="w-full flex-1" [showClear]="true" />
         <p-button icon="pi pi-plus" [text]="true" [outlined]="true" (onClick)="abrirNuevoProveedor()" pTooltip="Crear nuevo proveedor" />
       </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Asociar a partida de presupuesto</label>
+      <p-select [(ngModel)]="materialForm.lineaPartidaId" appendTo="body" [options]="availableMaterialBudgetLines()" 
+                optionLabel="label" optionValue="value"
+                placeholder="Selecciona una partida (opcional)" styleClass="w-full" [showClear]="true" />
     </div>
     <div class="grid grid-cols-2 gap-4">
       <div>

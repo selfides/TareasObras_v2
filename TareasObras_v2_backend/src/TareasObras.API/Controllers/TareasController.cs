@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TareasObras.Application.Features.Tareas.Commands.CambiarEstadoTarea;
+using TareasObras.Application.Features.Tareas.Commands.CambiarPrioridadTarea;
 using TareasObras.Application.Features.Tareas.Commands.CreateTarea;
 using TareasObras.Application.Features.Tareas.Commands.DeleteTarea;
 using TareasObras.Application.Features.Tareas.Commands.UpdateTarea;
@@ -110,6 +111,16 @@ namespace TareasObras.API.Controllers
             return result ? NoContent() : NotFound();
         }
 
+        /// <summary>Cambiar prioridad de una tarea (Admin y Supervisor)</summary>
+        [HttpPatch("{id:guid}/prioridad")]
+        [Authorize(Roles = "Admin,Supervisor")]
+        public async Task<IActionResult> CambiarPrioridad(Guid id, [FromBody] CambiarPrioridadRequest request, CancellationToken ct)
+        {
+            var result = await _mediator.Send(
+                new CambiarPrioridadTareaCommand(id, request.NuevaPrioridad), ct);
+            return result ? NoContent() : NotFound();
+        }
+
         /// <summary>Eliminar tarea — soft delete (Admin y Supervisor)</summary>
         [HttpDelete("{id:guid}")]
         [Authorize(Roles = "Admin,Supervisor")]
@@ -130,4 +141,6 @@ namespace TareasObras.API.Controllers
         Guid? UsuarioAsignadoId);
 
     public record CambiarEstadoRequest(EstadoTarea NuevoEstado, string? Observaciones);
+
+    public record CambiarPrioridadRequest(PrioridadTarea NuevaPrioridad);
 }

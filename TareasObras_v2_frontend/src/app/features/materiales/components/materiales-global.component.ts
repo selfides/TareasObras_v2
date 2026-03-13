@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { MaterialesObraService } from '../../../core/services/materiales-obra.service';
 import { ObrasService } from '../../../core/services/obras.service';
 import { ProveedoresService } from '../../../core/services/proveedores.service';
+import { PresupuestosService } from '../../../core/services/presupuestos.service';
+import { PartidasService, PartidaDto } from '../../../core/services/partidas.service';
 import { ObraListDto, ProveedorDto } from '../../../core/models';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -21,7 +23,8 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 interface MaterialGlobalDto {
   id: string; obraId: string; obraNombre: string; obraCodigo: string;
-  proveedorId?: string; descripcion: string; unidad: string;
+  proveedorId?: string; lineaPartidaId?: string; lineaPartidaNombre?: string;
+  descripcion: string; unidad: string;
   cantidad: number; precioUnitario: number; importeReal: number;
   fecha: string; numeroAlbaran?: string; numeroFactura?: string; observaciones?: string;
 }
@@ -39,12 +42,15 @@ export class MaterialesGlobalComponent implements OnInit {
   private materialesService = inject(MaterialesObraService);
   private obrasService = inject(ObrasService);
   private proveedoresService = inject(ProveedoresService);
+  private presupuestosService = inject(PresupuestosService);
+  private partidasService = inject(PartidasService);
   private msg = inject(MessageService);
   private confirmService = inject(ConfirmationService);
 
   obras = signal<ObraListDto[]>([]);
   materiales = signal<MaterialGlobalDto[]>([]);
   proveedores = signal<ProveedorDto[]>([]);
+  partidas = signal<PartidaDto[]>([]);
   loading = signal(true);
   saving = signal(false);
   dialogVisible = false;
@@ -65,7 +71,7 @@ export class MaterialesGlobalComponent implements OnInit {
   materialForm: any = {
     obraId: null, descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0,
     fecha: new Date(), proveedorId: null, numeroAlbaran: '',
-    numeroFactura: '', observaciones: ''
+    numeroFactura: '', observaciones: '', lineaPartidaId: null
   };
 
   proveedorForm: any = {
@@ -75,6 +81,16 @@ export class MaterialesGlobalComponent implements OnInit {
   // Stats
   totalMateriales = computed(() => this.filteredMateriales().length);
   totalImporte = computed(() => this.filteredMateriales().reduce((s, m) => s + m.importeReal, 0));
+
+  availableMaterialBudgetLines = computed(() => {
+    const res: any[] = [];
+    this.partidas().forEach(p => {
+      p.lineas.filter(l => l.tipo === 'Material').forEach(l => {
+        res.push({ label: `${p.nombre} - ${l.descripcion}`, value: l.id });
+      });
+    });
+    return res;
+  });
 
   ngOnInit() {
     this.obrasService.getAll().subscribe(o => this.obras.set(o));
@@ -118,9 +134,10 @@ export class MaterialesGlobalComponent implements OnInit {
       obraId: this.obras().length ? this.obras()[0].id : null,
       descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0,
       fecha: new Date(), proveedorId: null, numeroAlbaran: '',
-      numeroFactura: '', observaciones: ''
+      numeroFactura: '', observaciones: '', lineaPartidaId: null
     };
     this.dialogVisible = true;
+    this.onObraChange();
   }
 
   openEdit(material: MaterialGlobalDto) {
@@ -132,9 +149,41 @@ export class MaterialesGlobalComponent implements OnInit {
       fecha: new Date(material.fecha), proveedorId: material.proveedorId ?? null,
       numeroAlbaran: material.numeroAlbaran ?? '',
       numeroFactura: material.numeroFactura ?? '',
-      observaciones: material.observaciones ?? ''
+      observaciones: material.observaciones ?? '',
+      lineaPartidaId: material.lineaPartidaId
     };
     this.dialogVisible = true;
+    this.onObraChange(); // Cargar partidas para esta obra
+  }
+
+  onObraChange() {
+    const obraId = this.materialForm.obraId;
+    if (!obraId) {
+      this.partidas.set([]);
+      this.materialForm.lineaPartidaId = null;
+      return;
+    }
+
+    this.presupuestosService.getByObra(obraId).subscribe(pptos => {
+      const aprobado = pptos.find(p => p.esAprobado);
+      if (aprobado) {
+        this.partidasService.getByPresupuesto(aprobado.id).subscribe(part => {
+          this.partidas.set(part);
+        });
+      } else {
+        this.partidas.set([]);
+        this.materialForm.lineaPartidaId = null;
+      }
+    });
+  }
+
+  getLineaPartidaNombre(lineaId?: string): string {
+    if (!lineaId) return '';
+    for (const p of this.partidas()) {
+      const linea = p.lineas.find(l => l.id === lineaId);
+      if (linea) return `${p.nombre} > ${linea.descripcion}`;
+    }
+    return '';
   }
 
   guardar() {

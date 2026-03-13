@@ -39,6 +39,7 @@ export interface UpdateTareaRequest {
   fechaLimite?: string; horasEstimadas: number; cuadrillaId?: string; usuarioAsignadoId?: string;
 }
 export interface CambiarEstadoRequest { nuevoEstado: EstadoTarea; observaciones?: string; }
+export interface CambiarPrioridadRequest { nuevaPrioridad: PrioridadTarea; }
 
 // ─── Materiales ────────────────────────────────────────────────────────────
 export interface MaterialDto {
@@ -106,6 +107,8 @@ export interface RegistroHorasDto {
   horas: number;
   costeHoraAplicado: number;
   costeTotal: number;
+  tareaId?: string;
+  tareaTitulo?: string;
   observaciones?: string;
 }
 
@@ -149,6 +152,8 @@ export interface MaterialObraDto {
   id: string;
   obraId: string;
   proveedorId?: string;
+  lineaPartidaId?: string;
+  lineaPartidaNombre?: string;
   descripcion: string;
   unidad: string;
   cantidad: number;

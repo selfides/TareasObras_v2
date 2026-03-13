@@ -92,11 +92,20 @@ export class ObraDetailComponent implements OnInit {
   partidaForm: any     = { nombre: '', descripcion: '', orden: 1 };
   lineaForm: any       = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, categoriaOperarioId: null };
   horasForm: any       = { operarioId: null, categoriaOperarioId: null, fecha: new Date(), horas: 8, costeHoraAplicado: 0, observaciones: '' };
-  materialForm: any    = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), proveedorId: null, numeroAlbaran: '', numeroFactura: '', observaciones: '' };
+  materialForm: any    = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), proveedorId: null, numeroAlbaran: '', numeroFactura: '', observaciones: '', lineaPartidaId: null };
   proveedorForm: any   = { nombre: '', cifNif: '', direccion: '', telefono: '', email: '', observaciones: '' };
 
   // computed
   presupuestoAprobado         = computed(() => this.presupuestos().find(p => p.esAprobado));
+  availableMaterialBudgetLines = computed(() => {
+    const res: any[] = [];
+    this.partidas().forEach(p => {
+      p.lineas.filter(l => l.tipo === 'Material').forEach(l => {
+        res.push({ label: `${p.nombre} - ${l.descripcion}`, value: l.id });
+      });
+    });
+    return res;
+  });
   presupuestoAprobadoTotal    = computed(() => this.presupuestoAprobado()?.total ?? 0);
   presupuestoAprobadoMaterial = computed(() => this.presupuestoAprobado()?.totalMaterial ?? 0);
   presupuestoAprobadoHoras    = computed(() => this.presupuestoAprobado()?.totalHoras ?? 0);
@@ -114,7 +123,13 @@ export class ObraDetailComponent implements OnInit {
   }
 
   cargarDatos(id: string) {
-    this.presupuestosSvc.getByObra(id).subscribe(p => this.presupuestos.set(p));
+    this.presupuestosSvc.getByObra(id).subscribe(p => {
+      this.presupuestos.set(p);
+      const aprobado = p.find(x => x.esAprobado);
+      if (aprobado) {
+        this.partidasSvc.getByPresupuesto(aprobado.id).subscribe(part => this.partidas.set(part));
+      }
+    });
     this.registroHorasSvc.getByObra(id).subscribe(r => this.registrosHoras.set(r));
     this.materialesSvc.getByObra(id).subscribe(m => this.materiales.set(m));
     this.operariosSvc.getAll().subscribe(o => this.operarios.set(o));
@@ -343,14 +358,19 @@ export class ObraDetailComponent implements OnInit {
   // ── Materiales ───────────────────────────────────────────────────────────
   abrirNuevoMaterial() {
     this.editandoMaterialId.set(null);
-    this.materialForm = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), proveedorId: null, numeroAlbaran: '', numeroFactura: '', observaciones: '' };
+    this.materialForm = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), proveedorId: null, numeroAlbaran: '', numeroFactura: '', observaciones: '', lineaPartidaId: null };
     this.dlgMaterial = true;
   }
 
   abrirEditarMaterial(m: MaterialObraDto) {
     this.editandoMaterialId.set(m.id);
-    this.materialForm = { descripcion: m.descripcion, unidad: m.unidad, cantidad: m.cantidad,
-      precioUnitario: m.precioUnitario, fecha: new Date(m.fecha), proveedorId: m.proveedorId, numeroAlbaran: m.numeroAlbaran ?? '', numeroFactura: m.numeroFactura ?? '', observaciones: m.observaciones ?? '' };
+    this.materialForm = { 
+      descripcion: m.descripcion, unidad: m.unidad, cantidad: m.cantidad,
+      precioUnitario: m.precioUnitario, fecha: new Date(m.fecha), 
+      proveedorId: m.proveedorId, numeroAlbaran: m.numeroAlbaran ?? '', 
+      numeroFactura: m.numeroFactura ?? '', observaciones: m.observaciones ?? '',
+      lineaPartidaId: m.lineaPartidaId
+    };
     this.dlgMaterial = true;
   }
 
@@ -425,5 +445,13 @@ export class ObraDetailComponent implements OnInit {
   getProveedorNombre(id?: string): string {
     if (!id) return '';
     return this.proveedores().find(p => p.id === id)?.nombre || '';
+  }
+
+  getLineaPartidaNombre(id: string): string {
+    for (const p of this.partidas()) {
+      const linea = p.lineas.find(l => l.id === id);
+      if (linea) return `${p.nombre} > ${linea.descripcion}`;
+    }
+    return '';
   }
 }

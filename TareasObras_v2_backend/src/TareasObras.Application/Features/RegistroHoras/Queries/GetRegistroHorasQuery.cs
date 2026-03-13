@@ -15,6 +15,8 @@ public record RegistroHorasDto
     public decimal Horas { get; init; }
     public decimal CosteHoraAplicado { get; init; }
     public decimal CosteTotal { get; init; }
+    public Guid? TareaId { get; init; }
+    public string? TareaTitulo { get; init; }
     public string? Observaciones { get; init; }
 }
 
@@ -39,6 +41,8 @@ public class GetRegistroHorasByObraHandler : IRequestHandler<GetRegistroHorasByO
             Horas = r.Horas,
             CosteHoraAplicado = r.CosteHoraAplicado,
             CosteTotal = r.CosteTotal,
+            TareaId = r.TareaId,
+            TareaTitulo = r.Tarea?.Titulo,
             Observaciones = r.Observaciones
         });
     }

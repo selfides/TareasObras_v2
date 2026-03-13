@@ -59,13 +59,48 @@ public class AprobarPresupuestoHandler : IRequestHandler<AprobarPresupuestoComma
     public AprobarPresupuestoHandler(IUnitOfWork uow) => _uow = uow;
     public async Task<bool> Handle(AprobarPresupuestoCommand r, CancellationToken ct)
     {
-        var p = await _uow.Presupuestos.GetByIdAsync(r.Id, ct);
+        var p = await _uow.Presupuestos.GetByIdWithLinesAsync(r.Id, ct);
         if (p is null) return false;
-        p.Aprobar();
+        
+        if (p.Estado != Domain.Enums.EstadoPresupuesto.Aprobado)
+        {
+            p.Aprobar();
+
+            // Generar tareas para cada linea de mano de obra
+            if (p.Partidas != null)
+            {
+                foreach (var partida in p.Partidas.Where(pt => !pt.IsDeleted))
+                {
+                    foreach (var linea in partida.Lineas.Where(l => !l.IsDeleted && l.Tipo == TipoLineaPartida.ManoObra))
+                    {
+                        var nombreTarea = $"{partida.Nombre} - {linea.Descripcion}";
+                        if (nombreTarea.Length > 300) nombreTarea = nombreTarea.Substring(0, 300);
+
+                        var horasEstimadas = linea.Unidad.ToLower() == "h" ? linea.Cantidad : 0;
+
+                        var tarea = Tarea.Create(
+                            p.ObraId, 
+                            nombreTarea, 
+                            $"Tarea generada automáticamente de la partida: {partida.Nombre}. Línea: {linea.Descripcion}", 
+                            Domain.Enums.PrioridadTarea.Media, 
+                            null, 
+                            horasEstimadas,
+                            null,
+                            null,
+                            linea.Id
+                        );
+                        
+                        await _uow.Tareas.AddAsync(tarea, ct);
+                    }
+                }
+            }
+        }
+
         await _uow.SaveChangesAsync(ct);
         return true;
     }
 }
+
 
 public class DeletePresupuestoHandler : IRequestHandler<DeletePresupuestoCommand, bool>
 {
