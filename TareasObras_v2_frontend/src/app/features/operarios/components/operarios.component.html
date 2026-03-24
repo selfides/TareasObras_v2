@@ -28,13 +28,14 @@
             />
           </div>
           <div
-            class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden"
+            class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-visible"
           >
             <p-table
               [value]="operarios()"
               [loading]="loading()"
               styleClass="p-datatable-sm"
               [paginator]="true" [rows]="20" [rowsPerPageOptions]="[20, 50, 100]" [showCurrentPageReport]="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords}"
+              [paginatorDropdownAppendTo]="'body'"
             >
               <ng-template pTemplate="header">
                 <tr>
@@ -116,9 +117,9 @@
             />
           </div>
           <div
-            class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden"
+            class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-visible"
           >
-            <p-table [value]="categorias()" styleClass="p-datatable-sm" [paginator]="true" [rows]="20" [rowsPerPageOptions]="[20, 50, 100]" [showCurrentPageReport]="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords}">
+            <p-table [value]="categorias()" styleClass="p-datatable-sm" [paginator]="true" [rows]="20" [rowsPerPageOptions]="[20, 50, 100]" [showCurrentPageReport]="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords}" [paginatorDropdownAppendTo]="'body'">
               <ng-template pTemplate="header">
                 <tr>
                   <th>Nombre</th>
