@@ -1,0 +1,37 @@
+<div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 p-6 mt-4">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm mb-6 pb-6 border-b border-surface-100 dark:border-surface-700">
+    <div><span class="text-surface-500">Cliente:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.cliente || '-' }}</span></div>
+    <div><span class="text-surface-500">Dirección:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.direccion || '-' }}</span></div>
+    <div><span class="text-surface-500">Inicio:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.fechaInicio | date:'dd/MM/yyyy' }}</span></div>
+    <div><span class="text-surface-500">Fin previsto:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.fechaFinPrevista ? (store.selectedObra()!.fechaFinPrevista | date:'dd/MM/yyyy') : '-' }}</span></div>
+    <div class="flex items-center">
+      <span class="text-surface-500 mr-2">Estado:</span>
+      @if (auth.isSupervisor()) {
+        <p-select [options]="estadoOptions" [ngModel]="store.selectedObra()!.estado" 
+                  (ngModelChange)="cambiarEstado($event)"
+                  optionLabel="label" optionValue="value" 
+                  styleClass="w-36 text-sm"
+                  appendTo="body">
+           <ng-template pTemplate="selectedItem" let-item>
+             <span [class]="'px-2 py-0.5 rounded-full text-[11px] font-medium ' + estadoBadge(item.value)">
+               {{ item.label }}
+             </span>
+           </ng-template>
+           <ng-template pTemplate="item" let-item>
+             <span [class]="'px-2 py-0.5 rounded-full text-[11px] font-medium ' + estadoBadge(item.value)">
+               {{ item.label }}
+             </span>
+           </ng-template>
+        </p-select>
+      } @else {
+        <span [class]="'px-2 py-0.5 rounded-full text-xs font-medium ' + estadoBadge(store.selectedObra()!.estado)">
+          {{ store.selectedObra()!.estadoNombre }}
+        </span>
+      }
+    </div>
+    <div><span class="text-surface-500 line-height-3">Creado por:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.createdBy || '-' }}</span></div>
+  </div>
+  @if (store.selectedObra()!.descripcion) {
+    <p class="text-surface-600 dark:text-surface-300 text-sm">{{ store.selectedObra()!.descripcion }}</p>
+  }
+</div>

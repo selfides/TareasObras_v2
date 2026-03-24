@@ -62,181 +62,22 @@
 
         <!-- TAB INFO -->
         <p-tabpanel value="info">
-          <div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 p-6 mt-4">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm mb-6 pb-6 border-b border-surface-100 dark:border-surface-700">
-              <div><span class="text-surface-500">Cliente:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.cliente || '-' }}</span></div>
-              <div><span class="text-surface-500">Direccion:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.direccion || '-' }}</span></div>
-              <div><span class="text-surface-500">Inicio:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.fechaInicio | date:'dd/MM/yyyy' }}</span></div>
-              <div><span class="text-surface-500">Fin previsto:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.fechaFinPrevista ? (store.selectedObra()!.fechaFinPrevista | date:'dd/MM/yyyy') : '-' }}</span></div>
-              <div class="flex items-center">
-                <span class="text-surface-500 mr-2">Estado:</span>
-                @if (auth.isSupervisor()) {
-                  <p-select [options]="estadoOptions" [ngModel]="store.selectedObra()!.estado" 
-                            (ngModelChange)="cambiarEstado($event)"
-                            optionLabel="label" optionValue="value" 
-                            styleClass="w-36 text-sm"
-                            appendTo="body">
-                     <ng-template pTemplate="selectedItem" let-item>
-                       <span [class]="'px-2 py-0.5 rounded-full text-[11px] font-medium ' + estadoBadge(item.value)">
-                         {{ item.label }}
-                       </span>
-                     </ng-template>
-                     <ng-template pTemplate="item" let-item>
-                       <span [class]="'px-2 py-0.5 rounded-full text-[11px] font-medium ' + estadoBadge(item.value)">
-                         {{ item.label }}
-                       </span>
-                     </ng-template>
-                  </p-select>
-                } @else {
-                  <span [class]="'px-2 py-0.5 rounded-full text-xs font-medium ' + estadoBadge(store.selectedObra()!.estado)">
-                    {{ store.selectedObra()!.estadoNombre }}
-                  </span>
-                }
-              </div>
-              <div><span class="text-surface-500 line-height-3">Creado por:</span><span class="ml-2 font-medium">{{ store.selectedObra()!.createdBy || '-' }}</span></div>
-            </div>
-            @if (store.selectedObra()!.descripcion) {
-              <p class="text-surface-600 dark:text-surface-300 text-sm">{{ store.selectedObra()!.descripcion }}</p>
-            }
-          </div>
+          @defer (on immediate) {
+            <app-obra-tab-info />
+          } @placeholder {
+            <div class="space-y-4 mt-4"><p-skeleton height="200px" /></div>
+          }
         </p-tabpanel>
 
         <!-- TAB PRESUPUESTO -->
         <p-tabpanel value="presupuesto">
-          <div class="space-y-3 mt-4">
-            <div class="flex justify-between items-center">
-              <h3 class="font-semibold text-surface-900 dark:text-surface-50">Versiones de presupuesto</h3>
-              @if (auth.isSupervisor()) {
-                <p-button label="Nuevo presupuesto" icon="pi pi-plus" size="small" (onClick)="abrirNuevoPresupuesto()" />
-              }
-            </div>
-
-            @for (p of presupuestos(); track p.id) {
-              <div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
-                <!-- Cabecera presupuesto -->
-                <div class="flex flex-wrap items-center justify-between gap-2 p-4 border-b border-surface-100 dark:border-surface-700">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="font-mono font-semibold text-sm">{{ p.numero || ('v' + p.version) }}</span>
-                    <span [class]="'px-2 py-0.5 rounded-full text-xs font-medium ' + (p.esAprobado ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')">{{ p.estadoNombre }}</span>
-                    <span class="text-xs text-surface-400">{{ p.fecha | date:'dd/MM/yyyy' }}</span>
-                    @if (p.descripcion) { <span class="text-xs text-surface-500 italic">{{ p.descripcion }}</span> }
-                  </div>
-                    <div class="flex items-center gap-2">
-                    <span class="font-bold text-blue-600 text-sm">{{ p.total | number:'1.0-0' }} €</span>
-                    @if (!p.esAprobado && auth.isSupervisor()) {
-                      <p-button label="Aprobar" icon="pi pi-check" size="small" severity="success" (onClick)="aprobarPresupuesto(p.id)" />
-                      <p-button icon="pi pi-pencil" [text]="true" size="small" severity="info" pTooltip="Editar" (onClick)="abrirEditarPresupuesto(p)" />
-                      <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Eliminar" (onClick)="confirmarEliminarPresupuesto(p.id)" />
-                    }
-                    <p-button [label]="presupuestoSeleccionado() === p.id ? 'Cerrar' : 'Ver partidas'"
-                              [icon]="presupuestoSeleccionado() === p.id ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
-                              size="small" [outlined]="true"
-                              (onClick)="presupuestoSeleccionado() === p.id ? presupuestoSeleccionado.set(null) : seleccionarPresupuesto(p.id)" />
-                  </div>
-                </div>
-
-                <!-- Totales -->
-                <div class="grid grid-cols-3 gap-0 text-sm border-b border-surface-100 dark:border-surface-700">
-                  <div class="text-center p-3 border-r border-surface-100 dark:border-surface-700">
-                    <p class="text-surface-400 text-xs">Materiales</p>
-                    <p class="font-semibold">{{ p.totalMaterial | number:'1.0-0' }} €</p>
-                  </div>
-                  <div class="text-center p-3 border-r border-surface-100 dark:border-surface-700">
-                    <p class="text-surface-400 text-xs">Mano de obra</p>
-                    <p class="font-semibold">{{ p.totalHoras | number:'1.0-0' }} €</p>
-                  </div>
-                  <div class="text-center p-3">
-                    <p class="text-blue-500 text-xs">Total</p>
-                    <p class="font-bold text-blue-600">{{ p.total | number:'1.0-0' }} €</p>
-                  </div>
-                </div>
-
-                <!-- Partidas (expandible) -->
-                @if (presupuestoSeleccionado() === p.id) {
-                  <div class="p-4 space-y-3 bg-surface-50 dark:bg-surface-800">
-                    <div class="flex justify-between items-center">
-                      <p class="text-sm font-semibold text-surface-700 dark:text-surface-300">Partidas</p>
-                      @if (auth.isSupervisor()) {
-                        <p-button label="Nueva partida" icon="pi pi-plus" size="small" [text]="true" (onClick)="abrirNuevaPartida()" />
-                      }
-                    </div>
-
-                    @for (partida of partidas(); track partida.id) {
-                      <div class="bg-white dark:bg-surface-900 rounded-lg border border-surface-200 dark:border-surface-700 overflow-hidden">
-                        <!-- Cabecera partida -->
-                        <div class="flex items-center justify-between px-3 py-2 bg-surface-50 dark:bg-surface-800 border-b border-surface-100 dark:border-surface-700">
-                          <div class="flex items-center gap-2">
-                            <span class="font-medium text-sm">{{ partida.nombre }}</span>
-                            @if (partida.descripcion) { <span class="text-xs text-surface-400">{{ partida.descripcion }}</span> }
-                          </div>
-                          <div class="flex items-center gap-1">
-                            <span class="text-sm font-bold text-blue-600 mr-2">{{ partida.total | number:'1.2-2' }} €</span>
-                            @if (auth.isSupervisor()) {
-                              <p-button icon="pi pi-pencil" [text]="true" size="small" pTooltip="Editar partida" (onClick)="abrirEditarPartida(partida)" />
-                              <p-button icon="pi pi-plus" [text]="true" size="small" severity="success" pTooltip="Anadir material" (onClick)="abrirNuevaLinea(partida.id, 'Material')" />
-                              <p-button icon="pi pi-user" [text]="true" size="small" severity="info" pTooltip="Anadir mano de obra" (onClick)="abrirNuevaLinea(partida.id, 'ManoObra')" />
-                              <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Eliminar partida" (onClick)="confirmarEliminarPartida(partida.id)" />
-                            }
-                          </div>
-                        </div>
-                        <!-- Lineas -->
-                        @if (partida.lineas.length) {
-                          <table class="w-full text-xs">
-                            <thead>
-                              <tr class="text-left text-surface-400 border-b border-surface-100 dark:border-surface-700 bg-white dark:bg-surface-900">
-                                <th class="px-3 py-1.5">Tipo</th>
-                                <th class="py-1.5">Descripcion</th>
-                                <th class="py-1.5">Ud</th>
-                                <th class="py-1.5 text-right">Cantidad</th>
-                                <th class="py-1.5 text-right">Precio</th>
-                                <th class="py-1.5 text-right pr-3">Importe</th>
-                                @if (auth.isSupervisor()) { <th class="py-1.5 pr-1"></th> }
-                              </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-surface-900">
-                              @for (linea of partida.lineas; track linea.id) {
-                                <tr class="border-b border-surface-50 dark:border-surface-800">
-                                  <td class="px-3 py-1.5">
-                                    <span [class]="'px-1.5 py-0.5 rounded text-xs font-medium ' + (linea.tipo === 'Material' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700')">
-                                      {{ linea.tipo === 'Material' ? 'Mat' : 'M.O.' }}
-                                    </span>
-                                  </td>
-                                  <td class="py-1.5">{{ linea.descripcion }}
-                                    @if (linea.categoriaNombre) { <span class="text-surface-400 ml-1">({{ linea.categoriaNombre }})</span> }
-                                  </td>
-                                  <td class="py-1.5 text-surface-400">{{ linea.unidad }}</td>
-                                  <td class="py-1.5 text-right">{{ linea.cantidad | number:'1.0-3' }}</td>
-                                  <td class="py-1.5 text-right text-surface-500">{{ linea.precioUnitario | number:'1.2-2' }} €</td>
-                                  <td class="py-1.5 text-right font-medium pr-3">{{ linea.importe | number:'1.2-2' }} €</td>
-                                  @if (auth.isSupervisor()) {
-                                    <td class="py-1.5 pr-1 text-right">
-                                      <p-button icon="pi pi-pencil" [text]="true" size="small" (onClick)="abrirEditarLinea(linea, partida.id)" />
-                                      <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="confirmarEliminarLinea(linea.id)" />
-                                    </td>
-                                  }
-                                </tr>
-                              }
-                            </tbody>
-                          </table>
-                        } @else {
-                          <p class="text-center py-3 text-surface-400 text-xs bg-white dark:bg-surface-900">Sin lineas. Usa los botones + para anadir materiales o mano de obra.</p>
-                        }
-                      </div>
-                    }
-                    @if (!partidas().length) {
-                      <p class="text-center py-4 text-surface-400 text-sm">No hay partidas. Crea la primera con el boton de arriba.</p>
-                    }
-                  </div>
-                }
-              </div>
-            }
-
-            @if (!presupuestos().length) {
-              <div class="text-center py-10 text-surface-400 bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700">
-                <i class="pi pi-file text-3xl block mb-2"></i>No hay presupuestos
-              </div>
-            }
-          </div>
+          @defer (on immediate) {
+            <app-obra-tab-presupuestos [obraId]="obraId()" 
+                                       (presupuestoAprobadoChange)="presupuestoAprobado.set($event)"
+                                       (partidasChange)="partidas.set($event)" />
+          } @placeholder {
+            <div class="space-y-4 mt-4"><p-skeleton height="60px" /><p-skeleton height="200px" /></div>
+          }
         </p-tabpanel>
 
         <!-- TAB MANO DE OBRA -->
@@ -264,98 +105,6 @@
   }
 </div>
 
-<p-confirmdialog />
 
-<!-- Dialog Presupuesto -->
-<p-dialog [(visible)]="dlgPresupuesto" [header]="editandoPresupuestoId() ? 'Editar Presupuesto' : 'Nuevo Presupuesto'" [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false">
-  <div class="space-y-4 pt-2">
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Numero de presupuesto *</label>
-      <input pInputText [(ngModel)]="presupuestoForm.numero" class="w-full" placeholder="Ej: PPTO-2026-001" />
-    </div>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Fecha *</label>
-        <p-datepicker [(ngModel)]="presupuestoForm.fecha" appendTo="body" dateFormat="dd/mm/yy" styleClass="w-full" [showIcon]="true" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Descripcion</label>
-        <input pInputText [(ngModel)]="presupuestoForm.descripcion" class="w-full" placeholder="Ej: Revision inicial" />
-      </div>
-    </div>
-    @if (!editandoPresupuestoId()) {
-      <p class="text-xs text-surface-400">Tras crear el presupuesto podras anadir partidas con materiales y mano de obra.</p>
-    }
-  </div>
-  <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgPresupuesto = false" />
-    <p-button [label]="editandoPresupuestoId() ? 'Guardar Cambios' : 'Crear presupuesto'" icon="pi pi-check" (onClick)="guardarPresupuesto()" [loading]="saving()" />
-  </ng-template>
-</p-dialog>
-
-<!-- Dialog Partida -->
-<p-dialog [(visible)]="dlgPartida" [header]="editandoPartidaId() ? 'Editar partida' : 'Nueva partida'" [modal]="true" appendTo="body" [style]="{width:'min(440px, 95vw)'}" [draggable]="false">
-  <div class="space-y-4 pt-2">
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Nombre *</label>
-      <input pInputText [(ngModel)]="partidaForm.nombre" class="w-full" placeholder="Ej: Estructura, Albanileria..." />
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Descripcion</label>
-      <textarea pTextarea [(ngModel)]="partidaForm.descripcion" rows="2" class="w-full"></textarea>
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Orden</label>
-      <p-inputNumber [(ngModel)]="partidaForm.orden" [min]="1" styleClass="w-full" />
-    </div>
-  </div>
-  <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgPartida = false" />
-    <p-button [label]="editandoPartidaId() ? 'Guardar' : 'Crear partida'" icon="pi pi-check" (onClick)="guardarPartida()" [loading]="saving()" />
-  </ng-template>
-</p-dialog>
-
-<!-- Dialog Linea -->
-<p-dialog [(visible)]="dlgLinea" [header]="editandoLineaId() ? 'Editar linea' : (tipoLinea() === 'Material' ? 'Anadir material' : 'Anadir mano de obra')"
-          [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false">
-  <div class="space-y-4 pt-2">
-    @if (tipoLinea() === 'ManoObra') {
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Categoria *</label>
-        <p-select [(ngModel)]="lineaForm.categoriaOperarioId" appendTo="body" [options]="categorias()"
-                  optionLabel="nombre" optionValue="id" placeholder="Selecciona categoria" styleClass="w-full"
-                  (onChange)="onCategoriaLineaChange()" />
-      </div>
-    }
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Descripcion *</label>
-      <input pInputText [(ngModel)]="lineaForm.descripcion" class="w-full" placeholder="Ej: Cemento Portland, Oficial 1a montaje..." />
-    </div>
-    <div class="grid grid-cols-3 gap-3">
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Unidad</label>
-        <input pInputText [(ngModel)]="lineaForm.unidad" class="w-full" placeholder="kg, m2, h..." />
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Cantidad</label>
-        <p-inputNumber [(ngModel)]="lineaForm.cantidad" [minFractionDigits]="0" [maxFractionDigits]="3" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Precio (euros)</label>
-        <p-inputNumber [(ngModel)]="lineaForm.precioUnitario" [minFractionDigits]="2" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
-      </div>
-    </div>
-    <div class="bg-surface-50 dark:bg-surface-800 rounded-lg p-3 flex justify-between items-center">
-      <span class="text-sm text-surface-500">Importe total:</span>
-      <span class="font-bold text-blue-600">{{ lineaForm.cantidad * lineaForm.precioUnitario | number:'1.2-2' }} €</span>
-    </div>
-  </div>
-  <ng-template pTemplate="footer">
-    <div class="flex justify-end gap-2 w-full">
-      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgLinea = false" class="w-full sm:w-40" styleClass="w-full sm:w-40 justify-center" />
-      <p-button [label]="editandoLineaId() ? 'Guardar' : 'Anadir linea'" icon="pi pi-check" (onClick)="guardarLinea()" [loading]="saving()" class="w-full sm:w-40" styleClass="w-full sm:w-40 justify-center" />
-    </div>
-  </ng-template>
-</p-dialog>
 
 
