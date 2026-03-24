@@ -241,102 +241,22 @@
 
         <!-- TAB MANO DE OBRA -->
         <p-tabpanel value="horas">
-          <div class="space-y-4 mt-4">
-            <div class="flex justify-between items-center">
-              <div>
-                <h3 class="font-semibold text-surface-900 dark:text-surface-50">Registros de horas</h3>
-                <p class="text-sm text-surface-500">Total: <strong>{{ totalHorasReales() | number:'1.0-1' }} h</strong> - Coste: <strong>{{ totalCosteHoras() | number:'1.0-0' }} €</strong></p>
-              </div>
-              @if (auth.isSupervisor()) {
-                <p-button label="Registrar horas" icon="pi pi-plus" size="small" (onClick)="abrirNuevasHoras()" />
-              }
-            </div>
-            <div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
-              <p-table [value]="registrosHoras()" styleClass="p-datatable-sm">
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th>Operario</th><th>Observaciones</th><th>Fecha</th>
-                    <th class="text-right">Horas</th><th class="text-right">Euros/h</th><th class="text-right">Coste</th><th></th>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-r>
-                  <tr>
-                    <td class="font-medium">{{ r.operarioNombre }}</td>
-                    <td class="text-surface-500 text-sm truncate max-w-[150px]" [pTooltip]="r.observaciones">{{ r.observaciones || '-' }}</td>
-                    <td class="text-sm">{{ r.fecha | date:'dd/MM/yyyy' }}</td>
-                    <td class="text-right font-medium">{{ r.horas | number:'1.0-1' }} h</td>
-                    <td class="text-right text-surface-500">{{ r.costeHoraAplicado | number:'1.2-2' }} €</td>
-                    <td class="text-right font-medium text-blue-600">{{ r.costeTotal | number:'1.2-2' }} €</td>
-                    <td class="text-right">
-                      @if (auth.isSupervisor()) {
-                        <p-button icon="pi pi-pencil" [text]="true" size="small" (onClick)="abrirEditarHoras(r)" />
-                        <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="confirmarEliminarHoras(r.id)" />
-                      }
-                    </td>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="emptymessage">
-                  <tr><td colspan="7" class="text-center py-8 text-surface-400">No hay registros de horas</td></tr>
-                </ng-template>
-              </p-table>
-            </div>
-          </div>
+          @defer (on immediate) {
+            <app-obra-tab-mano-obra [obraId]="obraId()" (totalesActualizados)="onTotalesHoras($event)" />
+          } @placeholder {
+            <div class="space-y-4 mt-4"><p-skeleton height="60px" /><p-skeleton height="200px" /></div>
+          }
         </p-tabpanel>
 
         <!-- TAB MATERIALES -->
         <p-tabpanel value="materiales">
-          <div class="space-y-4 mt-4">
-            <div class="flex justify-between items-center">
-              <div>
-                <h3 class="font-semibold text-surface-900 dark:text-surface-50">Materiales consumidos</h3>
-                <p class="text-sm text-surface-500">Total real: <strong>{{ totalMaterialesReal() | number:'1.0-0' }} €</strong></p>
-              </div>
-              @if (auth.isSupervisor()) {
-                <p-button label="Anadir material" icon="pi pi-plus" size="small" (onClick)="abrirNuevoMaterial()" />
-              }
+          @defer (on interaction) {
+            <app-obra-tab-materiales [obraId]="obraId()" [availableMaterialBudgetLines]="availableMaterialBudgetLines()" (totalesActualizados)="onTotalesMateriales($event)" />
+          } @placeholder {
+            <div class="flex justify-center items-center py-10">
+              <p-button label="Cargar y gestionar materiales" icon="pi pi-download" [outlined]="true" />
             </div>
-            <div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
-              <p-table [value]="materiales()" styleClass="p-datatable-sm">
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th>Descripcion / Prov</th><th>Refs</th><th>Unidad</th><th>Fecha</th>
-                    <th class="text-right">Cantidad</th><th class="text-right">Precio</th><th class="text-right">Importe</th><th></th>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-m>
-                  <tr>
-                    <td>
-                      <div class="font-medium">{{ m.descripcion }}</div>
-                      @if (m.proveedorId) {
-                        <div class="text-xs text-surface-500 mt-0.5"><i class="pi pi-building text-xs mr-1"></i>{{ getProveedorNombre(m.proveedorId) }}</div>
-                      }
-                      @if (m.lineaPartidaId) {
-                        <div class="text-[10px] text-blue-500 mt-1 uppercase font-semibold"><i class="pi pi-tag text-[10px] mr-1"></i>Partida: {{ m.lineaPartidaNombre }}</div>
-                      }
-                    </td>
-                    <td class="text-xs text-surface-500 space-y-0.5">
-                      @if (m.numeroAlbaran) { <div>Alb: <span class="font-mono text-surface-700">{{ m.numeroAlbaran }}</span></div> }
-                      @if (m.numeroFactura) { <div>Fact: <span class="font-mono text-surface-700">{{ m.numeroFactura }}</span></div> }
-                    </td>
-                    <td class="text-surface-500 text-sm">{{ m.unidad }}</td>
-                    <td class="text-sm">{{ m.fecha | date:'dd/MM/yyyy' }}</td>
-                    <td class="text-right">{{ m.cantidad | number:'1.0-3' }}</td>
-                    <td class="text-right text-surface-500">{{ m.precioUnitario | number:'1.2-2' }} €</td>
-                    <td class="text-right font-medium text-blue-600">{{ m.importeReal | number:'1.2-2' }} €</td>
-                    <td class="text-right">
-                      @if (auth.isSupervisor()) {
-                        <p-button icon="pi pi-pencil" [text]="true" size="small" (onClick)="abrirEditarMaterial(m)" />
-                        <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="confirmarEliminarMaterial(m.id)" />
-                      }
-                    </td>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="emptymessage">
-                  <tr><td colspan="7" class="text-center py-8 text-surface-400">No hay materiales registrados</td></tr>
-                </ng-template>
-              </p-table>
-            </div>
-          </div>
+          }
         </p-tabpanel>
 
       </p-tabpanels>
@@ -438,141 +358,4 @@
   </ng-template>
 </p-dialog>
 
-<!-- Dialog Horas -->
-<p-dialog [(visible)]="dlgHoras" [header]="editandoHorasId() ? 'Editar horas' : 'Registrar horas'"
-          [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false">
-  <div class="space-y-4 pt-2">
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Operario *</label>
-      <p-select [(ngModel)]="horasForm.operarioId" appendTo="body" [options]="operarios()" optionLabel="nombreCompleto" optionValue="id"
-                placeholder="Selecciona operario" styleClass="w-full" (onChange)="onOperarioChange()" [disabled]="!!editandoHorasId()" />
-    </div>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Fecha *</label>
-        <p-datepicker [(ngModel)]="horasForm.fecha" appendTo="body" dateFormat="dd/mm/yy" class="w-full block" styleClass="w-full" inputStyleClass="w-full" [showIcon]="true" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Horas *</label>
-        <p-inputNumber [(ngModel)]="horasForm.horas" [minFractionDigits]="1" [min]="0.5" [max]="24" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
-      </div>
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Coste euros/hora</label>
-      <p-inputNumber [(ngModel)]="horasForm.costeHoraAplicado" [minFractionDigits]="2" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Observaciones</label>
-      <textarea pTextarea [(ngModel)]="horasForm.observaciones" rows="2" class="w-full"></textarea>
-    </div>
-  </div>
-  <ng-template pTemplate="footer">
-    <div class="flex justify-end gap-2 w-full">
-      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="cerrarDlgHoras()" class="w-full sm:w-44" styleClass="w-full sm:w-44 justify-center" />
-      <p-button [label]="editandoHorasId() ? 'Guardar cambios' : 'Registrar'" icon="pi pi-check" (onClick)="guardarHoras()" [loading]="saving()" class="w-full sm:w-44" styleClass="w-full sm:w-44 justify-center" />
-    </div>
-  </ng-template>
-</p-dialog>
 
-<!-- Dialog Material -->
-<p-dialog [(visible)]="dlgMaterial" [header]="editandoMaterialId() ? 'Editar material' : 'Anadir material'"
-          [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false">
-  <div class="space-y-4 pt-2">
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Descripcion *</label>
-      <input pInputText [(ngModel)]="materialForm.descripcion" class="w-full" placeholder="Ej: Cemento Portland" />
-    </div>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Unidad *</label>
-        <input pInputText [(ngModel)]="materialForm.unidad" class="w-full" placeholder="kg, m2, ud..." />
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Fecha *</label>
-        <p-datepicker [(ngModel)]="materialForm.fecha" appendTo="body" dateFormat="dd/mm/yy" class="w-full block" styleClass="w-full" inputStyleClass="w-full" [showIcon]="true" />
-      </div>
-    </div>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Cantidad *</label>
-        <p-inputNumber [(ngModel)]="materialForm.cantidad" [minFractionDigits]="0" [maxFractionDigits]="3" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Precio unitario (euros) *</label>
-        <p-inputNumber [(ngModel)]="materialForm.precioUnitario" [minFractionDigits]="2" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
-      </div>
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Proveedor</label>
-      <div class="flex gap-2">
-        <p-select [(ngModel)]="materialForm.proveedorId" appendTo="body" [options]="proveedores()" optionLabel="nombre" optionValue="id"
-                  placeholder="Selecciona proveedor" styleClass="w-full flex-1" [showClear]="true" />
-        <p-button icon="pi pi-plus" [text]="true" [outlined]="true" (onClick)="abrirNuevoProveedor()" pTooltip="Crear nuevo proveedor" />
-      </div>
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Asociar a partida de presupuesto</label>
-      <p-select [(ngModel)]="materialForm.lineaPartidaId" appendTo="body" [options]="availableMaterialBudgetLines()" 
-                optionLabel="label" optionValue="value"
-                placeholder="Selecciona una partida (opcional)" styleClass="w-full" [showClear]="true" />
-    </div>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Num. Albaran</label>
-        <input pInputText [(ngModel)]="materialForm.numeroAlbaran" class="w-full" placeholder="Opcional" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Num. Factura</label>
-        <input pInputText [(ngModel)]="materialForm.numeroFactura" class="w-full" placeholder="Opcional" />
-      </div>
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Observaciones</label>
-      <textarea pTextarea [(ngModel)]="materialForm.observaciones" rows="2" class="w-full"></textarea>
-    </div>
-  </div>
-  <ng-template pTemplate="footer">
-    <div class="flex justify-end gap-2 w-full">
-      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="cerrarDlgMaterial()" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
-      <p-button [label]="editandoMaterialId() ? 'Guardar' : 'Anadir'" icon="pi pi-check" (onClick)="guardarMaterial()" [loading]="saving()" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
-    </div>
-  </ng-template>
-</p-dialog>
-
-<!-- Dialog Proveedor -->
-<p-dialog [(visible)]="dlgProveedor" header="Nuevo Proveedor" [modal]="true" appendTo="body" [style]="{width:'min(440px, 95vw)'}" [draggable]="false">
-  <div class="space-y-4 pt-2">
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Nombre comercial / Razon social *</label>
-      <input pInputText [(ngModel)]="proveedorForm.nombre" class="w-full" placeholder="Ej: Materiales Hermanos SL" />
-    </div>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1.5">CIF/NIF</label>
-        <input pInputText [(ngModel)]="proveedorForm.cifNif" class="w-full" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1.5">Telefono</label>
-        <input pInputText [(ngModel)]="proveedorForm.telefono" class="w-full" />
-      </div>
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Email</label>
-      <input pInputText [(ngModel)]="proveedorForm.email" class="w-full" type="email" />
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Direccion</label>
-      <input pInputText [(ngModel)]="proveedorForm.direccion" class="w-full" />
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1.5">Observaciones</label>
-      <textarea pTextarea [(ngModel)]="proveedorForm.observaciones" rows="2" class="w-full"></textarea>
-    </div>
-  </div>
-  <ng-template pTemplate="footer">
-    <div class="flex justify-end gap-2 w-full">
-      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgProveedor = false" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
-      <p-button label="Crear" icon="pi pi-check" (onClick)="guardarProveedor()" [loading]="saving()" [disabled]="!proveedorForm.nombre" class="w-full sm:w-32" styleClass="w-full sm:w-32 justify-center" />
-    </div>
-  </ng-template>
-</p-dialog>

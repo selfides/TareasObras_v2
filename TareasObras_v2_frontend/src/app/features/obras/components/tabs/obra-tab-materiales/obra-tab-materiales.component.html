@@ -1,0 +1,155 @@
+<div class="space-y-4 mt-4">
+  <div class="flex justify-between items-center">
+    <div>
+      <h3 class="font-semibold text-surface-900 dark:text-surface-50">Materiales consumidos</h3>
+      <p class="text-sm text-surface-500">Gestión de compras y materiales</p>
+    </div>
+    @if (auth.isSupervisor()) {
+      <p-button label="Añadir material" icon="pi pi-plus" size="small" (onClick)="abrirNuevoMaterial()" />
+    }
+  </div>
+  <div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
+    <p-table [value]="materiales()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Descripción / Prov</th><th>Refs</th><th>Unidad</th><th>Fecha</th>
+          <th class="text-right">Cantidad</th><th class="text-right">Precio</th><th class="text-right">Importe</th><th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-m>
+        <tr>
+          <td>
+            <div class="font-medium">{{ m.descripcion }}</div>
+            @if (m.proveedorId) {
+              <div class="text-xs text-surface-500 mt-0.5"><i class="pi pi-building text-xs mr-1"></i>{{ getProveedorNombre(m.proveedorId) }}</div>
+            }
+            @if (m.lineaPartidaId) {
+              <div class="text-[10px] text-blue-500 mt-1 uppercase font-semibold"><i class="pi pi-tag text-[10px] mr-1"></i>Partida asignada</div>
+            }
+          </td>
+          <td class="text-xs text-surface-500 space-y-0.5">
+            @if (m.numeroAlbaran) { <div>Alb: <span class="font-mono text-surface-700">{{ m.numeroAlbaran }}</span></div> }
+            @if (m.numeroFactura) { <div>Fact: <span class="font-mono text-surface-700">{{ m.numeroFactura }}</span></div> }
+          </td>
+          <td class="text-surface-500 text-sm">{{ m.unidad }}</td>
+          <td class="text-sm">{{ m.fecha | date:'dd/MM/yyyy' }}</td>
+          <td class="text-right">{{ m.cantidad | number:'1.0-3' }}</td>
+          <td class="text-right text-surface-500">{{ m.precioUnitario | number:'1.2-2' }} €</td>
+          <td class="text-right font-medium text-blue-600">{{ m.importeReal | number:'1.2-2' }} €</td>
+          <td class="text-right">
+            @if (auth.isSupervisor()) {
+              <p-button icon="pi pi-pencil" [text]="true" size="small" (onClick)="abrirEditarMaterial(m)" />
+              <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="confirmarEliminarMaterial(m.id)" />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="8" class="text-center py-8 text-surface-400">No hay materiales registrados</td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<!-- Dialog Material -->
+<p-dialog [(visible)]="dlgMaterial" [header]="editandoMaterialId() ? 'Editar material' : 'Añadir material'"
+          [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false" class="p-fluid">
+  <div class="space-y-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Descripción *</label>
+      <input pInputText [(ngModel)]="materialForm.descripcion" class="w-full" placeholder="Ej: Cemento Portland" />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Unidad *</label>
+        <input pInputText [(ngModel)]="materialForm.unidad" class="w-full" placeholder="kg, m2, ud..." />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Fecha *</label>
+        <p-datepicker [(ngModel)]="materialForm.fecha" appendTo="body" dateFormat="dd/mm/yy" class="w-full block" styleClass="w-full" inputStyleClass="w-full" [showIcon]="true" />
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Cantidad *</label>
+        <p-inputNumber [(ngModel)]="materialForm.cantidad" [minFractionDigits]="0" [maxFractionDigits]="3" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Precio unitario (euros) *</label>
+        <p-inputNumber [(ngModel)]="materialForm.precioUnitario" [minFractionDigits]="2" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Proveedor</label>
+      <div class="flex gap-2">
+        <p-select [(ngModel)]="materialForm.proveedorId" appendTo="body" [options]="proveedores()" optionLabel="nombre" optionValue="id"
+                  placeholder="Selecciona proveedor" styleClass="w-full flex-1" [showClear]="true" />
+        <p-button icon="pi pi-plus" [text]="true" [outlined]="true" (onClick)="abrirNuevoProveedor()" pTooltip="Crear nuevo proveedor" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Asociar a partida de presupuesto</label>
+      <p-select [(ngModel)]="materialForm.lineaPartidaId" appendTo="body" [options]="availableMaterialBudgetLines()" 
+                optionLabel="label" optionValue="value"
+                placeholder="Selecciona una partida (opcional)" styleClass="w-full" [showClear]="true" />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Num. Albarán</label>
+        <input pInputText [(ngModel)]="materialForm.numeroAlbaran" class="w-full" placeholder="Opcional" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Num. Factura</label>
+        <input pInputText [(ngModel)]="materialForm.numeroFactura" class="w-full" placeholder="Opcional" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Observaciones</label>
+      <textarea pTextarea [(ngModel)]="materialForm.observaciones" rows="2" class="w-full"></textarea>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2 w-full">
+      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="cerrarDlgMaterial()" />
+      <p-button [label]="editandoMaterialId() ? 'Guardar' : 'Añadir'" icon="pi pi-check" (onClick)="guardarMaterial()" [loading]="saving()" />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog Proveedor -->
+<p-dialog [(visible)]="dlgProveedor" header="Nuevo Proveedor" [modal]="true" appendTo="body" [style]="{width:'min(440px, 95vw)'}" [draggable]="false" class="p-fluid">
+  <div class="space-y-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Nombre comercial / Razón social *</label>
+      <input pInputText [(ngModel)]="proveedorForm.nombre" class="w-full" placeholder="Ej: Materiales Hermanos SL" />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1.5">CIF/NIF</label>
+        <input pInputText [(ngModel)]="proveedorForm.cifNif" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Teléfono</label>
+        <input pInputText [(ngModel)]="proveedorForm.telefono" class="w-full" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Email</label>
+      <input pInputText [(ngModel)]="proveedorForm.email" class="w-full" type="email" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Dirección</label>
+      <input pInputText [(ngModel)]="proveedorForm.direccion" class="w-full" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Observaciones</label>
+      <textarea pTextarea [(ngModel)]="proveedorForm.observaciones" rows="2" class="w-full"></textarea>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2 w-full">
+      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgProveedor = false" />
+      <p-button label="Crear" icon="pi pi-check" (onClick)="guardarProveedor()" [loading]="saving()" [disabled]="!proveedorForm.nombre" />
+    </div>
+  </ng-template>
+</p-dialog>

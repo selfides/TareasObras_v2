@@ -12,6 +12,8 @@ public record RegistroHorasDto
     public Guid CategoriaOperarioId { get; init; }
     public string CategoriaNombre { get; init; } = "";
     public DateTime Fecha { get; init; }
+    public TimeSpan HoraInicio { get; init; }
+    public TimeSpan HoraFin { get; init; }
     public decimal Horas { get; init; }
     public decimal CosteHoraAplicado { get; init; }
     public decimal CosteTotal { get; init; }
@@ -38,6 +40,8 @@ public class GetRegistroHorasByObraHandler : IRequestHandler<GetRegistroHorasByO
             CategoriaOperarioId = r.CategoriaOperarioId,
             CategoriaNombre = r.Categoria?.Nombre ?? "",
             Fecha = r.Fecha,
+            HoraInicio = r.HoraInicio,
+            HoraFin = r.HoraFin,
             Horas = r.Horas,
             CosteHoraAplicado = r.CosteHoraAplicado,
             CosteTotal = r.CosteTotal,

@@ -3,8 +3,8 @@ using TareasObras.Application.Common.Interfaces;
 
 namespace TareasObras.Application.Features.RegistroHoras.Commands;
 
-public record CreateRegistroHorasCommand(Guid ObraId, Guid OperarioId, Guid CategoriaOperarioId, Guid? TareaId, DateTime Fecha, decimal Horas, decimal CosteHoraAplicado, string? Observaciones) : IRequest<Guid>;
-public record UpdateRegistroHorasCommand(Guid Id, Guid? TareaId, DateTime Fecha, decimal Horas, decimal CosteHoraAplicado, string? Observaciones) : IRequest<bool>;
+public record CreateRegistroHorasCommand(Guid ObraId, Guid OperarioId, Guid CategoriaOperarioId, Guid? TareaId, DateTime Fecha, TimeSpan HoraInicio, TimeSpan HoraFin, decimal CosteHoraAplicado, string? Observaciones) : IRequest<Guid>;
+public record UpdateRegistroHorasCommand(Guid Id, Guid? TareaId, DateTime Fecha, TimeSpan HoraInicio, TimeSpan HoraFin, decimal CosteHoraAplicado, string? Observaciones) : IRequest<bool>;
 public record DeleteRegistroHorasCommand(Guid Id) : IRequest<bool>;
 
 public class CreateRegistroHorasHandler : IRequestHandler<CreateRegistroHorasCommand, Guid>
@@ -13,13 +13,13 @@ public class CreateRegistroHorasHandler : IRequestHandler<CreateRegistroHorasCom
     public CreateRegistroHorasHandler(IUnitOfWork uow) => _uow = uow;
     public async Task<Guid> Handle(CreateRegistroHorasCommand r, CancellationToken ct)
     {
-        var reg = Domain.Entities.RegistroHoras.Create(r.ObraId, r.OperarioId, r.CategoriaOperarioId, r.TareaId, r.Fecha, r.Horas, r.CosteHoraAplicado, r.Observaciones);
+        var reg = Domain.Entities.RegistroHoras.Create(r.ObraId, r.OperarioId, r.CategoriaOperarioId, r.TareaId, r.Fecha, r.HoraInicio, r.HoraFin, r.CosteHoraAplicado, r.Observaciones);
         await _uow.RegistrosHoras.AddAsync(reg, ct);
 
         if (r.TareaId.HasValue)
         {
             var tarea = await _uow.Tareas.GetByIdAsync(r.TareaId.Value, ct);
-            if (tarea != null) tarea.RegistrarHoras(r.Horas);
+            if (tarea != null) tarea.RegistrarHoras(reg.Horas);
         }
 
         await _uow.SaveChangesAsync(ct);
@@ -36,6 +36,8 @@ public class UpdateRegistroHorasHandler : IRequestHandler<UpdateRegistroHorasCom
         var reg = await _uow.RegistrosHoras.GetByIdAsync(r.Id, ct);
         if (reg is null) return false;
 
+        var nuevasHoras = Math.Round((decimal)(r.HoraFin - r.HoraInicio).TotalHours, 2);
+
         // Restore old hours
         if (reg.TareaId.HasValue && reg.TareaId != r.TareaId) 
         {
@@ -45,17 +47,17 @@ public class UpdateRegistroHorasHandler : IRequestHandler<UpdateRegistroHorasCom
         else if (reg.TareaId.HasValue && reg.TareaId == r.TareaId) 
         {
             var tarea = await _uow.Tareas.GetByIdAsync(reg.TareaId.Value, ct);
-            if (tarea != null) tarea.RegistrarHoras(r.Horas - reg.Horas); // Adjusted hours
+            if (tarea != null) tarea.RegistrarHoras(nuevasHoras - reg.Horas); // Adjusted hours
         }
 
         // Add new hours if task changed
         if (r.TareaId.HasValue && r.TareaId != reg.TareaId) 
         {
             var newTarea = await _uow.Tareas.GetByIdAsync(r.TareaId.Value, ct);
-            if (newTarea != null) newTarea.RegistrarHoras(r.Horas);
+            if (newTarea != null) newTarea.RegistrarHoras(nuevasHoras);
         }
 
-        reg.Update(r.TareaId, r.Fecha, r.Horas, r.CosteHoraAplicado, r.Observaciones);
+        reg.Update(r.TareaId, r.Fecha, r.HoraInicio, r.HoraFin, r.CosteHoraAplicado, r.Observaciones);
         await _uow.SaveChangesAsync(ct);
         return true;
     }

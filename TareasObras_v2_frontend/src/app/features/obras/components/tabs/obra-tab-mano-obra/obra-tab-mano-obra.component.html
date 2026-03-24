@@ -1,0 +1,90 @@
+<div class="space-y-4 mt-4">
+  <div class="flex justify-between items-center">
+    <div>
+      <h3 class="font-semibold text-surface-900 dark:text-surface-50">Registros de horas</h3>
+      <p class="text-sm text-surface-500">Gestión de tiempos trabajados en esta obra</p>
+    </div>
+    @if (auth.isSupervisor()) {
+      <p-button label="Registrar horas" icon="pi pi-plus" size="small" (onClick)="abrirNuevasHoras()" />
+    }
+  </div>
+  <div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
+    <p-table [value]="registrosHoras()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Operario</th><th>Observaciones</th><th>Fecha</th>
+          <th class="text-right">Horas</th><th class="text-right">Euros/h</th><th class="text-right">Coste</th><th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td class="font-medium">{{ r.operarioNombre }}</td>
+          <td class="text-surface-500 text-sm truncate max-w-[150px]" [pTooltip]="r.observaciones">{{ r.observaciones || '-' }}</td>
+          <td class="text-sm">{{ r.fecha | date:'dd/MM/yyyy' }}</td>
+          <td class="text-right">
+            <div class="font-medium">{{ r.horas | number:'1.0-1' }} h</div>
+            <div class="text-[10px] text-surface-400 font-normal">{{ r.horaInicio?.substring(0,5) }} - {{ r.horaFin?.substring(0,5) }}</div>
+          </td>
+          <td class="text-right text-surface-500">{{ r.costeHoraAplicado | number:'1.2-2' }} €</td>
+          <td class="text-right font-medium text-blue-600">{{ r.costeTotal | number:'1.2-2' }} €</td>
+          <td class="text-right">
+            @if (auth.isSupervisor()) {
+              <p-button icon="pi pi-pencil" [text]="true" size="small" (onClick)="abrirEditarHoras(r)" />
+              <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="confirmarEliminarHoras(r.id)" />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="7" class="text-center py-8 text-surface-400">No hay registros de horas</td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<!-- Dialog Horas -->
+<p-dialog [(visible)]="dlgHoras" [header]="editandoHorasId() ? 'Editar horas' : 'Registrar horas'"
+          [modal]="true" appendTo="body" [style]="{ width: 'min(520px, 95vw)' }" [draggable]="false" class="p-fluid">
+  <div class="space-y-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Operario *</label>
+      <p-select [(ngModel)]="horasForm.operarioId" appendTo="body" [options]="operarios()" optionLabel="nombreCompleto" optionValue="id"
+                placeholder="Selecciona operario" styleClass="w-full" (onChange)="onOperarioChange()" [disabled]="!!editandoHorasId()" [filter]="true" filterBy="nombreCompleto"></p-select>
+    </div>
+    <div class="grid grid-cols-1 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Fecha *</label>
+        <p-datepicker [(ngModel)]="horasForm.fecha" appendTo="body" dateFormat="dd/mm/yy" class="w-full block" styleClass="w-full" inputStyleClass="w-full" [showIcon]="true" />
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Hora Inicio *</label>
+        <input pInputText [(ngModel)]="horasForm.horaInicioStr" (blur)="onTimeBlur('inicio')" 
+               class="w-full text-center" placeholder="Ej: 9 o 9,5" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Hora Fin *</label>
+        <input pInputText [(ngModel)]="horasForm.horaFinStr" (blur)="onTimeBlur('fin')" 
+               class="w-full text-center" placeholder="Ej: 14:30 o 14,5" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Coste euros/hora</label>
+      <p-inputNumber [(ngModel)]="horasForm.costeHoraAplicado" [minFractionDigits]="2" class="w-full block" styleClass="w-full" inputStyleClass="w-full" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1.5">Observaciones</label>
+      <textarea pTextarea [(ngModel)]="horasForm.observaciones" rows="2" class="w-full"></textarea>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="flex flex-wrap justify-end gap-2 w-full">
+      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="cerrarDlgHoras()" />
+      @if (!editandoHorasId()) {
+        <p-button label="Guardar y añadir otro" [disabled]="!horasForm.horaInicioStr || !horasForm.horaFinStr || !horasForm.fecha || !horasForm.operarioId" severity="info" [outlined]="true" icon="pi pi-plus" (onClick)="guardarHoras(true)" [loading]="saving()" />
+      }
+      <p-button [label]="editandoHorasId() ? 'Guardar cambios' : 'Registrar'" [disabled]="!horasForm.horaInicioStr || !horasForm.horaFinStr || !horasForm.fecha || !horasForm.operarioId" icon="pi pi-check" (onClick)="guardarHoras(false)" [loading]="saving()" />
+    </div>
+  </ng-template>
+</p-dialog>

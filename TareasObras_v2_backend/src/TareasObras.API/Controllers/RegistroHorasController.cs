@@ -31,7 +31,10 @@ public class RegistroHorasController : ControllerBase
             operarioId = r.OperarioId,
             operarioNombre = $"{r.Operario?.Nombre} {r.Operario?.Apellidos}".Trim(),
             categoriaNombre = r.Categoria?.Nombre ?? "",
-            fecha = r.Fecha, horas = r.Horas,
+            fecha = r.Fecha, 
+            horaInicio = r.HoraInicio, 
+            horaFin = r.HoraFin, 
+            horas = r.Horas,
             costeHoraAplicado = r.CosteHoraAplicado,
             costeTotal = r.CosteTotal,
             tareaId = r.TareaId,
@@ -56,7 +59,7 @@ public class RegistroHorasController : ControllerBase
     [Authorize(Roles = "Admin,Supervisor")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRegistroHorasRequest request, CancellationToken ct)
     {
-        var result = await _mediator.Send(new UpdateRegistroHorasCommand(id, request.TareaId, request.Fecha, request.Horas, request.CosteHoraAplicado, request.Observaciones), ct);
+        var result = await _mediator.Send(new UpdateRegistroHorasCommand(id, request.TareaId, request.Fecha, request.HoraInicio, request.HoraFin, request.CosteHoraAplicado, request.Observaciones), ct);
         return result ? NoContent() : NotFound();
     }
 
@@ -69,4 +72,4 @@ public class RegistroHorasController : ControllerBase
     }
 }
 
-public record UpdateRegistroHorasRequest(Guid? TareaId, DateTime Fecha, decimal Horas, decimal CosteHoraAplicado, string? Observaciones);
+public record UpdateRegistroHorasRequest(Guid? TareaId, DateTime Fecha, TimeSpan HoraInicio, TimeSpan HoraFin, decimal CosteHoraAplicado, string? Observaciones);

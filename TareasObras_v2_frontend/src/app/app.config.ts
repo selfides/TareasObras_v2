@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, LOCALE_ID } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -7,6 +7,11 @@ import Aura from '@primeng/themes/aura';
 import { routes } from './app.routes';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { jwtInterceptor, errorInterceptor } from './core/interceptors/interceptors';
+
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
+
+registerLocaleData(localeEs, 'es-ES');
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -26,6 +31,7 @@ export const appConfig: ApplicationConfig = {
       ripple: true
     }),
     ConfirmationService,
-    MessageService
+    MessageService,
+    { provide: LOCALE_ID, useValue: 'es-ES' }
   ]
 };

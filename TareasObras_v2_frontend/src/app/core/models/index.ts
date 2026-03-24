@@ -104,6 +104,8 @@ export interface RegistroHorasDto {
   categoriaOperarioId: string;
   categoriaNombre: string;
   fecha: string;
+  horaInicio: string;
+  horaFin: string;
   horas: number;
   costeHoraAplicado: number;
   costeTotal: number;

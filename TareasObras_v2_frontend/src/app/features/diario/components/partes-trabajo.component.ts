@@ -65,7 +65,7 @@ export class PartesTrabajoComponent implements OnInit {
 
   form: any = {
     obraId: null, operarioId: null, tareaId: null, fecha: new Date(),
-    horas: 0, observaciones: ''
+    horaInicioStr: '08:00', horaFinStr: '09:00', observaciones: ''
   };
 
   // Stats
@@ -110,12 +110,16 @@ export class PartesTrabajoComponent implements OnInit {
 
   openNew() {
     this.editingId.set(null);
+    const hoy = new Date(this.selectedDate());
+    
     this.form = {
       obraId: this.obras().length ? this.obras()[0].id : null,
       operarioId: this.operarios().length ? this.operarios()[0].id : null,
       tareaId: null,
-      fecha: this.selectedDate(),
-      horas: 8, observaciones: ''
+      fecha: hoy,
+      horaInicioStr: '08:00',
+      horaFinStr: '09:00',
+      observaciones: ''
     };
     if (this.form.obraId) this.loadTareas(this.form.obraId);
     this.dialogVisible = true;
@@ -133,27 +137,59 @@ export class PartesTrabajoComponent implements OnInit {
 
   openEdit(reg: RegistroHorasGlobalDto) {
     this.editingId.set(reg.id);
+    const hoy = new Date(reg.fecha);
+    const [hI, mI] = ((reg as any).horaInicio || '00:00:00').split(':');
+    const [hF, mF] = ((reg as any).horaFin || '00:00:00').split(':');
+
     this.form = {
       obraId: reg.obraId,
       operarioId: reg.operarioId,
       tareaId: reg.tareaId,
-      fecha: new Date(reg.fecha),
-      horas: reg.horas,
+      fecha: hoy,
+      horaInicioStr: `${String(hI).padStart(2, '0')}:${String(mI).padStart(2, '0')}`,
+      horaFinStr: `${String(hF).padStart(2, '0')}:${String(mF).padStart(2, '0')}`,
       observaciones: reg.observaciones ?? ''
     };
     this.loadTareas(reg.obraId);
     this.dialogVisible = true;
   }
 
-  guardar() {
-    if (!this.form.obraId || !this.form.operarioId || this.form.horas <= 0) return;
+  onTimeBlur(field: 'inicio' | 'fin') {
+    let val = field === 'inicio' ? this.form.horaInicioStr : this.form.horaFinStr;
+    if (!val) return;
+    val = val.toString().trim().replace(',', '.');
+    
+    let hours = 0; let mins = 0;
+    if (val.includes(':')) {
+      const parts = val.split(':');
+      hours = parseInt(parts[0], 10) || 0;
+      mins = parseInt(parts[1], 10) || 0;
+    } else {
+      const asNum = parseFloat(val);
+      if (!isNaN(asNum)) {
+        hours = Math.floor(asNum);
+        mins = Math.round((asNum - hours) * 60);
+      }
+    }
+    
+    hours = Math.max(0, Math.min(23, hours));
+    mins = Math.max(0, Math.min(59, mins));
+    
+    const formatted = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    if (field === 'inicio') this.form.horaInicioStr = formatted;
+    else this.form.horaFinStr = formatted;
+  }
+
+  guardar(continuar: boolean = false) {
+    if (!this.form.obraId || !this.form.operarioId) return;
     
     this.saving.set(true);
     if (this.editingId()) {
       const original = this.registros().find(r => r.id === this.editingId());
       const data = {
         fecha: this.form.fecha,
-        horas: this.form.horas,
+        horaInicio: this.form.horaInicioStr + ':00',
+        horaFin: this.form.horaFinStr + ':00',
         tareaId: this.form.tareaId,
         costeHoraAplicado: original?.costeHoraAplicado ?? 0,
         observaciones: this.form.observaciones
@@ -173,14 +209,35 @@ export class PartesTrabajoComponent implements OnInit {
         categoriaOperarioId: op?.categoriaOperarioId,
         tareaId: this.form.tareaId,
         fecha: this.form.fecha,
-        horas: this.form.horas,
+        horaInicio: this.form.horaInicioStr + ':00',
+        horaFin: this.form.horaFinStr + ':00',
         costeHoraAplicado: op?.costeHoraBase ?? 0,
         observaciones: this.form.observaciones
       };
       this.registroService.create(data).subscribe({
         next: () => {
           this.msg.add({ severity: 'success', summary: 'Trabajo registrado' });
-          this.dialogVisible = false; this.saving.set(false); this.loadRegistros();
+          this.loadRegistros();
+          
+          if (continuar) {
+            // Flujo ágil: mantener el diálogo abierto, avanzar la hora de inicio a la hora fin actual
+            const oldFin = this.form.horaFinStr;
+            this.form.horaInicioStr = oldFin;
+            
+            // Avanzar hora fin + 1h por defecto
+            let [h, m] = oldFin.split(':').map(Number);
+            h = (h + 1) % 24;
+            this.form.horaFinStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            
+            // Limpiar tarea y observaciones
+            this.form.tareaId = null;
+            this.form.observaciones = '';
+            
+            this.saving.set(false);
+          } else {
+            this.dialogVisible = false;
+            this.saving.set(false);
+          }
         },
         error: () => { this.saving.set(false); this.msg.add({ severity: 'error', summary: 'Error' }); }
       });

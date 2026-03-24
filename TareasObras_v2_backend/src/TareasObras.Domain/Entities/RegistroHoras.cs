@@ -9,6 +9,8 @@ public class RegistroHoras : BaseEntity
     public Guid CategoriaOperarioId { get; private set; }
     public Guid? TareaId { get; private set; }
     public DateTime Fecha { get; private set; }
+    public TimeSpan HoraInicio { get; private set; }
+    public TimeSpan HoraFin { get; private set; }
     public decimal Horas { get; private set; }
     public decimal CosteHoraAplicado { get; private set; }
     public string? Observaciones { get; private set; }
@@ -20,7 +22,7 @@ public class RegistroHoras : BaseEntity
 
     private RegistroHoras() { }
 
-    public static RegistroHoras Create(Guid obraId, Guid operarioId, Guid categoriaOperarioId, Guid? tareaId, DateTime fecha, decimal horas, decimal costeHoraAplicado, string? observaciones = null)
+    public static RegistroHoras Create(Guid obraId, Guid operarioId, Guid categoriaOperarioId, Guid? tareaId, DateTime fecha, TimeSpan horaInicio, TimeSpan horaFin, decimal costeHoraAplicado, string? observaciones = null)
     {
         return new RegistroHoras
         {
@@ -29,17 +31,21 @@ public class RegistroHoras : BaseEntity
             CategoriaOperarioId = categoriaOperarioId,
             TareaId = tareaId,
             Fecha = fecha.Date,
-            Horas = horas,
+            HoraInicio = horaInicio,
+            HoraFin = horaFin,
+            Horas = Math.Round((decimal)(horaFin - horaInicio).TotalHours, 2),
             CosteHoraAplicado = costeHoraAplicado,
             Observaciones = observaciones?.Trim()
         };
     }
 
-    public void Update(Guid? tareaId, DateTime fecha, decimal horas, decimal costeHoraAplicado, string? observaciones)
+    public void Update(Guid? tareaId, DateTime fecha, TimeSpan horaInicio, TimeSpan horaFin, decimal costeHoraAplicado, string? observaciones)
     {
         TareaId = tareaId;
         Fecha = fecha.Date;
-        Horas = horas;
+        HoraInicio = horaInicio;
+        HoraFin = horaFin;
+        Horas = Math.Round((decimal)(horaFin - horaInicio).TotalHours, 2);
         CosteHoraAplicado = costeHoraAplicado;
         Observaciones = observaciones?.Trim();
         UpdatedAt = DateTime.UtcNow;

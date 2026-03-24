@@ -26,13 +26,16 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { TextareaModule } from 'primeng/textarea';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
+import { ObraTabManoObraComponent } from './tabs/obra-tab-mano-obra/obra-tab-mano-obra.component';
+import { ObraTabMaterialesComponent } from './tabs/obra-tab-materiales/obra-tab-materiales.component';
 
 @Component({
   selector: 'app-obra-detail',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, ButtonModule, SkeletonModule,
             TabsModule, TableModule, DialogModule, ConfirmDialogModule, InputTextModule,
-            InputNumberModule, SelectModule, DatePickerModule, TextareaModule, TagModule, TooltipModule],
+            InputNumberModule, SelectModule, DatePickerModule, TextareaModule, TagModule, TooltipModule,
+            ObraTabManoObraComponent, ObraTabMaterialesComponent],
   templateUrl: './obra-detail.component.html'
 })
 export class ObraDetailComponent implements OnInit {
@@ -56,11 +59,11 @@ export class ObraDetailComponent implements OnInit {
   presupuestos            = signal<PresupuestoDto[]>([]);
   partidas                = signal<PartidaDto[]>([]);
   presupuestoSeleccionado = signal<string | null>(null);
-  registrosHoras          = signal<RegistroHorasDto[]>([]);
-  materiales              = signal<MaterialObraDto[]>([]);
-  operarios               = signal<OperarioDto[]>([]);
   categorias              = signal<CategoriaOperarioDto[]>([]);
-  proveedores             = signal<ProveedorDto[]>([]);
+
+  // Totales locales recibidos de las pestanas hijas
+  totalCosteHoras = signal<number>(0);
+  totalMaterialesReal = signal<number>(0);
 
   estadoOptions = [
     { label: 'Planificada', value: 1 },
@@ -74,14 +77,9 @@ export class ObraDetailComponent implements OnInit {
   dlgPresupuesto = false;
   dlgPartida     = false;
   dlgLinea       = false;
-  dlgHoras       = false;
-  dlgMaterial    = false;
-  dlgProveedor   = false;
 
   // signals de edicion
   editandoPresupuestoId = signal<string | null>(null);
-  editandoHorasId    = signal<string | null>(null);
-  editandoMaterialId = signal<string | null>(null);
   editandoPartidaId  = signal<string | null>(null);
   editandoLineaId    = signal<string | null>(null);
   lineaPartidaId     = signal<string | null>(null);
@@ -91,9 +89,6 @@ export class ObraDetailComponent implements OnInit {
   presupuestoForm: any = { numero: '', fecha: new Date(), descripcion: '' };
   partidaForm: any     = { nombre: '', descripcion: '', orden: 1 };
   lineaForm: any       = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, categoriaOperarioId: null };
-  horasForm: any       = { operarioId: null, categoriaOperarioId: null, fecha: new Date(), horas: 8, costeHoraAplicado: 0, observaciones: '' };
-  materialForm: any    = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), proveedorId: null, numeroAlbaran: '', numeroFactura: '', observaciones: '', lineaPartidaId: null };
-  proveedorForm: any   = { nombre: '', cifNif: '', direccion: '', telefono: '', email: '', observaciones: '' };
 
   // computed
   presupuestoAprobado         = computed(() => this.presupuestos().find(p => p.esAprobado));
@@ -109,11 +104,8 @@ export class ObraDetailComponent implements OnInit {
   presupuestoAprobadoTotal    = computed(() => this.presupuestoAprobado()?.total ?? 0);
   presupuestoAprobadoMaterial = computed(() => this.presupuestoAprobado()?.totalMaterial ?? 0);
   presupuestoAprobadoHoras    = computed(() => this.presupuestoAprobado()?.totalHoras ?? 0);
-  totalHorasReales    = computed(() => this.registrosHoras().reduce((s, r) => s + r.horas, 0));
-  totalCosteHoras     = computed(() => this.registrosHoras().reduce((s, r) => s + r.costeTotal, 0));
-  totalMaterialesReal = computed(() => this.materiales().reduce((s, m) => s + m.importeReal, 0));
-  costeReal           = computed(() => this.totalCosteHoras() + this.totalMaterialesReal());
-  desviacion          = computed(() => this.costeReal() - this.presupuestoAprobadoTotal());
+  costeReal                   = computed(() => this.store.selectedObra()?.presupuestoReal ?? (this.totalCosteHoras() + this.totalMaterialesReal()));
+  desviacion                  = computed(() => this.costeReal() - this.presupuestoAprobadoTotal());
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id')!;
@@ -130,11 +122,16 @@ export class ObraDetailComponent implements OnInit {
         this.partidasSvc.getByPresupuesto(aprobado.id).subscribe(part => this.partidas.set(part));
       }
     });
-    this.registroHorasSvc.getByObra(id).subscribe(r => this.registrosHoras.set(r));
-    this.materialesSvc.getByObra(id).subscribe(m => this.materiales.set(m));
-    this.operariosSvc.getAll().subscribe(o => this.operarios.set(o));
+    // Las categorias pueden ser necesarias para Anadir Mano de Obra desde Linea de presupuesto
     this.categoriasSvc.getAll().subscribe(c => this.categorias.set(c));
-    this.proveedoresSvc.getAll().subscribe(p => this.proveedores.set(p));
+  }
+
+  onTotalesHoras(event: {horas: number, coste: number}) {
+    this.totalCosteHoras.set(event.coste);
+  }
+
+  onTotalesMateriales(coste: number) {
+    this.totalMaterialesReal.set(coste);
   }
 
   // ── Presupuesto ──────────────────────────────────────────────────────────
@@ -305,130 +302,6 @@ export class ObraDetailComponent implements OnInit {
     });
   }
 
-  // ── Horas ────────────────────────────────────────────────────────────────
-  abrirNuevasHoras() {
-    this.editandoHorasId.set(null);
-    this.horasForm = { operarioId: null, categoriaOperarioId: null, fecha: new Date(), horas: 8, costeHoraAplicado: 0, observaciones: '' };
-    this.dlgHoras = true;
-  }
-
-  abrirEditarHoras(r: RegistroHorasDto) {
-    this.editandoHorasId.set(r.id);
-    this.horasForm = { operarioId: r.operarioId, categoriaOperarioId: r.categoriaOperarioId,
-      fecha: new Date(r.fecha), horas: r.horas, costeHoraAplicado: r.costeHoraAplicado, observaciones: r.observaciones ?? '' };
-    this.dlgHoras = true;
-  }
-
-  cerrarDlgHoras() { this.dlgHoras = false; this.editandoHorasId.set(null); }
-
-  onOperarioChange() {
-    const op = this.operarios().find(o => o.id === this.horasForm.operarioId);
-    if (op) { this.horasForm.categoriaOperarioId = op.categoriaOperarioId; this.horasForm.costeHoraAplicado = op.costeHoraBase; }
-  }
-
-  guardarHoras() {
-    this.saving.set(true);
-    const editId = this.editandoHorasId();
-    const obs = editId
-      ? this.registroHorasSvc.update(editId, { fecha: this.horasForm.fecha, horas: this.horasForm.horas,
-          costeHoraAplicado: this.horasForm.costeHoraAplicado, observaciones: this.horasForm.observaciones })
-      : this.registroHorasSvc.create({ obraId: this.obraId(), operarioId: this.horasForm.operarioId,
-          categoriaOperarioId: this.horasForm.categoriaOperarioId, fecha: this.horasForm.fecha,
-          horas: this.horasForm.horas, costeHoraAplicado: this.horasForm.costeHoraAplicado, observaciones: this.horasForm.observaciones });
-    obs.subscribe({
-      next: () => {
-        this.cerrarDlgHoras(); this.saving.set(false);
-        this.registroHorasSvc.getByObra(this.obraId()).subscribe(r => this.registrosHoras.set(r));
-        this.msg.add({ severity: 'success', summary: editId ? 'Horas actualizadas' : 'Horas registradas' });
-      },
-      error: () => { this.saving.set(false); this.msg.add({ severity: 'error', summary: 'Error al guardar' }); }
-    });
-  }
-
-  confirmarEliminarHoras(id: string) {
-    this.confirm.confirm({ message: 'Eliminar este registro de horas?', header: 'Confirmar',
-      icon: 'pi pi-exclamation-triangle', acceptLabel: 'Eliminar', rejectLabel: 'Cancelar', acceptButtonStyleClass: 'p-button-danger',
-      accept: () => { this.registroHorasSvc.delete(id).subscribe({
-        next: () => { this.registroHorasSvc.getByObra(this.obraId()).subscribe(r => this.registrosHoras.set(r));
-          this.msg.add({ severity: 'success', summary: 'Registro eliminado' }); }
-      }); }
-    });
-  }
-
-  // ── Materiales ───────────────────────────────────────────────────────────
-  abrirNuevoMaterial() {
-    this.editandoMaterialId.set(null);
-    this.materialForm = { descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), proveedorId: null, numeroAlbaran: '', numeroFactura: '', observaciones: '', lineaPartidaId: null };
-    this.dlgMaterial = true;
-  }
-
-  abrirEditarMaterial(m: MaterialObraDto) {
-    this.editandoMaterialId.set(m.id);
-    this.materialForm = { 
-      descripcion: m.descripcion, unidad: m.unidad, cantidad: m.cantidad,
-      precioUnitario: m.precioUnitario, fecha: new Date(m.fecha), 
-      proveedorId: m.proveedorId, numeroAlbaran: m.numeroAlbaran ?? '', 
-      numeroFactura: m.numeroFactura ?? '', observaciones: m.observaciones ?? '',
-      lineaPartidaId: m.lineaPartidaId
-    };
-    this.dlgMaterial = true;
-  }
-
-  cerrarDlgMaterial() { this.dlgMaterial = false; this.editandoMaterialId.set(null); }
-
-  guardarMaterial() {
-    this.saving.set(true);
-    const editId = this.editandoMaterialId();
-    const obs = editId
-      ? this.materialesSvc.update(editId, this.materialForm)
-      : this.materialesSvc.create({ obraId: this.obraId(), ...this.materialForm });
-    obs.subscribe({
-      next: () => {
-        this.cerrarDlgMaterial(); this.saving.set(false);
-        this.materialesSvc.getByObra(this.obraId()).subscribe(m => this.materiales.set(m));
-        this.msg.add({ severity: 'success', summary: editId ? 'Material actualizado' : 'Material anadido' });
-      },
-      error: () => { this.saving.set(false); this.msg.add({ severity: 'error', summary: 'Error al guardar' }); }
-    });
-  }
-
-  confirmarEliminarMaterial(id: string) {
-    this.confirm.confirm({ message: 'Eliminar este material?', header: 'Confirmar',
-      icon: 'pi pi-exclamation-triangle', acceptLabel: 'Eliminar', rejectLabel: 'Cancelar', acceptButtonStyleClass: 'p-button-danger',
-      accept: () => { this.materialesSvc.delete(id).subscribe({
-        next: () => { this.materialesSvc.getByObra(this.obraId()).subscribe(m => this.materiales.set(m));
-          this.msg.add({ severity: 'success', summary: 'Material eliminado' }); }
-      }); }
-    });
-  }
-
-  // ── Proveedores ──────────────────────────────────────────────────────────
-  abrirNuevoProveedor() {
-    this.proveedorForm = { nombre: '', cifNif: '', direccion: '', telefono: '', email: '', observaciones: '' };
-    this.dlgProveedor = true;
-  }
-
-  guardarProveedor() {
-    if (!this.proveedorForm.nombre) return;
-    this.saving.set(true);
-    this.proveedoresSvc.create(this.proveedorForm).subscribe({
-      next: (prov) => {
-        this.msg.add({ severity: 'success', summary: 'Proveedor creado' });
-        this.dlgProveedor = false;
-        this.saving.set(false);
-        // Recargar proveedores y seleccionar el nuevo
-        this.proveedoresSvc.getAll().subscribe(p => {
-          this.proveedores.set(p);
-          this.materialForm.proveedorId = prov.id;
-        });
-      },
-      error: () => {
-        this.saving.set(false);
-        this.msg.add({ severity: 'error', summary: 'Error al crear proveedor' });
-      }
-    });
-  }
-
   cambiarEstado(nuevoEstado: number) {
     this.store.cambiarEstadoObra(this.obraId(), nuevoEstado);
     this.msg.add({ severity: 'success', summary: 'Estado actualizado correctamente' });
@@ -440,11 +313,6 @@ export class ObraDetailComponent implements OnInit {
       2: 'bg-amber-100 text-amber-700', 3: 'bg-green-100 text-green-700', 4: 'bg-red-100 text-red-700'
     };
     return map[estado] ?? '';
-  }
-
-  getProveedorNombre(id?: string): string {
-    if (!id) return '';
-    return this.proveedores().find(p => p.id === id)?.nombre || '';
   }
 
   getLineaPartidaNombre(id: string): string {
