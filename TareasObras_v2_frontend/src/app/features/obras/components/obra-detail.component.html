@@ -91,12 +91,10 @@
 
         <!-- TAB MATERIALES -->
         <p-tabpanel value="materiales">
-          @defer (on interaction) {
+          @defer (on immediate) {
             <app-obra-tab-materiales [obraId]="obraId()" [availableMaterialBudgetLines]="availableMaterialBudgetLines()" (totalesActualizados)="onTotalesMateriales($event)" />
           } @placeholder {
-            <div class="flex justify-center items-center py-10">
-              <p-button label="Cargar y gestionar materiales" icon="pi pi-download" [outlined]="true" />
-            </div>
+            <div class="space-y-4 mt-4"><p-skeleton height="60px" /><p-skeleton height="200px" /></div>
           }
         </p-tabpanel>
 

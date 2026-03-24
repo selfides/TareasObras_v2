@@ -23,6 +23,7 @@
       [value]="usuarios()"
       [loading]="loading()"
       styleClass="p-datatable-sm"
+      [paginator]="true" [rows]="20" [rowsPerPageOptions]="[20, 50, 100]" [showCurrentPageReport]="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords}"
     >
       <ng-template pTemplate="header">
         <tr>
