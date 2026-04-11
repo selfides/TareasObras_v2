@@ -1,0 +1,41 @@
+# User Requested
+opencode.json
+
+# IDE / OS
+.vscode/
+.vs/
+*.user
+*.suo
+*.sln.docstates
+.DS_Store
+Thumbs.db
+
+# Frontend (Angular/Node)
+node_modules/
+.angular/
+dist/
+*.log
+build_log.txt
+build_output.txt
+
+# Backend (.NET)
+[Dd]ebug/
+[Rr]elease/
+bin/
+obj/
+out/
+[Ll]og/
+[Ll]ogs/
+*.pdb
+*.userprefs
+*.ilk
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+
+# Project Context (Large files)
+contexto-proyecto-fullstack-*.md
