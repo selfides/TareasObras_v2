@@ -46,7 +46,7 @@ public class TareaRepository : ITareaRepository
             .OrderBy(t => t.Prioridad).ThenBy(t => t.FechaLimite).ToListAsync(ct);
 
     public async Task<IEnumerable<Tarea>> GetByObraIdAsync(Guid obraId, CancellationToken ct = default)
-        => await _ctx.Tareas.Include(t => t.Cuadrilla).Where(t => t.ObraId == obraId)
+        => await _ctx.Tareas.Include(t => t.Cuadrilla).Include(t => t.LineaPartida).Where(t => t.ObraId == obraId)
             .OrderBy(t => t.Prioridad).ThenBy(t => t.FechaLimite).ToListAsync(ct);
 
     public async Task<IEnumerable<Tarea>> GetByUsuarioIdAsync(string usuarioId, CancellationToken ct = default)

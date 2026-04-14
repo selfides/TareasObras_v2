@@ -28,7 +28,9 @@ export interface TareaDto {
   id: string; obraId: string; titulo: string; descripcion?: string;
   estadoNombre: string; estado: EstadoTarea; prioridadNombre: string; prioridad: PrioridadTarea;
   fechaLimite?: string; horasEstimadas: number; horasReales: number;
-  cuadrillaId?: string; usuarioAsignadoId?: string; observaciones?: string; createdAt: string;
+  cuadrillaId?: string; usuarioAsignadoId?: string; observaciones?: string;
+  lineaPartidaId?: string; lineaPartidaDescripcion?: string;
+  createdAt: string;
 }
 export interface CreateTareaRequest {
   obraId: string; titulo: string; descripcion?: string; prioridad: PrioridadTarea;

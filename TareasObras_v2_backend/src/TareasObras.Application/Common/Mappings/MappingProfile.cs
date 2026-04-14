@@ -24,7 +24,8 @@ namespace TareasObras.Application.Common.Mappings
 
             CreateMap<Tarea, TareaDto>()
                 .ForMember(d => d.EstadoNombre, o => o.MapFrom(s => s.Estado.ToString()))
-                .ForMember(d => d.PrioridadNombre, o => o.MapFrom(s => s.Prioridad.ToString()));
+                .ForMember(d => d.PrioridadNombre, o => o.MapFrom(s => s.Prioridad.ToString()))
+                .ForMember(d => d.LineaPartidaDescripcion, o => o.MapFrom(s => s.LineaPartida != null ? s.LineaPartida.Descripcion : null));
         }
     }
 }

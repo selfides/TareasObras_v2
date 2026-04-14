@@ -21,6 +21,8 @@ namespace TareasObras.Application.Features.Tareas.Queries.GetTareasByObra
         public Guid? CuadrillaId { get; init; }
         public Guid? UsuarioAsignadoId { get; init; }
         public string? Observaciones { get; init; }
+        public Guid? LineaPartidaId { get; init; }
+        public string? LineaPartidaDescripcion { get; init; }
         public DateTime CreatedAt { get; init; }
     }
 

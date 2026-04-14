@@ -62,16 +62,27 @@
             (dragstart)="onDragStart($event, tarea)"
             (click)="openEdit(tarea)"
           >
-            <!-- Priority badge -->
+            <!-- Priority badge + origin badge -->
             <div class="flex items-center justify-between mb-2">
-              <span
-                [class]="
-                  'px-2 py-0.5 rounded text-xs font-medium ' +
-                  prioridadBadge(tarea.prioridad)
-                "
-              >
-                {{ tarea.prioridadNombre }}
-              </span>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span
+                  [class]="
+                    'px-2 py-0.5 rounded text-xs font-medium ' +
+                    prioridadBadge(tarea.prioridad)
+                  "
+                >
+                  {{ tarea.prioridadNombre }}
+                </span>
+                @if (tarea.lineaPartidaId) {
+                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" pTooltip="Generada desde presupuesto" tooltipPosition="top">
+                    <i class="pi pi-file text-[10px] mr-0.5"></i> Presupuesto
+                  </span>
+                } @else {
+                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400">
+                    <i class="pi pi-pencil text-[10px] mr-0.5"></i> Manual
+                  </span>
+                }
+              </div>
               @if (auth.isSupervisor()) {
                 <button
                   (click)="$event.stopPropagation(); deleteTarea(tarea)"
@@ -87,6 +98,11 @@
             >
               {{ tarea.titulo }}
             </h4>
+            @if (tarea.lineaPartidaDescripcion) {
+              <p class="text-xs text-blue-500 dark:text-blue-400 mb-1 line-clamp-1">
+                <i class="pi pi-bookmark text-[10px] mr-0.5"></i>{{ tarea.lineaPartidaDescripcion }}
+              </p>
+            }
             @if (tarea.descripcion) {
               <p
                 class="text-xs text-surface-500 dark:text-surface-400 line-clamp-2 mb-2"
