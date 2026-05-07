@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TareasObras.Application.Features.Partidas.Commands;
@@ -47,7 +47,7 @@ public class PartidasController : ControllerBase
     public async Task<IActionResult> AddMaterial(Guid id, [FromBody] AddLineaMaterialRequest req, CancellationToken ct)
     {
         var lineaId = await _mediator.Send(new AddLineaMaterialCommand(id, req.Descripcion, req.Unidad, req.Cantidad, req.PrecioUnitario), ct);
-        return CreatedAtAction(nameof(GetByPresupuesto), new { }, new { id = lineaId });
+        return Ok(new { id = lineaId });
     }
 
     [HttpPost("{id:guid}/lineas/manoobra")]
@@ -55,7 +55,7 @@ public class PartidasController : ControllerBase
     public async Task<IActionResult> AddManoObra(Guid id, [FromBody] AddLineaManoObraRequest req, CancellationToken ct)
     {
         var lineaId = await _mediator.Send(new AddLineaManoObraCommand(id, req.CategoriaOperarioId, req.Descripcion, req.Unidad, req.Cantidad, req.PrecioUnitario), ct);
-        return CreatedAtAction(nameof(GetByPresupuesto), new { }, new { id = lineaId });
+        return Ok(new { id = lineaId });
     }
 
     [HttpPut("lineas/{id:guid}")]
