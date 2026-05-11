@@ -65,39 +65,72 @@ public class AprobarPresupuestoHandler : IRequestHandler<AprobarPresupuestoComma
         if (p.Estado != Domain.Enums.EstadoPresupuesto.Aprobado)
         {
             p.Aprobar();
-
-            // Generar tareas para cada linea de mano de obra
-            if (p.Partidas != null)
-            {
-                foreach (var partida in p.Partidas.Where(pt => !pt.IsDeleted))
-                {
-                    foreach (var linea in partida.Lineas.Where(l => !l.IsDeleted && l.Tipo == TipoLineaPartida.ManoObra))
-                    {
-                        var nombreTarea = $"{partida.Nombre} - {linea.Descripcion}";
-                        if (nombreTarea.Length > 300) nombreTarea = nombreTarea.Substring(0, 300);
-
-                        var horasEstimadas = linea.Unidad.ToLower() == "h" ? linea.Cantidad : 0;
-
-                        var tarea = Tarea.Create(
-                            p.ObraId, 
-                            nombreTarea, 
-                            $"Tarea generada automáticamente de la partida: {partida.Nombre}. Línea: {linea.Descripcion}", 
-                            Domain.Enums.PrioridadTarea.Media, 
-                            null, 
-                            horasEstimadas,
-                            null,
-                            null,
-                            linea.Id
-                        );
-                        
-                        await _uow.Tareas.AddAsync(tarea, ct);
-                    }
-                }
-            }
+            await PresupuestoTaskGenerator.GenerarTareasDesdePartidas(p, _uow, ct);
         }
 
         await _uow.SaveChangesAsync(ct);
         return true;
+    }
+}
+
+public record GenerarTareasPresupuestoCommand(Guid PresupuestoId) : IRequest<int>;
+
+public class GenerarTareasPresupuestoHandler : IRequestHandler<GenerarTareasPresupuestoCommand, int>
+{
+    private readonly IUnitOfWork _uow;
+    public GenerarTareasPresupuestoHandler(IUnitOfWork uow) => _uow = uow;
+    public async Task<int> Handle(GenerarTareasPresupuestoCommand r, CancellationToken ct)
+    {
+        var p = await _uow.Presupuestos.GetByIdWithLinesAsync(r.PresupuestoId, ct);
+        if (p is null || p.Estado != Domain.Enums.EstadoPresupuesto.Aprobado) return 0;
+
+        var count = await PresupuestoTaskGenerator.GenerarTareasDesdePartidas(p, _uow, ct);
+        await _uow.SaveChangesAsync(ct);
+        return count;
+    }
+}
+
+// Shared helper for task generation from budget partidas
+file static class PresupuestoTaskGenerator
+{
+    public static async Task<int> GenerarTareasDesdePartidas(Presupuesto p, IUnitOfWork uow, CancellationToken ct)
+    {
+        if (p.Partidas is null) return 0;
+
+        // Get existing tasks for this obra to avoid duplicates
+        var tareasExistentes = await uow.Tareas.GetByObraIdAsync(p.ObraId, ct);
+        var lineasConTarea = new HashSet<Guid>(
+            tareasExistentes.Where(t => t.LineaPartidaId.HasValue).Select(t => t.LineaPartidaId!.Value));
+
+        int count = 0;
+        foreach (var partida in p.Partidas.Where(pt => !pt.IsDeleted))
+        {
+            foreach (var linea in partida.Lineas.Where(l => !l.IsDeleted && l.Tipo == TipoLineaPartida.ManoObra))
+            {
+                if (lineasConTarea.Contains(linea.Id)) continue; // skip if task already exists
+
+                var nombreTarea = $"{partida.Nombre} - {linea.Descripcion}";
+                if (nombreTarea.Length > 300) nombreTarea = nombreTarea.Substring(0, 300);
+
+                var horasEstimadas = linea.Unidad.ToLower() == "h" ? linea.Cantidad : 0;
+
+                var tarea = Tarea.Create(
+                    p.ObraId, 
+                    nombreTarea, 
+                    $"Tarea generada automáticamente de la partida: {partida.Nombre}. Línea: {linea.Descripcion}", 
+                    Domain.Enums.PrioridadTarea.Media, 
+                    null, 
+                    horasEstimadas,
+                    null,
+                    null,
+                    linea.Id
+                );
+                
+                await uow.Tareas.AddAsync(tarea, ct);
+                count++;
+            }
+        }
+        return count;
     }
 }
 

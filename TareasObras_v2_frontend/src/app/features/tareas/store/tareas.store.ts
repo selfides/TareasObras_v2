@@ -1,6 +1,7 @@
 import { signalStore, withState, withMethods, withComputed, patchState } from '@ngrx/signals';
 import { inject, computed } from '@angular/core';
 import { TareasService } from '../../../core/services/tareas.service';
+import { ObrasService } from '../../../core/services/obras.service';
 import { TareaDto, CreateTareaRequest, UpdateTareaRequest, CambiarEstadoRequest, EstadoTarea } from '../../../core/models';
 
 interface TareasState {
@@ -8,10 +9,13 @@ interface TareasState {
   loading: boolean;
   error: string | null;
   currentObraId: string | null;
+  obraNombre: string;
+  obraCodigo: string;
 }
 
 const initialState: TareasState = {
-  tareas: [], loading: false, error: null, currentObraId: null
+  tareas: [], loading: false, error: null, currentObraId: null,
+  obraNombre: '', obraCodigo: ''
 };
 
 export const TareasStore = signalStore(
@@ -24,8 +28,10 @@ export const TareasStore = signalStore(
     completadas: computed(() => tareas().filter(t => t.estado === EstadoTarea.Completada)),
     horasTotalesEstimadas: computed(() => tareas().reduce((s, t) => s + t.horasEstimadas, 0)),
     horasTotalesReales:    computed(() => tareas().reduce((s, t) => s + t.horasReales, 0)),
+    totalPresupuesto: computed(() => tareas().filter(t => !!t.lineaPartidaId).length),
+    totalManuales:    computed(() => tareas().filter(t => !t.lineaPartidaId).length),
   })),
-  withMethods((store, service = inject(TareasService)) => {
+  withMethods((store, service = inject(TareasService), obrasService = inject(ObrasService)) => {
 
     const _reload = () => {
       const obraId = store.currentObraId();
@@ -43,6 +49,10 @@ export const TareasStore = signalStore(
         service.getByObra(obraId).subscribe({
           next: (tareas: TareaDto[]) => patchState(store, { tareas, loading: false }),
           error: () => patchState(store, { loading: false, error: 'Error al cargar tareas' })
+        });
+        // Load obra info for the header
+        obrasService.getById(obraId).subscribe({
+          next: (obra) => patchState(store, { obraNombre: obra.nombre, obraCodigo: obra.codigo }),
         });
       },
 
@@ -73,6 +83,8 @@ export const TareasStore = signalStore(
           error: () => patchState(store, { error: 'Error al eliminar tarea' })
         });
       },
+
+      reload() { _reload(); },
     };
   })
 );

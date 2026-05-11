@@ -56,6 +56,15 @@ public class PresupuestosController : ControllerBase
         var result = await _mediator.Send(new DeletePresupuestoCommand(id), ct);
         return result ? NoContent() : NotFound();
     }
+
+    /// <summary>Generar/regenerar tareas de mano de obra desde un presupuesto aprobado</summary>
+    [HttpPost("{id:guid}/generar-tareas")]
+    [Authorize(Roles = "Admin,Supervisor")]
+    public async Task<IActionResult> GenerarTareas(Guid id, CancellationToken ct)
+    {
+        var count = await _mediator.Send(new GenerarTareasPresupuestoCommand(id), ct);
+        return Ok(new { tareasGeneradas = count });
+    }
 }
 
 public record UpdatePresupuestoRequest(string? Numero, DateTime Fecha, string? Descripcion);

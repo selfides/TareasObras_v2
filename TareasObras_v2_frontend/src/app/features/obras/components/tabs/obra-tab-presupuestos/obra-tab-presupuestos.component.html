@@ -24,6 +24,11 @@
             <p-button icon="pi pi-pencil" [text]="true" size="small" severity="info" pTooltip="Editar" (onClick)="abrirEditarPresupuesto(p)" />
             <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Eliminar" (onClick)="confirmarEliminarPresupuesto(p.id)" />
           }
+          @if (p.esAprobado && auth.isSupervisor()) {
+            <p-button label="Generar tareas" icon="pi pi-list-check" size="small" severity="info" [outlined]="true"
+                      pTooltip="Genera las tareas de mano de obra en el Kanban" tooltipPosition="top"
+                      (onClick)="generarTareasPresupuesto(p.id)" />
+          }
           <p-button [label]="presupuestoSeleccionado() === p.id ? 'Cerrar' : 'Ver partidas'"
                     [icon]="presupuestoSeleccionado() === p.id ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
                     size="small" [outlined]="true"

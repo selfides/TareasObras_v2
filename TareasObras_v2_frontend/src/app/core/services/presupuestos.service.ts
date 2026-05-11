@@ -13,5 +13,6 @@ export class PresupuestosService {
   create(data: any)           { return this.http.post<{id:string}>(`${API}/presupuestos`, data); }
   update(id: string, data: any) { return this.http.put(`${API}/presupuestos/${id}`, data); }
   aprobar(id: string)         { return this.http.patch(`${API}/presupuestos/${id}/aprobar`, {}); }
+  generarTareas(id: string)   { return this.http.post<{tareasGeneradas: number}>(`${API}/presupuestos/${id}/generar-tareas`, {}); }
   delete(id: string)          { return this.http.delete(`${API}/presupuestos/${id}`); }
 }

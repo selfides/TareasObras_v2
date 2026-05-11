@@ -152,6 +152,19 @@ export class ObraTabPresupuestosComponent implements OnInit {
     });
   }
 
+  generarTareasPresupuesto(id: string) {
+    this.presupuestosSvc.generarTareas(id).subscribe({
+      next: (res) => {
+        if (res.tareasGeneradas > 0) {
+          this.msg.add({ severity: 'success', summary: 'Tareas generadas', detail: `Se han creado ${res.tareasGeneradas} tareas en el Kanban` });
+        } else {
+          this.msg.add({ severity: 'info', summary: 'Sin cambios', detail: 'Todas las tareas ya existían en el Kanban' });
+        }
+      },
+      error: () => { this.msg.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron generar las tareas' }); }
+    });
+  }
+
   seleccionarPresupuesto(id: string) {
     this.presupuestoSeleccionado.set(id);
     this.partidasSvc.getByPresupuesto(id).subscribe(p => { 

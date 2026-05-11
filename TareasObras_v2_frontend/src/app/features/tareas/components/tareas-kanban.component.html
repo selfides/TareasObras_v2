@@ -1,6 +1,6 @@
 <div class="space-y-4 animate-fade-in">
   <!-- Header -->
-  <div class="flex items-center justify-between">
+  <div class="flex items-center justify-between flex-wrap gap-3">
     <div class="flex items-center gap-3">
       <a [routerLink]="['/obras', obraId()]">
         <p-button
@@ -11,23 +11,46 @@
         />
       </a>
       <div>
-        <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-50">
-          Kanban de Tareas
-        </h1>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-surface-500 bg-surface-100 dark:bg-surface-800 px-2 py-0.5 rounded">{{ store.obraCodigo() }}</span>
+          <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-50">
+            {{ store.obraNombre() || 'Kanban de Tareas' }}
+          </h1>
+        </div>
         <p class="text-surface-500 text-sm mt-0.5">
           {{ store.horasTotalesReales() }}h reales ·
           {{ store.horasTotalesEstimadas() }}h estimadas
         </p>
       </div>
     </div>
-    @if (auth.isSupervisor()) {
-      <p-button
-        label="Nueva Tarea"
-        icon="pi pi-plus"
+    <div class="flex items-center gap-3">
+      @if (auth.isSupervisor()) {
+        <p-button
+          label="Nueva Tarea"
+          icon="pi pi-plus"
+          size="small"
+          (onClick)="openNew()"
+        />
+      }
+    </div>
+  </div>
+
+  <!-- Filter toggle -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div class="flex items-center gap-2">
+      <p-selectButton
+        [options]="filtroOptions"
+        [ngModel]="filtroOrigen()"
+        (ngModelChange)="onFiltroChange($event)"
+        optionLabel="label"
+        optionValue="value"
         size="small"
-        (onClick)="openNew()"
       />
-    }
+      <span class="text-xs text-surface-500 ml-2">
+        <i class="pi pi-file text-blue-500 mr-1"></i>{{ store.totalPresupuesto() }} presupuesto ·
+        <i class="pi pi-pencil text-surface-400 mr-1"></i>{{ store.totalManuales() }} manuales
+      </span>
+    </div>
   </div>
 
   <!-- Kanban board -->

@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TareasStore } from '../store/tareas.store';
 import { AuthService } from '../../../core/auth/auth.service';
+import { PresupuestosService } from '../../../core/services/presupuestos.service';
 import { TareaDto, EstadoTarea, PrioridadTarea } from '../../../core/models';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -13,14 +14,17 @@ import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TooltipModule } from 'primeng/tooltip';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 interface KanbanCol { label: string; estado: EstadoTarea; color: string; headerColor: string; }
+
+type FiltroOrigen = 'todas' | 'presupuesto' | 'manual';
 
 @Component({
   selector: 'app-tareas-kanban',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, ButtonModule, DialogModule,
-            InputTextModule, SelectModule, TextareaModule, InputNumberModule, TooltipModule],
+            InputTextModule, SelectModule, TextareaModule, InputNumberModule, TooltipModule, SelectButtonModule],
   templateUrl: './tareas-kanban.component.html'
 })
 export class TareasKanbanComponent implements OnInit {
@@ -28,6 +32,7 @@ export class TareasKanbanComponent implements OnInit {
   auth = inject(AuthService);
   private route = inject(ActivatedRoute);
   private msg = inject(MessageService);
+  private presupuestosSvc = inject(PresupuestosService);
 
   obraId = signal('');
   dialogVisible = false;
@@ -35,6 +40,14 @@ export class TareasKanbanComponent implements OnInit {
   draggingTarea: TareaDto | null = null;
 
   tareaForm = { titulo: '', descripcion: '', prioridad: PrioridadTarea.Media, horasEstimadas: 0 };
+
+  // Filter toggle
+  filtroOrigen = signal<FiltroOrigen>('todas');
+  filtroOptions = [
+    { label: 'Todas', value: 'todas' },
+    { label: 'Presupuesto', value: 'presupuesto', icon: 'pi pi-file' },
+    { label: 'Manuales', value: 'manual', icon: 'pi pi-pencil' },
+  ];
 
   columns: KanbanCol[] = [
     { label: 'Pendiente',   estado: EstadoTarea.Pendiente,  color: 'bg-slate-400',  headerColor: 'bg-slate-100' },
@@ -57,7 +70,17 @@ export class TareasKanbanComponent implements OnInit {
   }
 
   tareasEnEstado(estado: EstadoTarea): TareaDto[] {
-    return this.store.tareas().filter(t => t.estado === estado);
+    const filtro = this.filtroOrigen();
+    return this.store.tareas().filter(t => {
+      if (t.estado !== estado) return false;
+      if (filtro === 'presupuesto') return !!t.lineaPartidaId;
+      if (filtro === 'manual') return !t.lineaPartidaId;
+      return true;
+    });
+  }
+
+  onFiltroChange(value: FiltroOrigen) {
+    this.filtroOrigen.set(value);
   }
 
   onDragStart(event: DragEvent, tarea: TareaDto) {
