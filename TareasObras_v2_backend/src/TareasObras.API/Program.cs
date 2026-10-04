@@ -1,4 +1,4 @@
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Serilog;
 using TareasObras.API.Middleware;
 using TareasObras.Application;
@@ -56,14 +56,11 @@ try
             Description = "Introduce el token JWT: Bearer {tu_token}"
         });
 
-        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        c.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
         {
             {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-                },
-                Array.Empty<string>()
+                new OpenApiSecuritySchemeReference("Bearer", doc),
+                new List<string>()
             }
         });
     });
