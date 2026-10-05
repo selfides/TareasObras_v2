@@ -23,20 +23,22 @@
   <div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 p-4">
     <div class="flex flex-wrap items-center gap-4">
       <div class="flex items-center gap-2">
-        <p-toggleSwitch [(ngModel)]="filterByDate" (onChange)="onFilterToggle()" />
+        <p-toggleSwitch [ngModel]="filterByDate()" (ngModelChange)="filterByDate.set($event); onFilterToggle()" />
         <span class="text-sm font-medium text-surface-700 dark:text-surface-300">Filtrar por día</span>
       </div>
       @if (filterByDate()) {
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5">
           <p-button icon="pi pi-chevron-left" [text]="true" [rounded]="true" size="small" (onClick)="goDay(-1)" pTooltip="Día anterior" />
           <p-datepicker
             [ngModel]="selectedDate()"
             (ngModelChange)="onDateChange($event)"
             dateFormat="dd/mm/yy"
             [showIcon]="true"
+            iconDisplay="input"
+            size="small"
             appendTo="body"
-            styleClass="w-44"
-            inputStyleClass="text-center text-sm"
+            styleClass="w-36"
+            inputStyleClass="w-full text-center text-sm font-medium"
           />
           <p-button icon="pi pi-chevron-right" [text]="true" [rounded]="true" size="small" (onClick)="goDay(1)" pTooltip="Día siguiente" />
           <p-button label="Hoy" size="small" [outlined]="true" severity="secondary" (onClick)="goToday()" />
