@@ -22,8 +22,7 @@ export const routes: Routes = [
       },
       {
         path: 'obras/nueva',
-        loadComponent: () => import('./features/obras/components/obra-form.component').then(m => m.ObraFormComponent),
-        canActivate: [adminGuard]
+        redirectTo: () => '/obras?nueva=true'
       },
       {
         path: 'obras/:id',
@@ -31,8 +30,7 @@ export const routes: Routes = [
       },
       {
         path: 'obras/:id/editar',
-        loadComponent: () => import('./features/obras/components/obra-form.component').then(m => m.ObraFormComponent),
-        canActivate: [adminGuard]
+        redirectTo: (route) => `/obras/${route.params['id']}?editar=true`
       },
       {
         path: 'obras/:id/tareas',

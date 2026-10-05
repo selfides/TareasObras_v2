@@ -3,21 +3,25 @@ This file is a merged representation of a subset of the codebase, containing fil
 # File Summary
 
 ## Purpose
+
 This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
 It is designed to be easily consumable by AI systems for analysis, code review,
 or other automated processes.
 
 ## File Format
+
 The content is organized as follows:
+
 1. This summary section
 2. Repository information
 3. Directory structure
 4. Repository files (if enabled)
 5. Multiple file entries, each consisting of:
-  a. A header with the file path (## File: path/to/file)
-  b. The full contents of the file in a code block
+   a. A header with the file path (## File: path/to/file)
+   b. The full contents of the file in a code block
 
 ## Usage Guidelines
+
 - This file should be treated as read-only. Any changes should be made to the
   original repository files, not this packed version.
 - When processing this file, use the file path to distinguish
@@ -26,14 +30,16 @@ The content is organized as follows:
   the same level of security as you would the original repository.
 
 ## Notes
+
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Files matching these patterns are excluded: **/node_modules/**, **/bin/**, **/obj/**, **/*.exe, **/*.dll, **/dist/**, **/.git/**
+- Files matching these patterns are excluded: **/node_modules/**, **/bin/**, **/obj/**, **/\*.exe, **/\*.dll, **/dist/**, **/.git/**
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 - Files are sorted by Git change count (files with more changes are at the bottom)
 
 # Directory Structure
+
 ```
 .gitattributes
 .gitignore
@@ -117,6 +123,7 @@ TareasObras.sln
 # Files
 
 ## File: repomix-output.xml
+
 ````xml
 This file is a merged representation of the entire codebase, combined into a single document by Repomix.
 
@@ -260,7 +267,7 @@ This section contains the contents of the repository's files.
 #
 # Merging from the command prompt will add diff markers to the files if there
 # are conflicts (Merging from VS is not affected by the settings below, in VS
-# the diff markers are never inserted). Diff markers may cause the following 
+# the diff markers are never inserted). Diff markers may cause the following
 # file extensions to fail to load in VS. An alternative would be to treat
 # these files as binary and thus will always conflict and require user
 # intervention with every merge. To do so, just uncomment the entries below
@@ -289,9 +296,9 @@ This section contains the contents of the repository's files.
 
 ###############################################################################
 # diff behavior for common document formats
-# 
+#
 # Convert binary document formats to text before diffing them. This feature
-# is only available from the command line. Turn it on by uncommenting the 
+# is only available from the command line. Turn it on by uncommenting the
 # entries below.
 ###############################################################################
 #*.doc   diff=astextplain
@@ -9428,28 +9435,30 @@ public class UnitOfWork : IUnitOfWork
 ````
 
 ## File: repomix.config.json
-````json
+
+```json
 {
-	"output": {
-		"filePath": "contexto-proyecto-fullstack.md",
-		"style": "markdown"
-	},
-	"ignore": {
-		"customPatterns": [
-			"**/node_modules/**",
-			"**/bin/**",
-			"**/obj/**",
-			"**/*.exe",
-			"**/*.dll",
-			"**/dist/**",
-			"**/.git/**"
-		]
-	}
+  "output": {
+    "filePath": "contexto-proyecto-fullstack.md",
+    "style": "markdown"
+  },
+  "ignore": {
+    "customPatterns": [
+      "**/node_modules/**",
+      "**/bin/**",
+      "**/obj/**",
+      "**/*.exe",
+      "**/*.dll",
+      "**/dist/**",
+      "**/.git/**"
+    ]
+  }
 }
-````
+```
 
 ## File: .gitattributes
-````
+
+```
 ###############################################################################
 # Set default behavior to automatically normalize line endings.
 ###############################################################################
@@ -9469,7 +9478,7 @@ public class UnitOfWork : IUnitOfWork
 #
 # Merging from the command prompt will add diff markers to the files if there
 # are conflicts (Merging from VS is not affected by the settings below, in VS
-# the diff markers are never inserted). Diff markers may cause the following 
+# the diff markers are never inserted). Diff markers may cause the following
 # file extensions to fail to load in VS. An alternative would be to treat
 # these files as binary and thus will always conflict and require user
 # intervention with every merge. To do so, just uncomment the entries below
@@ -9498,9 +9507,9 @@ public class UnitOfWork : IUnitOfWork
 
 ###############################################################################
 # diff behavior for common document formats
-# 
+#
 # Convert binary document formats to text before diffing them. This feature
-# is only available from the command line. Turn it on by uncommenting the 
+# is only available from the command line. Turn it on by uncommenting the
 # entries below.
 ###############################################################################
 #*.doc   diff=astextplain
@@ -9513,10 +9522,11 @@ public class UnitOfWork : IUnitOfWork
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
-````
+```
 
 ## File: .gitignore
-````
+
+```
 ## Ignore Visual Studio temporary files, build results, and
 ## files generated by popular Visual Studio add-ons.
 ##
@@ -9880,13 +9890,15 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-````
+```
 
 ## File: README.md
+
 ````markdown
 # TareasObras API — Fase 1
 
 ## Stack
+
 - ASP.NET Core 8 Web API
 - Entity Framework Core 8 + SQL Server
 - ASP.NET Identity + JWT
@@ -9894,6 +9906,7 @@ FodyWeavers.xsd
 - Serilog
 
 ## Arquitectura (Clean Architecture)
+
 ```
 TareasObras.sln
 ├── Domain        → Entities, Enums (sin dependencias externas)
@@ -9907,18 +9920,23 @@ TareasObras.sln
 ## Puesta en marcha paso a paso
 
 ### 1. Requisitos previos
+
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - SQL Server (local, SQLEXPRESS, o Docker)
 - Visual Studio 2022 / Rider / VS Code
 
 ### 2. Instalar dotnet-ef (herramienta global — solo una vez)
+
 ```powershell
 dotnet tool install --global dotnet-ef
 ```
+
 > Si ya lo tienes instalado y falla: `dotnet tool update --global dotnet-ef`
 
 ### 3. Configurar la cadena de conexión
+
 Edita `src/TareasObras.API/appsettings.Development.json` con tu servidor:
+
 ```json
 {
   "ConnectionStrings": {
@@ -9928,15 +9946,18 @@ Edita `src/TareasObras.API/appsettings.Development.json` con tu servidor:
 ```
 
 ### 4. Configurar el secreto JWT (desde la raíz de la solución)
+
 ```powershell
 cd src/TareasObras.API
 dotnet user-secrets init
 dotnet user-secrets set "JwtSettings:SecretKey" "TuClaveSecretaMuyLargaMin32Chars!!"
 cd ../..
 ```
+
 > ⚠️ La clave debe tener **mínimo 32 caracteres**. Nunca la subas a Git.
 
 ### 5. Crear la migración inicial
+
 ```powershell
 dotnet ef migrations add InitialCreate `
   --project src/TareasObras.Infrastructure `
@@ -9944,15 +9965,19 @@ dotnet ef migrations add InitialCreate `
 ```
 
 ### 6. Ejecutar la API
+
 ```powershell
 dotnet run --project src/TareasObras.API
 ```
+
 Al arrancar la primera vez:
+
 - Se aplican las migraciones automáticamente
 - Se crean los roles (Admin, Supervisor, Operario)
 - Se crea el usuario administrador por defecto
 
 ### 7. Acceder a Swagger
+
 ```
 https://localhost:7000/swagger
 ```
@@ -9960,11 +9985,12 @@ https://localhost:7000/swagger
 ---
 
 ## Usuario administrador por defecto
-| Campo | Valor |
-|---|---|
-| Email | admin@tareasObras.com |
-| Password | Admin@1234 |
-| Rol | Admin |
+
+| Campo    | Valor                 |
+| -------- | --------------------- |
+| Email    | admin@tareasObras.com |
+| Password | Admin@1234            |
+| Rol      | Admin                 |
 
 > ⚠️ Cambia esta contraseña en producción.
 
@@ -9973,36 +9999,40 @@ https://localhost:7000/swagger
 ## Endpoints
 
 ### Auth
-| Método | Ruta | Rol requerido |
-|--------|------|---------------|
-| POST | /api/auth/login | Público |
-| POST | /api/auth/register | Admin |
-| POST | /api/auth/change-password | Autenticado |
+
+| Método | Ruta                      | Rol requerido |
+| ------ | ------------------------- | ------------- |
+| POST   | /api/auth/login           | Público       |
+| POST   | /api/auth/register        | Admin         |
+| POST   | /api/auth/change-password | Autenticado   |
 
 ### Obras
-| Método | Ruta | Rol requerido |
-|--------|------|---------------|
-| GET | /api/obras | Autenticado |
-| GET | /api/obras/{id} | Autenticado |
-| POST | /api/obras | Admin, Supervisor |
-| PUT | /api/obras/{id} | Admin, Supervisor |
-| PATCH | /api/obras/{id}/estado | Admin, Supervisor |
-| DELETE | /api/obras/{id} | Admin |
+
+| Método | Ruta                   | Rol requerido     |
+| ------ | ---------------------- | ----------------- |
+| GET    | /api/obras             | Autenticado       |
+| GET    | /api/obras/{id}        | Autenticado       |
+| POST   | /api/obras             | Admin, Supervisor |
+| PUT    | /api/obras/{id}        | Admin, Supervisor |
+| PATCH  | /api/obras/{id}/estado | Admin, Supervisor |
+| DELETE | /api/obras/{id}        | Admin             |
 
 ### Tareas
-| Método | Ruta | Rol requerido |
-|--------|------|---------------|
-| GET | /api/tareas/mis-tareas | Autenticado |
-| GET | /api/tareas/obra/{obraId} | Autenticado |
-| GET | /api/tareas/{id} | Autenticado |
-| POST | /api/tareas | Admin, Supervisor |
-| PUT | /api/tareas/{id} | Admin, Supervisor |
-| PATCH | /api/tareas/{id}/estado | Todos |
-| DELETE | /api/tareas/{id} | Admin, Supervisor |
+
+| Método | Ruta                      | Rol requerido     |
+| ------ | ------------------------- | ----------------- |
+| GET    | /api/tareas/mis-tareas    | Autenticado       |
+| GET    | /api/tareas/obra/{obraId} | Autenticado       |
+| GET    | /api/tareas/{id}          | Autenticado       |
+| POST   | /api/tareas               | Admin, Supervisor |
+| PUT    | /api/tareas/{id}          | Admin, Supervisor |
+| PATCH  | /api/tareas/{id}/estado   | Todos             |
+| DELETE | /api/tareas/{id}          | Admin, Supervisor |
 
 ---
 
 ## Usar Swagger con JWT
+
 1. Haz POST a `/api/auth/login` con `{ "email": "...", "password": "..." }`
 2. Copia el `token` de la respuesta
 3. Pulsa **Authorize** (🔒) en Swagger
@@ -10011,6 +10041,7 @@ https://localhost:7000/swagger
 ---
 
 ## Próximas fases
+
 - **Fase 2:** Frontend Angular 17 + PrimeNG + Tailwind
 - **Fase 3:** OCR con Azure Document Intelligence para albaranes/facturas
 - **Fase 4:** Dashboards y reportes
@@ -10018,7 +10049,8 @@ https://localhost:7000/swagger
 ````
 
 ## File: src/TareasObras.API/appsettings.json
-````json
+
+```json
 {
   "ConnectionStrings": {
     "DefaultConnection": "Server=192.168.1.204,1433;Database=TareasObrasDB;User Id=sa;Password=061121Pgm;TrustServerCertificate=true;"
@@ -10040,10 +10072,11 @@ https://localhost:7000/swagger
   },
   "AllowedHosts": "*"
 }
-````
+```
 
 ## File: src/TareasObras.API/Controllers/AuthController.cs
-````csharp
+
+```csharp
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TareasObras.Application.Common.Interfaces;
@@ -10101,10 +10134,11 @@ public class AuthController : ControllerBase
 public record LoginRequest(string Email, string Password);
 public record RegisterRequest(string Email, string Password, string Nombre, string Apellidos, string Rol);
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
-````
+```
 
 ## File: src/TareasObras.API/Controllers/CategoriasOperarioController.cs
-````csharp
+
+```csharp
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10151,10 +10185,11 @@ public class CategoriasOperarioController : ControllerBase
 }
 
 public record UpdateCategoriaOperarioRequest(string Nombre, decimal CosteHoraBase);
-````
+```
 
 ## File: src/TareasObras.API/Controllers/MaterialesObraController.cs
-````csharp
+
+```csharp
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10201,10 +10236,11 @@ public class MaterialesObraController : ControllerBase
 }
 
 public record UpdateMaterialObraRequest(string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario, DateTime Fecha, string? Observaciones);
-````
+```
 
 ## File: src/TareasObras.API/Controllers/ObrasController.cs
-````csharp
+
+```csharp
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10298,10 +10334,11 @@ namespace TareasObras.API.Controllers
 
     public record CambiarEstadoObraRequest(EstadoObra NuevoEstado);
 }
-````
+```
 
 ## File: src/TareasObras.API/Controllers/OperariosController.cs
-````csharp
+
+```csharp
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10348,10 +10385,11 @@ public class OperariosController : ControllerBase
 }
 
 public record UpdateOperarioRequest(string Nombre, string Apellidos, string? DNI, string? Telefono, Guid CategoriaOperarioId, Guid? CuadrillaId);
-````
+```
 
 ## File: src/TareasObras.API/Controllers/PartidasController.cs
-````csharp
+
+```csharp
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10433,10 +10471,11 @@ public record UpdatePartidaRequest(string Nombre, string? Descripcion, int Orden
 public record AddLineaMaterialRequest(string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario);
 public record AddLineaManoObraRequest(Guid CategoriaOperarioId, string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario);
 public record UpdateLineaRequest(string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario, Guid? CategoriaOperarioId);
-````
+```
 
 ## File: src/TareasObras.API/Controllers/PresupuestosController.cs
-````csharp
+
+```csharp
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10488,10 +10527,11 @@ public class PresupuestosController : ControllerBase
         return result ? NoContent() : NotFound();
     }
 }
-````
+```
 
 ## File: src/TareasObras.API/Controllers/RegistroHorasController.cs
-````csharp
+
+```csharp
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10538,10 +10578,11 @@ public class RegistroHorasController : ControllerBase
 }
 
 public record UpdateRegistroHorasRequest(DateTime Fecha, decimal Horas, decimal CosteHoraAplicado, string? Observaciones);
-````
+```
 
 ## File: src/TareasObras.API/Controllers/TareasController.cs
-````csharp
+
+```csharp
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10644,10 +10685,11 @@ namespace TareasObras.API.Controllers
 
     public record CambiarEstadoRequest(EstadoTarea NuevoEstado, string? Observaciones);
 }
-````
+```
 
 ## File: src/TareasObras.API/Controllers/UsuariosController.cs
-````csharp
+
+```csharp
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10693,10 +10735,11 @@ public class UsuariosController : ControllerBase
         return Ok(result);
     }
 }
-````
+```
 
 ## File: src/TareasObras.API/Middleware/ExceptionMiddleware.cs
-````csharp
+
+```csharp
 using FluentValidation;
 using System.Net;
 using System.Text.Json;
@@ -10771,10 +10814,11 @@ public class ExceptionMiddleware
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
     }
 }
-````
+```
 
 ## File: src/TareasObras.API/Program.cs
-````csharp
+
+```csharp
 using Microsoft.OpenApi.Models;
 using Serilog;
 using TareasObras.API.Middleware;
@@ -10877,10 +10921,11 @@ finally
 {
     Log.CloseAndFlush();
 }
-````
+```
 
 ## File: src/TareasObras.API/Properties/launchSettings.json
-````json
+
+```json
 {
   "profiles": {
     "TareasObras.API": {
@@ -10893,10 +10938,11 @@ finally
     }
   }
 }
-````
+```
 
 ## File: src/TareasObras.API/TareasObras.API.csproj
-````
+
+```
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -10923,10 +10969,11 @@ finally
     <ProjectReference Include="..\TareasObras.Infrastructure\TareasObras.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
-````
+```
 
 ## File: src/TareasObras.Application/Common/Behaviors/PipelineBehaviors.cs
-````csharp
+
+```csharp
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -10991,10 +11038,11 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Common/Interfaces/IAuthService.cs
-````csharp
+
+```csharp
 namespace TareasObras.Application.Common.Interfaces;
 
 public record AuthResult(bool Success, string? Token, string? RefreshToken, string? Error, UserDto? User);
@@ -11007,10 +11055,11 @@ public interface IAuthService
     Task<AuthResult> RegisterAsync(string email, string password, string nombre, string apellidos, string rol, CancellationToken ct = default);
     Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword, CancellationToken ct = default);
 }
-````
+```
 
 ## File: src/TareasObras.Application/Common/Mappings/MappingProfile.cs
-````csharp
+
+```csharp
 using AutoMapper;
 using TareasObras.Application.Features.Obras.Queries.GetObraById;
 using TareasObras.Application.Features.Obras.Queries.GetObras;
@@ -11041,10 +11090,11 @@ namespace TareasObras.Application.Common.Mappings
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/DependencyInjection.cs
-````csharp
+
+```csharp
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -11072,10 +11122,11 @@ public static class DependencyInjection
         return services;
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/CategoriasOperario/Commands/CategoriaOperarioCommands.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
@@ -11126,10 +11177,11 @@ public class DeleteCategoriaOperarioHandler : IRequestHandler<DeleteCategoriaOpe
         return true;
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/CategoriasOperario/Queries/GetCategoriasOperarioQuery.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 
@@ -11163,10 +11215,11 @@ public class GetCategoriasOperarioHandler : IRequestHandler<GetCategoriasOperari
         });
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/MaterialesObra/Commands/MaterialObraCommands.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
@@ -11217,10 +11270,11 @@ public class DeleteMaterialObraHandler : IRequestHandler<DeleteMaterialObraComma
         return true;
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/MaterialesObra/Queries/GetMaterialesObraQuery.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 
@@ -11256,10 +11310,11 @@ public class GetMaterialesByObraHandler : IRequestHandler<GetMaterialesByObraQue
         });
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Obras/Commands/CambiarEstadoObra/CambiarEstadoObraCommand.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Enums;
@@ -11294,10 +11349,11 @@ namespace TareasObras.Application.Features.Obras.Commands.CambiarEstadoObra
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Obras/Commands/CreateObra/CreateObraCommand.cs
-````csharp
+
+```csharp
 using FluentValidation;
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
@@ -11373,10 +11429,11 @@ namespace TareasObras.Application.Features.Obras.Commands.CreateObra
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Obras/Commands/DeleteObra/DeleteObraCommand.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 
@@ -11406,10 +11463,11 @@ namespace TareasObras.Application.Features.Obras.Commands.DeleteObra
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Obras/Commands/UpdateObra/UpdateObraCommand.cs
-````csharp
+
+```csharp
 using FluentValidation;
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
@@ -11468,10 +11526,11 @@ namespace TareasObras.Application.Features.Obras.Commands.UpdateObra
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Operarios/Commands/OperarioCommands.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
@@ -11522,10 +11581,11 @@ public class DeleteOperarioHandler : IRequestHandler<DeleteOperarioCommand, bool
         return true;
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Operarios/Queries/GetOperariosQuery.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 
@@ -11574,10 +11634,11 @@ public class GetOperariosHandler : IRequestHandler<GetOperariosQuery, IEnumerabl
         });
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Partidas/Commands/PartidaCommands.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
@@ -11686,10 +11747,11 @@ public class DeleteLineaPartidaHandler : IRequestHandler<DeleteLineaPartidaComma
         return true;
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Partidas/Queries/GetPartidasQuery.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
@@ -11746,10 +11808,11 @@ public class GetPartidasByPresupuestoHandler : IRequestHandler<GetPartidasByPres
         });
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/RegistroHoras/Commands/RegistroHorasCommands.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 
@@ -11799,10 +11862,11 @@ public class DeleteRegistroHorasHandler : IRequestHandler<DeleteRegistroHorasCom
         return true;
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/RegistroHoras/Queries/GetRegistroHorasQuery.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 
@@ -11848,10 +11912,11 @@ public class GetRegistroHorasByObraHandler : IRequestHandler<GetRegistroHorasByO
         });
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Tareas/Commands/CambiarEstadoTarea/CambiarEstadoTareaCommand.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Enums;
@@ -11886,10 +11951,11 @@ namespace TareasObras.Application.Features.Tareas.Commands.CambiarEstadoTarea
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Tareas/Commands/CreateTarea/CreateTareaCommand.cs
-````csharp
+
+```csharp
 using FluentValidation;
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
@@ -11950,10 +12016,11 @@ namespace TareasObras.Application.Features.Tareas.Commands.CreateTarea
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Tareas/Commands/DeleteTarea/DeleteTareaCommand.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 
@@ -11983,10 +12050,11 @@ namespace TareasObras.Application.Features.Tareas.Commands.DeleteTarea
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Tareas/Commands/UpdateTarea/UpdateTareaCommand.cs
-````csharp
+
+```csharp
 using FluentValidation;
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
@@ -12035,10 +12103,11 @@ namespace TareasObras.Application.Features.Tareas.Commands.UpdateTarea
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Tareas/Queries/GetTareaById/GetTareaByIdQuery.cs
-````csharp
+
+```csharp
 using AutoMapper;
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
@@ -12063,10 +12132,11 @@ namespace TareasObras.Application.Features.Tareas.Queries.GetTareaById
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Tareas/Queries/GetTareasByUsuario/GetTareasByUsuarioQuery.cs
-````csharp
+
+```csharp
 using AutoMapper;
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
@@ -12091,10 +12161,11 @@ namespace TareasObras.Application.Features.Tareas.Queries.GetTareasByUsuario
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/TareasObras.Application.csproj
-````
+
+```
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -12115,10 +12186,11 @@ namespace TareasObras.Application.Features.Tareas.Queries.GetTareasByUsuario
     <ProjectReference Include="..\TareasObras.Domain\TareasObras.Domain.csproj" />
   </ItemGroup>
 </Project>
-````
+```
 
 ## File: src/TareasObras.Domain/Common/BaseEntity.cs
-````csharp
+
+```csharp
 namespace TareasObras.Domain.Common;
 
 public abstract class BaseEntity
@@ -12130,10 +12202,11 @@ public abstract class BaseEntity
     public string? UpdatedBy { get; set; }
     public bool IsDeleted { get; set; } = false;
 }
-````
+```
 
 ## File: src/TareasObras.Domain/Entities/Operario.cs
-````csharp
+
+```csharp
 using TareasObras.Domain.Common;
 
 namespace TareasObras.Domain.Entities;
@@ -12209,10 +12282,11 @@ public class Operario : BaseEntity
     public void Desactivar() { Activo = false; UpdatedAt = DateTime.UtcNow; }
     public void Activar()    { Activo = true;  UpdatedAt = DateTime.UtcNow; }
 }
-````
+```
 
 ## File: src/TareasObras.Domain/Entities/PartidaPresupuesto.cs
-````csharp
+
+```csharp
 namespace TareasObras.Domain.Entities;
 
 public class PartidaPresupuesto
@@ -12284,10 +12358,11 @@ public class LineaPartida
 
     public void Delete() => IsDeleted = true;
 }
-````
+```
 
 ## File: src/TareasObras.Domain/Entities/RegistroHoras.cs
-````csharp
+
+```csharp
 using TareasObras.Domain.Common;
 
 namespace TareasObras.Domain.Entities;
@@ -12333,10 +12408,11 @@ public class RegistroHoras : BaseEntity
 
     public decimal CosteTotal => Horas * CosteHoraAplicado;
 }
-````
+```
 
 ## File: src/TareasObras.Domain/Entities/Tarea.cs
-````csharp
+
+```csharp
 using TareasObras.Domain.Common;
 using TareasObras.Domain.Enums;
 
@@ -12420,10 +12496,11 @@ public class Tarea : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 }
-````
+```
 
 ## File: src/TareasObras.Domain/TareasObras.Domain.csproj
-````
+
+```
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -12432,10 +12509,11 @@ public class Tarea : BaseEntity
     <RootNamespace>TareasObras.Domain</RootNamespace>
   </PropertyGroup>
 </Project>
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Audit/AuditService.cs
-````csharp
+
+```csharp
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using System.Text.Json;
@@ -12499,10 +12577,11 @@ public class AuditService : IAuditService
         await _ctx.SaveChangesAsync(ct);
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/DependencyInjection.cs
-````csharp
+
+```csharp
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -12616,10 +12695,11 @@ public static class DatabaseSeeder
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Identity/AuthService.cs
-````csharp
+
+```csharp
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -12717,10 +12797,11 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Migrations/20260227231855_InitialCreate.cs
-````csharp
+
+```csharp
 using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -13091,10 +13172,11 @@ namespace TareasObras.Infrastructure.Migrations
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Migrations/20260227231855_InitialCreate.Designer.cs
-````csharp
+
+```csharp
 // <auto-generated />
 using System;
 using Microsoft.EntityFrameworkCore;
@@ -13638,10 +13720,11 @@ namespace TareasObras.Infrastructure.Migrations
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Migrations/20260303234707_AddPresupuestosOperariosMateriales.cs
-````csharp
+
+```csharp
 using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -13943,10 +14026,11 @@ namespace TareasObras.Infrastructure.Migrations
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Migrations/20260303234707_AddPresupuestosOperariosMateriales.Designer.cs
-````csharp
+
+```csharp
 // <auto-generated />
 using System;
 using Microsoft.EntityFrameworkCore;
@@ -14949,10 +15033,11 @@ namespace TareasObras.Infrastructure.Migrations
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Migrations/20260304225858_AddPartidasPresupuesto.cs
-````csharp
+
+```csharp
 using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -15055,10 +15140,11 @@ namespace TareasObras.Infrastructure.Migrations
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Migrations/20260304225858_AddPartidasPresupuesto.Designer.cs
-````csharp
+
+```csharp
 // <auto-generated />
 using System;
 using Microsoft.EntityFrameworkCore;
@@ -16169,10 +16255,11 @@ namespace TareasObras.Infrastructure.Migrations
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Persistence/Configurations/EntityConfigurations.cs
-````csharp
+
+```csharp
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TareasObras.Domain.Entities;
@@ -16265,10 +16352,11 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.HasIndex(a => new { a.Entidad, a.EntidadId });
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/TareasObras.Infrastructure.csproj
-````
+
+```
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -16296,10 +16384,11 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
     <ProjectReference Include="..\TareasObras.Application\TareasObras.Application.csproj" />
   </ItemGroup>
 </Project>
-````
+```
 
 ## File: TareasObras.sln
-````
+
+```
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.3.11520.95 d18.3
@@ -16342,28 +16431,30 @@ Global
 		SolutionGuid = {0AC77E74-6C28-488C-8A59-5F668EE85313}
 	EndGlobalSection
 EndGlobal
-````
+```
 
 ## File: src/TareasObras.API/appsettings.Development.json
-````json
+
+```json
 {
-    "ConnectionStrings":  {
-                              "DefaultConnection":  "Server=192.168.1.204,1433;Database=TareasObrasDB;User Id=sa;Password=061121Pgm;TrustServerCertificate=true;"
-                          },
-    "Serilog":  {
-                    "MinimumLevel":  {
-                                         "Default":  "Debug",
-                                         "Override":  {
-                                                          "Microsoft":  "Information",
-                                                          "Microsoft.EntityFrameworkCore.Database.Command":  "Information"
-                                                      }
-                                     }
-                }
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=192.168.1.204,1433;Database=TareasObrasDB;User Id=sa;Password=061121Pgm;TrustServerCertificate=true;"
+  },
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Debug",
+      "Override": {
+        "Microsoft": "Information",
+        "Microsoft.EntityFrameworkCore.Database.Command": "Information"
+      }
+    }
+  }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Obras/Queries/GetObraById/GetObraByIdQuery.cs
-````csharp
+
+```csharp
 using AutoMapper;
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
@@ -16409,10 +16500,11 @@ namespace TareasObras.Application.Features.Obras.Queries.GetObraById
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Obras/Queries/GetObras/GetObrasQuery.cs
-````csharp
+
+```csharp
 using AutoMapper;
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
@@ -16454,10 +16546,11 @@ namespace TareasObras.Application.Features.Obras.Queries.GetObras
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Presupuestos/Commands/PresupuestoCommands.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
@@ -16524,10 +16617,11 @@ public class DeletePresupuestoHandler : IRequestHandler<DeletePresupuestoCommand
         return true;
     }
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Presupuestos/Queries/GetPresupuestosQuery.cs
-````csharp
+
+```csharp
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Enums;
@@ -16624,10 +16718,11 @@ internal static class PresupuestoDtoMapper
         }).ToList() ?? []
     };
 }
-````
+```
 
 ## File: src/TareasObras.Application/Features/Tareas/Queries/GetTareasByObra/GetTareasByObraQuery.cs
-````csharp
+
+```csharp
 using AutoMapper;
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
@@ -16671,10 +16766,11 @@ namespace TareasObras.Application.Features.Tareas.Queries.GetTareasByObra
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Domain/Entities/Cuadrilla.cs
-````csharp
+
+```csharp
 using TareasObras.Domain.Common;
 
 namespace TareasObras.Domain.Entities;
@@ -16716,10 +16812,11 @@ public class AuditLog
     public DateTime FechaHora { get; set; } = DateTime.UtcNow;
     public string? IpAddress { get; set; }
 }
-````
+```
 
 ## File: src/TareasObras.Domain/Entities/Obra.cs
-````csharp
+
+```csharp
 using TareasObras.Domain.Common;
 using TareasObras.Domain.Enums;
 
@@ -16806,10 +16903,11 @@ public class Obra : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 }
-````
+```
 
 ## File: src/TareasObras.Domain/Entities/Presupuesto.cs
-````csharp
+
+```csharp
 using TareasObras.Domain.Enums;
 using TareasObras.Domain.Common;
 
@@ -16961,10 +17059,11 @@ public class MaterialObra : BaseEntity
 
     public decimal ImporteReal => Cantidad * PrecioUnitario;
 }
-````
+```
 
 ## File: src/TareasObras.Domain/Enums/Enums.cs
-````csharp
+
+```csharp
 namespace TareasObras.Domain.Enums;
 
 public enum EstadoObra
@@ -17002,10 +17101,11 @@ public enum RolUsuario
 
 
 public enum EstadoPresupuesto { Borrador = 0, Aprobado = 1, Anulado = 2 }
-````
+```
 
 ## File: src/TareasObras.Application/Common/Interfaces/IRepositories.cs
-````csharp
+
+```csharp
 using TareasObras.Domain.Entities;
 
 namespace TareasObras.Application.Common.Interfaces;
@@ -17147,10 +17247,11 @@ public interface IAuditService
         object? valoresAnteriores = null, object? valoresNuevos = null,
         CancellationToken ct = default);
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Migrations/AppDbContextModelSnapshot.cs
-````csharp
+
+```csharp
 // <auto-generated />
 using System;
 using Microsoft.EntityFrameworkCore;
@@ -18258,10 +18359,11 @@ namespace TareasObras.Infrastructure.Migrations
         }
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Persistence/AppDbContext.cs
-````csharp
+
+```csharp
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -18447,10 +18549,11 @@ public class AppDbContext : IdentityDbContext<AppUser>
         return base.SaveChangesAsync(ct);
     }
 }
-````
+```
 
 ## File: src/TareasObras.Infrastructure/Persistence/Repositories/Repositories.cs
-````csharp
+
+```csharp
 using Microsoft.EntityFrameworkCore;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
@@ -18705,4 +18808,4 @@ public class UnitOfWork : IUnitOfWork
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default) => _ctx.SaveChangesAsync(ct);
 }
-````
+```

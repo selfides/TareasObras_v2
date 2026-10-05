@@ -10,9 +10,7 @@
       </p>
     </div>
     @if (auth.isSupervisor()) {
-      <a routerLink="/obras/nueva">
-        <p-button label="Nueva Obra" icon="pi pi-plus" size="small" />
-      </a>
+      <p-button label="Nueva Obra" icon="pi pi-plus" size="small" (onClick)="abrirNuevaObra()" />
     }
   </div>
 
@@ -63,7 +61,7 @@
               <span class="text-xs text-surface-500">{{ obra.totalTareas - obra.tareasPendientes }}/{{ obra.totalTareas }}</span>
             </div>
           </td>
-          <td class="font-medium text-surface-900 dark:text-surface-100">{{ obra.presupuestoEstimado | number:'1.0-0' }} €</td>
+          <td class="font-medium text-surface-900 dark:text-surface-100">{{ obra.presupuestoEstimado | number:'1.2-2' }} €</td>
           <td class="text-sm text-surface-500 dark:text-surface-400">{{ obra.fechaInicio | date:'dd/MM/yyyy' }}</td>
           <td class="text-center" (click)="$event.stopPropagation()">
             <div class="flex items-center justify-center gap-1">
@@ -71,9 +69,7 @@
                 <p-button icon="pi pi-list-check" size="small" [text]="true" pTooltip="Ver tareas" tooltipPosition="top" />
               </a>
               @if (auth.isSupervisor()) {
-                <a [routerLink]="['/obras', obra.id, 'editar']">
-                  <p-button icon="pi pi-pencil" size="small" [text]="true" severity="secondary" pTooltip="Editar" tooltipPosition="top" />
-                </a>
+                <p-button icon="pi pi-pencil" size="small" [text]="true" severity="secondary" pTooltip="Editar" tooltipPosition="top" (onClick)="abrirEditarObra(obra.id)" />
               }
               @if (auth.isAdmin()) {
                 <p-button icon="pi pi-trash" size="small" [text]="true" severity="danger"
@@ -91,4 +87,10 @@
       </ng-template>
     </p-table>
   </div>
+
+  <app-obra-dialog
+    [(visible)]="dlgObra"
+    [obraId]="editandoObraId()"
+    (saved)="onObraGuardada()"
+  />
 </div>

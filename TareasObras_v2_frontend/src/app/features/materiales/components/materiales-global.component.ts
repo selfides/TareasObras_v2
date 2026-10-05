@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MaterialesObraService } from '../../../core/services/materiales-obra.service';
@@ -56,6 +56,15 @@ export class MaterialesGlobalComponent implements OnInit {
   dialogVisible = false;
   dlgProveedor = false;
   editingMaterialId = signal<string | null>(null);
+
+  @HostListener('document:keydown.escape', ['$event'])
+  handleEscape(event: KeyboardEvent) {
+    if (this.dialogVisible) {
+      this.dialogVisible = false;
+    } else if (this.dlgProveedor) {
+      this.dlgProveedor = false;
+    }
+  }
 
   // Filtros
   selectedDate = signal<Date>(new Date());

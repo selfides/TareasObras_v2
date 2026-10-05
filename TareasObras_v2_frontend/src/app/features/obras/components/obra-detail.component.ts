@@ -13,13 +13,15 @@ import { ObraTabInfoComponent } from './tabs/obra-tab-info/obra-tab-info.compone
 import { ObraTabPresupuestosComponent } from './tabs/obra-tab-presupuestos/obra-tab-presupuestos.component';
 import { ObraTabManoObraComponent } from './tabs/obra-tab-mano-obra/obra-tab-mano-obra.component';
 import { ObraTabMaterialesComponent } from './tabs/obra-tab-materiales/obra-tab-materiales.component';
+import { ObraDialogComponent } from './obra-dialog.component';
 
 @Component({
   selector: 'app-obra-detail',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, ButtonModule, SkeletonModule,
             TabsModule,
-            ObraTabInfoComponent, ObraTabPresupuestosComponent, ObraTabManoObraComponent, ObraTabMaterialesComponent],
+            ObraTabInfoComponent, ObraTabPresupuestosComponent, ObraTabManoObraComponent, ObraTabMaterialesComponent,
+            ObraDialogComponent],
   templateUrl: './obra-detail.component.html'
 })
 export class ObraDetailComponent implements OnInit {
@@ -37,6 +39,8 @@ export class ObraDetailComponent implements OnInit {
   // Totales locales recibidos de las pestanas hijas
   totalCosteHoras = signal<number>(0);
   totalMaterialesReal = signal<number>(0);
+
+  dlgEditarObra = signal(false);
 
   // computed
   availableMaterialBudgetLines = computed(() => {
@@ -58,6 +62,20 @@ export class ObraDetailComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id')!;
     this.obraId.set(id);
     this.store.loadObraById(id);
+
+    this.route.queryParamMap.subscribe(params => {
+      if (params.get('editar') === 'true') {
+        this.abrirEditarObra();
+      }
+    });
+  }
+
+  abrirEditarObra() {
+    this.dlgEditarObra.set(true);
+  }
+
+  onObraGuardada() {
+    this.store.loadObraById(this.obraId());
   }
 
   onTotalesHoras(event: {horas: number, coste: number}) {

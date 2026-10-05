@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ObrasStore } from '../store/obras.store';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -13,23 +13,29 @@ import { TagModule } from 'primeng/tag';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonModule } from 'primeng/skeleton';
+import { ObraDialogComponent } from './obra-dialog.component';
 
 @Component({
   selector: 'app-obras-list',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, TableModule, ButtonModule,
-            InputTextModule, SelectModule, TagModule, ConfirmDialogModule, TooltipModule, SkeletonModule],
+            InputTextModule, SelectModule, TagModule, ConfirmDialogModule, TooltipModule, SkeletonModule,
+            ObraDialogComponent],
   providers: [ConfirmationService],
   templateUrl: './obras-list.component.html'
 })
 export class ObrasListComponent implements OnInit {
   store = inject(ObrasStore);
   auth = inject(AuthService);
+  private route = inject(ActivatedRoute);
   private confirm = inject(ConfirmationService);
   private msg = inject(MessageService);
 
   searchText = '';
   estadoFiltro = '';
+
+  dlgObra = signal(false);
+  editandoObraId = signal<string | null>(null);
 
   estadoOptions = [
     { label: 'Planificada', value: 'Planificada' },
@@ -39,7 +45,32 @@ export class ObrasListComponent implements OnInit {
     { label: 'Cancelada',   value: 'Cancelada' },
   ];
 
-  ngOnInit() { this.store.loadObras({}); }
+  ngOnInit() {
+    this.route.queryParamMap.subscribe(params => {
+      const estado = params.get('estado');
+      if (estado) {
+        this.estadoFiltro = estado;
+      }
+      this.store.loadObras({ search: this.searchText, estado: this.estadoFiltro });
+      if (params.get('nueva') === 'true') {
+        this.abrirNuevaObra();
+      }
+    });
+  }
+
+  abrirNuevaObra() {
+    this.editandoObraId.set(null);
+    this.dlgObra.set(true);
+  }
+
+  abrirEditarObra(id: string) {
+    this.editandoObraId.set(id);
+    this.dlgObra.set(true);
+  }
+
+  onObraGuardada() {
+    this.store.loadObras({ search: this.searchText, estado: this.estadoFiltro });
+  }
 
   onSearch() { this.store.loadObras({ search: this.searchText, estado: this.estadoFiltro }); }
   onFiltro() { this.store.loadObras({ search: this.searchText, estado: this.estadoFiltro }); }

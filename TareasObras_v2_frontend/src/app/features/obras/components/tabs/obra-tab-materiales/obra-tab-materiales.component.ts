@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, input, output, signal } from '@angular/core';
+import { Component, inject, OnInit, input, output, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessageService, ConfirmationService } from 'primeng/api';
@@ -45,6 +45,15 @@ export class ObraTabMaterialesComponent implements OnInit {
   dlgProveedor = false;
   editandoMaterialId = signal<string | null>(null);
   saving = signal(false);
+
+  @HostListener('document:keydown.escape', ['$event'])
+  handleEscape(event: KeyboardEvent) {
+    if (this.dlgMaterial) {
+      this.dlgMaterial = false;
+    } else if (this.dlgProveedor) {
+      this.dlgProveedor = false;
+    }
+  }
 
   materialForm: any = { 
     descripcion: '', unidad: '', cantidad: 0, precioUnitario: 0, fecha: new Date(), 

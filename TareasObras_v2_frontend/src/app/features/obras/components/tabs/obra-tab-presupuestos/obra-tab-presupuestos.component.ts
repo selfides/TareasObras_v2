@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, input, output, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, input, output, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessageService, ConfirmationService } from 'primeng/api';
@@ -48,6 +48,17 @@ export class ObraTabPresupuestosComponent implements OnInit {
   dlgPresupuesto = false;
   dlgPartida = false;
   dlgLinea = false;
+
+  @HostListener('document:keydown.escape', ['$event'])
+  handleEscape(event: KeyboardEvent) {
+    if (this.dlgLinea) {
+      this.dlgLinea = false;
+    } else if (this.dlgPartida) {
+      this.dlgPartida = false;
+    } else if (this.dlgPresupuesto) {
+      this.dlgPresupuesto = false;
+    }
+  }
 
   // Edit signals
   editandoPresupuestoId = signal<string | null>(null);

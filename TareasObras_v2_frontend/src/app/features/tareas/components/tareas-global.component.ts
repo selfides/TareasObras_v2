@@ -1,6 +1,7 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { TareasService } from '../../../core/services/tareas.service';
 import { ObrasService } from '../../../core/services/obras.service';
 import { ObraListDto, EstadoTarea, PrioridadTarea, CreateTareaRequest, UpdateTareaRequest } from '../../../core/models';
@@ -41,6 +42,7 @@ interface TareaGlobalDto {
 export class TareasGlobalComponent implements OnInit {
   private tareasService = inject(TareasService);
   private obrasService = inject(ObrasService);
+  private route = inject(ActivatedRoute);
   private msg = inject(MessageService);
   private confirmService = inject(ConfirmationService);
   auth = inject(AuthService);
@@ -98,7 +100,28 @@ export class TareasGlobalComponent implements OnInit {
 
   ngOnInit() {
     this.obrasService.getAll().subscribe(o => this.obras.set(o));
-    this.loadTareas();
+    this.route.queryParamMap.subscribe(params => {
+      if (params.get('sinFecha') === 'true') {
+        this.filterByDate.set(false);
+      }
+      const estado = params.get('estado');
+      if (estado !== null) {
+        if (estado === 'Pendiente' || estado === '1') {
+          this.selectedEstadoFilter.set(EstadoTarea.Pendiente);
+        } else if (estado === 'EnProgreso' || estado === '2') {
+          this.selectedEstadoFilter.set(EstadoTarea.EnProgreso);
+        } else if (estado === 'Bloqueada' || estado === '3') {
+          this.selectedEstadoFilter.set(EstadoTarea.Bloqueada);
+        } else if (estado === 'Completada' || estado === '4') {
+          this.selectedEstadoFilter.set(EstadoTarea.Completada);
+        }
+      }
+      const obraId = params.get('obraId');
+      if (obraId) {
+        this.selectedObraFilter.set(obraId);
+      }
+      this.loadTareas();
+    });
   }
 
   loadTareas() {
