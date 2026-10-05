@@ -37,8 +37,8 @@ export class ObraDetailComponent implements OnInit {
   presupuestoAprobado = signal<PresupuestoDto | null>(null);
 
   // Totales locales recibidos de las pestanas hijas
-  totalCosteHoras = signal<number>(0);
-  totalMaterialesReal = signal<number>(0);
+  totalCosteHoras = signal<number | null>(null);
+  totalMaterialesReal = signal<number | null>(null);
 
   dlgEditarObra = signal(false);
 
@@ -55,7 +55,14 @@ export class ObraDetailComponent implements OnInit {
   presupuestoAprobadoTotal    = computed(() => this.presupuestoAprobado()?.total ?? 0);
   presupuestoAprobadoMaterial = computed(() => this.presupuestoAprobado()?.totalMaterial ?? 0);
   presupuestoAprobadoHoras    = computed(() => this.presupuestoAprobado()?.totalHoras ?? 0);
-  costeReal                   = computed(() => this.store.selectedObra()?.presupuestoReal ?? (this.totalCosteHoras() + this.totalMaterialesReal()));
+  costeReal                   = computed(() => {
+    const h = this.totalCosteHoras();
+    const m = this.totalMaterialesReal();
+    if (h !== null && m !== null) {
+      return h + m;
+    }
+    return this.store.selectedObra()?.presupuestoReal ?? 0;
+  });
   desviacion                  = computed(() => this.costeReal() - this.presupuestoAprobadoTotal());
 
   ngOnInit() {

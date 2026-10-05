@@ -46,7 +46,11 @@ export const ObrasStore = signalStore(
       },
 
       loadObraById(id: string) {
-        patchState(store, { loading: true });
+        if (store.selectedObra()?.id !== id) {
+          patchState(store, { selectedObra: null, loading: true });
+        } else {
+          patchState(store, { loading: true });
+        }
         service.getById(id).subscribe({
           next: (obra: ObraDetailDto) => patchState(store, { selectedObra: obra, loading: false }),
           error: () => patchState(store, { loading: false, error: 'Error al cargar obra' })

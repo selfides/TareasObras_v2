@@ -28,6 +28,40 @@ public class ObraRepository : IObraRepository
         return await query.OrderByDescending(o => o.CreatedAt).ToListAsync(ct);
     }
 
+    public async Task<Dictionary<Guid, decimal>> GetCostesRealesAsync(CancellationToken ct = default)
+    {
+        var horas = await _ctx.RegistrosHoras
+            .GroupBy(r => r.ObraId)
+            .Select(g => new { ObraId = g.Key, Total = g.Sum(r => (decimal?)(r.Horas * r.CosteHoraAplicado)) ?? 0m })
+            .ToDictionaryAsync(x => x.ObraId, x => x.Total, ct);
+
+        var materiales = await _ctx.MaterialesObra
+            .GroupBy(m => m.ObraId)
+            .Select(g => new { ObraId = g.Key, Total = g.Sum(m => (decimal?)(m.Cantidad * m.PrecioUnitario)) ?? 0m })
+            .ToDictionaryAsync(x => x.ObraId, x => x.Total, ct);
+
+        var allObraIds = horas.Keys.Union(materiales.Keys).Distinct();
+        var result = new Dictionary<Guid, decimal>();
+        foreach (var id in allObraIds)
+        {
+            result[id] = horas.GetValueOrDefault(id) + materiales.GetValueOrDefault(id);
+        }
+        return result;
+    }
+
+    public async Task<decimal> GetCosteRealAsync(Guid obraId, CancellationToken ct = default)
+    {
+        var totalHoras = await _ctx.RegistrosHoras
+            .Where(r => r.ObraId == obraId)
+            .SumAsync(r => (decimal?)(r.Horas * r.CosteHoraAplicado), ct) ?? 0m;
+
+        var totalMateriales = await _ctx.MaterialesObra
+            .Where(m => m.ObraId == obraId)
+            .SumAsync(m => (decimal?)(m.Cantidad * m.PrecioUnitario), ct) ?? 0m;
+
+        return totalHoras + totalMateriales;
+    }
+
     public async Task AddAsync(Obra obra, CancellationToken ct = default) => await _ctx.Obras.AddAsync(obra, ct);
     public void Update(Obra obra) => _ctx.Obras.Update(obra);
     public void Delete(Obra obra) => _ctx.Obras.Remove(obra);

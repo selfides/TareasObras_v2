@@ -13,6 +13,7 @@ namespace TareasObras.Application.Features.Obras.Queries.GetObras
         public string? Cliente { get; init; }
         public int Estado { get; init; }
         public decimal PresupuestoEstimado { get; init; }
+        public decimal PresupuestoReal { get; init; }
         public DateTime FechaInicio { get; init; }
         public DateTime? FechaFinPrevista { get; init; }
         public int TotalTareas { get; init; }
@@ -35,7 +36,10 @@ namespace TareasObras.Application.Features.Obras.Queries.GetObras
         public async Task<IEnumerable<ObraListDto>> Handle(GetObrasQuery request, CancellationToken ct)
         {
             var obras = await _uow.Obras.GetFilteredAsync(request.Search, request.Estado, ct);
-            return _mapper.Map<IEnumerable<ObraListDto>>(obras);
+            var costesReales = await _uow.Obras.GetCostesRealesAsync(ct);
+            return _mapper.Map<IEnumerable<ObraListDto>>(obras)
+                .Select(dto => dto with { PresupuestoReal = costesReales.GetValueOrDefault(dto.Id) })
+                .ToList();
         }
     }
 }

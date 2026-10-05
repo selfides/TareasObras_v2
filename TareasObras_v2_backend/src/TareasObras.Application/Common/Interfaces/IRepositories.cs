@@ -8,6 +8,8 @@ public interface IObraRepository
     Task<Obra?> GetByCodigoAsync(string codigo, CancellationToken ct = default);
     Task<IEnumerable<Obra>> GetAllAsync(CancellationToken ct = default);
     Task<IEnumerable<Obra>> GetFilteredAsync(string? search, string? estado, CancellationToken ct = default);
+    Task<Dictionary<Guid, decimal>> GetCostesRealesAsync(CancellationToken ct = default);
+    Task<decimal> GetCosteRealAsync(Guid obraId, CancellationToken ct = default);
     Task AddAsync(Obra obra, CancellationToken ct = default);
     void Update(Obra obra);
     void Delete(Obra obra);

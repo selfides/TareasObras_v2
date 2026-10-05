@@ -39,7 +39,9 @@ namespace TareasObras.Application.Features.Obras.Queries.GetObraById
         public async Task<ObraDetailDto?> Handle(GetObraByIdQuery request, CancellationToken ct)
         {
             var obra = await _uow.Obras.GetByIdAsync(request.Id, ct);
-            return obra is null ? null : _mapper.Map<ObraDetailDto>(obra);
+            if (obra is null) return null;
+            var costeReal = await _uow.Obras.GetCosteRealAsync(request.Id, ct);
+            return _mapper.Map<ObraDetailDto>(obra) with { PresupuestoReal = costeReal };
         }
     }
 }
