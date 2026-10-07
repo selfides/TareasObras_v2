@@ -139,8 +139,7 @@
   }
 </div>
 
-<!-- Dialog Presupuesto -->
-<p-dialog [(visible)]="dlgPresupuesto" [header]="editandoPresupuestoId() ? 'Editar Presupuesto' : 'Nuevo Presupuesto'" [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false" [closeOnEscape]="true" (keydown.escape)="dlgPresupuesto = false" class="p-fluid">
+<p-dialog [(visible)]="dlgPresupuesto" [header]="editandoPresupuestoId() ? 'Editar Presupuesto' : 'Nuevo Presupuesto'" [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false" [closeOnEscape]="true" class="p-fluid">
   <div class="space-y-4 pt-2">
     <div>
       <label class="block text-sm font-medium mb-1.5">Numero de presupuesto *</label>
@@ -166,8 +165,7 @@
   </ng-template>
 </p-dialog>
 
-<!-- Dialog Partida -->
-<p-dialog [(visible)]="dlgPartida" [header]="editandoPartidaId() ? 'Editar partida' : 'Nueva partida'" [modal]="true" appendTo="body" [style]="{width:'min(440px, 95vw)'}" [draggable]="false" [closeOnEscape]="true" (keydown.escape)="dlgPartida = false" class="p-fluid">
+<p-dialog [(visible)]="dlgPartida" [header]="editandoPartidaId() ? 'Editar partida' : 'Nueva partida'" [modal]="true" appendTo="body" [style]="{width:'min(440px, 95vw)'}" [draggable]="false" [closeOnEscape]="true" class="p-fluid">
   <div class="space-y-4 pt-2">
     <div>
       <label class="block text-sm font-medium mb-1.5">Nombre *</label>
@@ -188,9 +186,8 @@
   </ng-template>
 </p-dialog>
 
-<!-- Dialog Linea -->
 <p-dialog [(visible)]="dlgLinea" [header]="editandoLineaId() ? 'Editar linea' : (tipoLinea() === 'Material' ? 'Anadir material' : 'Anadir mano de obra')"
-          [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false" [closeOnEscape]="true" (keydown.escape)="dlgLinea = false" class="p-fluid">
+          [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false" [closeOnEscape]="true" class="p-fluid">
   <div class="space-y-4 pt-2">
     @if (tipoLinea() === 'ManoObra') {
       <div>
