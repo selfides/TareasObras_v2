@@ -16,6 +16,8 @@ namespace TareasObras.Application.Common.Mappings
                     s.Tareas.Count(t =>
                         t.Estado == Domain.Enums.EstadoTarea.Pendiente ||
                         t.Estado == Domain.Enums.EstadoTarea.EnProgreso)))
+                .ForMember(d => d.TareasCompletadas, o => o.MapFrom(s =>
+                    s.Tareas.Count(t => t.Estado == Domain.Enums.EstadoTarea.Completada)))
                 .ForMember(d => d.EstadoNombre, o => o.MapFrom(s => s.Estado.ToString()));
 
             CreateMap<Obra, ObraDetailDto>()
