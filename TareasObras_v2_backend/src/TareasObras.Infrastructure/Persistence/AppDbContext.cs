@@ -60,7 +60,12 @@ public class AppDbContext : IdentityDbContext<AppUser>
         builder.Entity<Tarea>().HasQueryFilter(t => !t.IsDeleted);
         builder.Entity<Cuadrilla>().HasQueryFilter(c => !c.IsDeleted);
         builder.Entity<Operario>().HasQueryFilter(o => !o.IsDeleted);
+        builder.Entity<CategoriaOperario>().HasQueryFilter(c => !c.IsDeleted);
         builder.Entity<Presupuesto>().HasQueryFilter(p => !p.IsDeleted);
+        builder.Entity<PartidaPresupuesto>().HasQueryFilter(p => !p.IsDeleted);
+        builder.Entity<LineaPresupuestoMaterial>().HasQueryFilter(l => !l.IsDeleted);
+        builder.Entity<LineaPresupuestoHoras>().HasQueryFilter(l => !l.IsDeleted);
+        builder.Entity<LineaPartida>().HasQueryFilter(l => !l.IsDeleted);
         builder.Entity<RegistroHoras>().HasQueryFilter(r => !r.IsDeleted);
         builder.Entity<MaterialObra>().HasQueryFilter(m => !m.IsDeleted);
         builder.Entity<Proveedor>().HasQueryFilter(p => !p.IsDeleted);
@@ -176,6 +181,10 @@ public class AppDbContext : IdentityDbContext<AppUser>
             .Property(m => m.Cantidad).HasPrecision(12, 3);
         builder.Entity<MaterialObra>()
             .Property(m => m.PrecioUnitario).HasPrecision(10, 2);
+        builder.Entity<LineaPartida>()
+            .Property(l => l.Cantidad).HasPrecision(12, 3);
+        builder.Entity<LineaPartida>()
+            .Property(l => l.PrecioUnitario).HasPrecision(10, 2);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken ct = default)
