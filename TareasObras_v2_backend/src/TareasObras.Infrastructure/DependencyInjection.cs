@@ -19,9 +19,12 @@ public static class DependencyInjection
     {
         // ─── Database ──────────────────────────────────────────────────────
         services.AddDbContext<AppDbContext>(options =>
+        {
             options.UseSqlServer(
                 config.GetConnectionString("DefaultConnection"),
-                sql => sql.MigrationsAssembly(typeof(AppDbContext).Assembly.GetName().Name)));
+                sql => sql.MigrationsAssembly(typeof(AppDbContext).Assembly.GetName().Name));
+            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
 
         // ─── Identity ──────────────────────────────────────────────────────
         services.AddIdentity<AppUser, IdentityRole>(options =>
