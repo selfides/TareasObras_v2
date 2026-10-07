@@ -57,8 +57,8 @@ export class MaterialesGlobalComponent implements OnInit {
   dlgProveedor = false;
   editingMaterialId = signal<string | null>(null);
 
-  @HostListener('document:keydown.escape', ['$event'])
-  handleEscape(event: KeyboardEvent) {
+  @HostListener('document:keydown.escape')
+  handleEscape() {
     if (this.dialogVisible) {
       this.dialogVisible = false;
     } else if (this.dlgProveedor) {

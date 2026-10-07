@@ -49,8 +49,8 @@ export class ObraTabPresupuestosComponent implements OnInit {
   dlgPartida = false;
   dlgLinea = false;
 
-  @HostListener('document:keydown.escape', ['$event'])
-  handleEscape(event: KeyboardEvent) {
+  @HostListener('document:keydown.escape')
+  handleEscape() {
     if (this.dlgLinea) {
       this.dlgLinea = false;
     } else if (this.dlgPartida) {

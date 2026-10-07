@@ -93,8 +93,8 @@ export class ObraDialogComponent implements OnInit {
 
   ngOnInit() {}
 
-  @HostListener('document:keydown.escape', ['$event'])
-  handleEscape(event: KeyboardEvent) {
+  @HostListener('document:keydown.escape')
+  handleEscape() {
     if (this.visible()) {
       this.visible.set(false);
       this.closed.emit();

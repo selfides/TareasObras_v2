@@ -46,8 +46,8 @@ export class ObraTabMaterialesComponent implements OnInit {
   editandoMaterialId = signal<string | null>(null);
   saving = signal(false);
 
-  @HostListener('document:keydown.escape', ['$event'])
-  handleEscape(event: KeyboardEvent) {
+  @HostListener('document:keydown.escape')
+  handleEscape() {
     if (this.dlgMaterial) {
       this.dlgMaterial = false;
     } else if (this.dlgProveedor) {
