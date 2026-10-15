@@ -94,6 +94,7 @@ public interface IMaterialObraRepository
     Task<IEnumerable<MaterialObra>> GetAllAsync(CancellationToken ct = default);
     Task<IEnumerable<MaterialObra>> GetByObraIdAsync(Guid obraId, CancellationToken ct = default);
     Task<IEnumerable<MaterialObra>> GetByFechaAsync(DateTime fecha, CancellationToken ct = default);
+    Task<MaterialObra?> GetByHashAsync(string hash, CancellationToken ct = default);
     Task AddAsync(MaterialObra material, CancellationToken ct = default);
     void Update(MaterialObra material);
     void Delete(MaterialObra material);
@@ -125,6 +126,16 @@ public interface IProveedorRepository
     void Delete(Proveedor proveedor);
 }
 
+public interface ITicketPendienteRepository
+{
+    Task<TicketPendiente?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<TicketPendiente?> GetByHashAsync(string hash, CancellationToken ct = default);
+    Task<IEnumerable<TicketPendiente>> GetAllAsync(Domain.Enums.EstadoTicketPendiente? estado = null, Guid? obraId = null, string? usuarioId = null, CancellationToken ct = default);
+    Task AddAsync(TicketPendiente ticket, CancellationToken ct = default);
+    void Update(TicketPendiente ticket);
+    void Delete(TicketPendiente ticket);
+}
+
 public interface IUnitOfWork
 {
     IObraRepository Obras { get; }
@@ -140,8 +151,10 @@ public interface IUnitOfWork
     IPartidaPresupuestoRepository PartidasPresupuesto { get; }
     ILineaPartidaRepository LineasPartida { get; }
     IProveedorRepository Proveedores { get; }
+    ITicketPendienteRepository TicketsPendientes { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
+
 
 public interface ICurrentUserService
 {

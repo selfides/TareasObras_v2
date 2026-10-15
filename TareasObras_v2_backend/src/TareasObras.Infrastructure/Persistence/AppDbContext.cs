@@ -34,6 +34,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<LineaPresupuestoHoras> LineasPresupuestoHoras => Set<LineaPresupuestoHoras>();
     public DbSet<MaterialObra> MaterialesObra => Set<MaterialObra>();
     public DbSet<Proveedor> Proveedores => Set<Proveedor>();
+    public DbSet<TicketPendiente> TicketsPendientes => Set<TicketPendiente>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserService currentUser)
         : base(options)
@@ -69,6 +70,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
         builder.Entity<RegistroHoras>().HasQueryFilter(r => !r.IsDeleted);
         builder.Entity<MaterialObra>().HasQueryFilter(m => !m.IsDeleted);
         builder.Entity<Proveedor>().HasQueryFilter(p => !p.IsDeleted);
+        builder.Entity<TicketPendiente>().HasQueryFilter(t => !t.IsDeleted);
 
         // Presupuesto → Obra
         builder.Entity<Presupuesto>()
@@ -181,11 +183,38 @@ public class AppDbContext : IdentityDbContext<AppUser>
             .Property(m => m.Cantidad).HasPrecision(12, 3);
         builder.Entity<MaterialObra>()
             .Property(m => m.PrecioUnitario).HasPrecision(10, 2);
-        builder.Entity<LineaPartida>()
-            .Property(l => l.Cantidad).HasPrecision(12, 3);
+        builder.Entity<MaterialObra>()
+            .Property(m => m.PorcentajeIva).HasPrecision(5, 2);
+        builder.Entity<MaterialObra>()
+            .Property(m => m.ImporteIva).HasPrecision(10, 2);
+        builder.Entity<MaterialObra>()
+            .Property(m => m.BaseImponible).HasPrecision(10, 2);
+        builder.Entity<MaterialObra>()
+            .Property(m => m.DocumentoAdjuntoUrl).HasMaxLength(500);
+        builder.Entity<MaterialObra>()
+            .Property(m => m.DocumentoHash).HasMaxLength(128);
+        builder.Entity<MaterialObra>()
+            .Property(m => m.CifProveedor).HasMaxLength(30);
+        builder.Entity<MaterialObra>()
+            .HasIndex(m => m.DocumentoHash);
         builder.Entity<LineaPartida>()
             .Property(l => l.PrecioUnitario).HasPrecision(10, 2);
+
+        builder.Entity<TicketPendiente>()
+            .HasOne(t => t.Obra)
+            .WithMany()
+            .HasForeignKey(t => t.ObraId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<TicketPendiente>()
+            .Property(t => t.DocumentoUrl).HasMaxLength(500);
+        builder.Entity<TicketPendiente>()
+            .Property(t => t.DocumentoHash).HasMaxLength(128);
+        builder.Entity<TicketPendiente>()
+            .HasIndex(t => t.DocumentoHash);
+        builder.Entity<TicketPendiente>()
+            .Property(t => t.TotalEstimado).HasPrecision(12, 2);
     }
+
 
     public override Task<int> SaveChangesAsync(CancellationToken ct = default)
     {

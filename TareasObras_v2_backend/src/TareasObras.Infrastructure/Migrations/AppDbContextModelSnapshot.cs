@@ -285,8 +285,7 @@ namespace TareasObras.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Cantidad")
-                        .HasPrecision(12, 3)
-                        .HasColumnType("decimal(12,3)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid?>("CategoriaOperarioId")
                         .HasColumnType("uniqueidentifier");
@@ -418,9 +417,17 @@ namespace TareasObras.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal?>("BaseImponible")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
                     b.Property<decimal>("Cantidad")
                         .HasPrecision(12, 3)
                         .HasColumnType("decimal(12,3)");
+
+                    b.Property<string>("CifProveedor")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -432,8 +439,20 @@ namespace TareasObras.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DocumentoAdjuntoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("DocumentoHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("ImporteIva")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -453,6 +472,10 @@ namespace TareasObras.Infrastructure.Migrations
                     b.Property<string>("Observaciones")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal?>("PorcentajeIva")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<decimal>("PrecioUnitario")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
@@ -471,6 +494,8 @@ namespace TareasObras.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DocumentoHash");
 
                     b.HasIndex("LineaPartidaId");
 
@@ -862,6 +887,102 @@ namespace TareasObras.Infrastructure.Migrations
                     b.ToTable("Tareas");
                 });
 
+            modelBuilder.Entity("TareasObras.Domain.Entities.TicketPendiente", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CifSugerido")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ComentarioOperario")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DatosExtraidosJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentoHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("DocumentoUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FechaGasto")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaRevision")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("MaterialObraId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MotivoRechazo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NombreArchivoOriginal")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NumeroFacturaSugerido")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ObraId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProveedorSugerido")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RevisadoPor")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("TotalEstimado")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UsuarioId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UsuarioNombre")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentoHash");
+
+                    b.HasIndex("MaterialObraId");
+
+                    b.HasIndex("ObraId");
+
+                    b.ToTable("TicketsPendientes");
+                });
+
             modelBuilder.Entity("TareasObras.Infrastructure.Persistence.AppUser", b =>
                 {
                     b.Property<string>("Id")
@@ -1158,6 +1279,23 @@ namespace TareasObras.Infrastructure.Migrations
                     b.Navigation("Cuadrilla");
 
                     b.Navigation("LineaPartida");
+
+                    b.Navigation("Obra");
+                });
+
+            modelBuilder.Entity("TareasObras.Domain.Entities.TicketPendiente", b =>
+                {
+                    b.HasOne("TareasObras.Domain.Entities.MaterialObra", "MaterialObra")
+                        .WithMany()
+                        .HasForeignKey("MaterialObraId");
+
+                    b.HasOne("TareasObras.Domain.Entities.Obra", "Obra")
+                        .WithMany()
+                        .HasForeignKey("ObraId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("MaterialObra");
 
                     b.Navigation("Obra");
                 });

@@ -153,20 +153,21 @@ public record LineaMaterialExtraidaDto
 
 ## 8. Fases de Ejecución
 
-- [ ] **Fase 1: Infraestructura y Almacenamiento en Backend (.NET 10)**
-  - [ ] Añadir campos `DocumentoAdjuntoUrl`, `DocumentoHash` y datos fiscales en `MaterialObra`.
-  - [ ] Implementar `FileStorageService` para subida y almacenamiento seguro de PDFs e imágenes.
-  - [ ] Generar migración de base de datos correspondiente.
-- [ ] **Fase 2: Motor de Extracción IA**
-  - [ ] Configurar cliente de API de Visión (Gemini Flash API o Azure).
-  - [ ] Definir `InvoiceSchema` estricto en JSON y DTOs de salida.
-  - [ ] Crear endpoint `POST /api/facturas/analizar` con pruebas unitarias sobre tickets y facturas reales.
-- [ ] **Fase 3: Endpoint de Imputación y Lógica de Negocio**
-  - [ ] Endpoint `POST /api/facturas/imputar` con creación en bloque de `MaterialesObra` y actualización de balances de coste real.
-  - [ ] Lógica de vinculación y alta automática de proveedores desconocidos.
-- [ ] **Fase 4: Componente de Pantalla Dividida en Frontend (Angular 20)**
-  - [ ] Creación de `FacturaImputarDialogComponent` con visor de documento (PDF/Foto) a la izquierda y tabla editable a la derecha.
-  - [ ] Integración con el botón "Importar Factura / Ticket" en la vista global de materiales y en la pestaña de materiales de cada obra.
-- [ ] **Fase 5: Captura Rápida en Móvil / PWA**
-  - [ ] Botón de captura con cámara en el portal del operario para digitalización in situ de tickets de caja.
-  - [ ] Bandeja de entrada de *"Tickets pendientes de aprobación"* en el panel de administración.
+- [x] **Fase 1: Infraestructura y Almacenamiento en Backend (.NET 10)**
+  - [x] Añadir campos `DocumentoAdjuntoUrl`, `DocumentoHash` y datos fiscales en `MaterialObra`.
+  - [x] Implementar `FileStorageService` para subida y almacenamiento seguro de PDFs e imágenes.
+  - [x] Generar migración de base de datos correspondiente.
+- [x] **Fase 2: Motor de Extracción IA**
+  - [x] Configurar cliente de API de Visión (Gemini Flash API o Azure).
+  - [x] Definir `InvoiceSchema` estricto en JSON y DTOs de salida.
+  - [x] Crear endpoint `POST /api/facturas/analizar` con pruebas unitarias sobre tickets y facturas reales.
+- [x] **Fase 3: Endpoint de Imputación y Lógica de Negocio**
+  - [x] Endpoint `POST /api/facturas/imputar` con creación en bloque de `MaterialesObra` y actualización de balances de coste real.
+  - [x] Lógica de vinculación y alta automática de proveedores desconocidos.
+- [x] **Fase 4: Componente de Pantalla Dividida en Frontend (Angular 20)**
+  - [x] Creación de `FacturaImputarDialogComponent` con visor de documento (PDF/Foto) a la izquierda y tabla editable a la derecha.
+  - [x] Integración con el botón "Importar Factura / Ticket" en la vista global de materiales y en la pestaña de materiales de cada obra.
+- [x] **Fase 5: Captura Rápida en Móvil / PWA**
+  - [x] Botón de captura con cámara en el portal del operario para digitalización in situ de tickets de caja.
+  - [x] Bandeja de entrada de *"Tickets pendientes de aprobación"* en el panel de administración.
+

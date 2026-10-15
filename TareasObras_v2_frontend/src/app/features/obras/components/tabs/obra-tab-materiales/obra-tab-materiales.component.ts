@@ -17,15 +17,20 @@ import { AuthService } from '../../../../../core/auth/auth.service';
 import { MaterialesObraService } from '../../../../../core/services/materiales-obra.service';
 import { ProveedoresService } from '../../../../../core/services/proveedores.service';
 import { MaterialObraDto, ProveedorDto } from '../../../../../core/models';
+import { FacturaImputarDialogComponent } from '../../../../facturas/components/factura-imputar-dialog.component';
 
 @Component({
   selector: 'app-obra-tab-materiales',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableModule, DialogModule, ButtonModule, SelectModule,
-            DatePickerModule, InputTextModule, InputNumberModule, TextareaModule, TooltipModule, ConfirmDialogModule],
+  imports: [
+    CommonModule, FormsModule, TableModule, DialogModule, ButtonModule, SelectModule,
+    DatePickerModule, InputTextModule, InputNumberModule, TextareaModule, TooltipModule, ConfirmDialogModule,
+    FacturaImputarDialogComponent
+  ],
   providers: [ConfirmationService],
   templateUrl: './obra-tab-materiales.component.html'
 })
+
 export class ObraTabMaterialesComponent implements OnInit {
   obraId = input.required<string>();
   availableMaterialBudgetLines = input<any[]>([]); // Pasado desde el detail para vincular presupuesto
@@ -43,6 +48,7 @@ export class ObraTabMaterialesComponent implements OnInit {
   // Dialog State
   dlgMaterial = false;
   dlgProveedor = false;
+  dlgFacturaIaVisible = signal<boolean>(false);
   editandoMaterialId = signal<string | null>(null);
   saving = signal(false);
 
@@ -163,5 +169,13 @@ export class ObraTabMaterialesComponent implements OnInit {
   getProveedorNombre(id?: string): string {
     if (!id) return '';
     return this.proveedores().find(p => p.id === id)?.nombre || '';
+  }
+
+  onFacturaImputadaSuccess(resultado: any) {
+    this.cargarDatos();
+  }
+
+  abrirDocumento(materialId: string) {
+    window.open(`/api/materialesobra/documento/${materialId}`, '_blank');
   }
 }

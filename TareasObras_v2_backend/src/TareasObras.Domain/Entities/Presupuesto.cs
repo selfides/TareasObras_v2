@@ -130,13 +130,38 @@ public class MaterialObra : BaseEntity
     public string? NumeroFactura { get; private set; }
     public string? Observaciones { get; private set; }
 
+    // Campos de Justificante / Factura / Ticket
+    public string? DocumentoAdjuntoUrl { get; private set; }
+    public string? DocumentoHash { get; private set; }
+    public string? CifProveedor { get; private set; }
+    public decimal? PorcentajeIva { get; private set; }
+    public decimal? ImporteIva { get; private set; }
+    public decimal? BaseImponible { get; private set; }
+
     public Obra Obra { get; private set; } = null!;
     public Proveedor? Proveedor { get; private set; }
     public LineaPartida? LineaPartida { get; private set; }
 
     private MaterialObra() { }
 
-    public static MaterialObra Create(Guid obraId, string descripcion, string unidad, decimal cantidad, decimal precioUnitario, DateTime fecha, Guid? proveedorId = null, string? numeroAlbaran = null, string? numeroFactura = null, string? observaciones = null, Guid? lineaPartidaId = null)
+    public static MaterialObra Create(
+        Guid obraId,
+        string descripcion,
+        string unidad,
+        decimal cantidad,
+        decimal precioUnitario,
+        DateTime fecha,
+        Guid? proveedorId = null,
+        string? numeroAlbaran = null,
+        string? numeroFactura = null,
+        string? observaciones = null,
+        Guid? lineaPartidaId = null,
+        string? documentoAdjuntoUrl = null,
+        string? documentoHash = null,
+        string? cifProveedor = null,
+        decimal? porcentajeIva = null,
+        decimal? importeIva = null,
+        decimal? baseImponible = null)
     {
         return new MaterialObra
         {
@@ -150,11 +175,33 @@ public class MaterialObra : BaseEntity
             Fecha = fecha.Date,
             NumeroAlbaran = numeroAlbaran?.Trim(),
             NumeroFactura = numeroFactura?.Trim(),
-            Observaciones = observaciones?.Trim()
+            Observaciones = observaciones?.Trim(),
+            DocumentoAdjuntoUrl = documentoAdjuntoUrl?.Trim(),
+            DocumentoHash = documentoHash?.Trim(),
+            CifProveedor = cifProveedor?.Trim(),
+            PorcentajeIva = porcentajeIva,
+            ImporteIva = importeIva,
+            BaseImponible = baseImponible
         };
     }
 
-    public void Update(string descripcion, string unidad, decimal cantidad, decimal precioUnitario, DateTime fecha, Guid? proveedorId, string? numeroAlbaran, string? numeroFactura, string? observaciones, Guid? lineaPartidaId)
+    public void Update(
+        string descripcion,
+        string unidad,
+        decimal cantidad,
+        decimal precioUnitario,
+        DateTime fecha,
+        Guid? proveedorId,
+        string? numeroAlbaran,
+        string? numeroFactura,
+        string? observaciones,
+        Guid? lineaPartidaId,
+        string? documentoAdjuntoUrl = null,
+        string? documentoHash = null,
+        string? cifProveedor = null,
+        decimal? porcentajeIva = null,
+        decimal? importeIva = null,
+        decimal? baseImponible = null)
     {
         Descripcion = descripcion.Trim();
         Unidad = unidad.Trim();
@@ -166,6 +213,28 @@ public class MaterialObra : BaseEntity
         NumeroFactura = numeroFactura?.Trim();
         Observaciones = observaciones?.Trim();
         LineaPartidaId = lineaPartidaId;
+        if (documentoAdjuntoUrl != null) DocumentoAdjuntoUrl = documentoAdjuntoUrl.Trim();
+        if (documentoHash != null) DocumentoHash = documentoHash.Trim();
+        if (cifProveedor != null) CifProveedor = cifProveedor.Trim();
+        if (porcentajeIva.HasValue) PorcentajeIva = porcentajeIva;
+        if (importeIva.HasValue) ImporteIva = importeIva;
+        if (baseImponible.HasValue) BaseImponible = baseImponible;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetDocumento(string? url, string? hash)
+    {
+        DocumentoAdjuntoUrl = url?.Trim();
+        DocumentoHash = hash?.Trim();
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetDatosFiscales(string? cifProveedor, decimal? porcentajeIva, decimal? importeIva, decimal? baseImponible)
+    {
+        CifProveedor = cifProveedor?.Trim();
+        PorcentajeIva = porcentajeIva;
+        ImporteIva = importeIva;
+        BaseImponible = baseImponible;
         UpdatedAt = DateTime.UtcNow;
     }
 

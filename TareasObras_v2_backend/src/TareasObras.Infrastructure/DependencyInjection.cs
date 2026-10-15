@@ -11,6 +11,9 @@ using TareasObras.Infrastructure.Identity;
 using TareasObras.Infrastructure.Persistence;
 using TareasObras.Infrastructure.Persistence.Repositories;
 
+using TareasObras.Infrastructure.Storage;
+using TareasObras.Infrastructure.Services;
+
 namespace TareasObras.Infrastructure;
 
 public static class DependencyInjection
@@ -68,10 +71,13 @@ public static class DependencyInjection
 
         // ─── Repositories & Services ───────────────────────────────────────
         services.AddHttpContextAccessor();
+        services.AddHttpClient();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddHttpClient<IFacturaOcrService, GeminiFacturaOcrService>();
 
         return services;
     }

@@ -167,7 +167,109 @@ export interface MaterialObraDto {
   numeroAlbaran?: string;
   numeroFactura?: string;
   observaciones?: string;
+  documentoAdjuntoUrl?: string;
+  documentoHash?: string;
+  cifProveedor?: string;
+  porcentajeIva?: number;
+  importeIva?: number;
+  baseImponible?: number;
 }
+
+// ─── Facturas e IA ────────────────────────────────────────────────────────
+export interface LineaMaterialExtraidaDto {
+  descripcion: string;
+  unidad: string;
+  cantidad: number;
+  precioUnitario: number;
+  importe: number;
+  lineaPartidaIdSugerida?: string;
+  partidaSugeridaNombre?: string;
+}
+
+export interface FacturaExtraidaDto {
+  proveedorNombre?: string;
+  proveedorCif?: string;
+  proveedorIdSugerido?: string;
+  numeroFactura?: string;
+  numeroAlbaran?: string;
+  fechaEmision?: string;
+  baseImponible: number;
+  porcentajeIva: number;
+  importeIva: number;
+  importeTotal: number;
+  obraIdentificadaTexto?: string;
+  obraIdSugerida?: string;
+  documentoTemporalUrl: string;
+  documentoHash: string;
+  esDuplicado: boolean;
+  advertenciaDuplicado?: string;
+  lineas: LineaMaterialExtraidaDto[];
+}
+
+export interface LineaImputarFacturaDto {
+  descripcion: string;
+  unidad: string;
+  cantidad: number;
+  precioUnitario: number;
+  importe: number;
+  lineaPartidaId?: string;
+  observaciones?: string;
+}
+
+export interface ImputarFacturaCommand {
+  obraId: string;
+  proveedorId?: string;
+  proveedorNombre?: string;
+  proveedorCif?: string;
+  crearProveedorSiNoExiste?: boolean;
+  numeroFactura?: string;
+  numeroAlbaran?: string;
+  fecha: string;
+  porcentajeIva?: number;
+  documentoAdjuntoUrl?: string;
+  documentoHash?: string;
+  observaciones?: string;
+  ticketPendienteId?: string;
+  lineas: LineaImputarFacturaDto[];
+}
+
+export interface ImputarFacturaResultDto {
+  success: boolean;
+  mensaje: string;
+  materialesCreados: number;
+  totalCosteImputado: number;
+  nuevoCosteRealObra: number;
+  proveedorId?: string;
+  proveedorNombre?: string;
+  materialIds: string[];
+}
+
+export interface TicketPendienteDto {
+  id: string;
+  obraId: string;
+  obraNombre: string;
+  obraCodigo: string;
+  usuarioId?: string;
+  usuarioNombre?: string;
+  documentoUrl: string;
+  documentoHash: string;
+  nombreArchivoOriginal: string;
+  contentType: string;
+  estado: 'Pendiente' | 'Aprobado' | 'Rechazado';
+  fechaSubida: string;
+  fechaGasto?: string;
+  totalEstimado?: number;
+  proveedorSugerido?: string;
+  cifSugerido?: string;
+  numeroFacturaSugerido?: string;
+  comentarioOperario?: string;
+  datosExtraidosJson?: string;
+  materialObraId?: string;
+  motivoRechazo?: string;
+  revisadoPor?: string;
+  fechaRevision?: string;
+}
+
 
 // ─── Proveedores ────────────────────────────────────────────────────────
 export interface ProveedorDto {

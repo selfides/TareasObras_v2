@@ -6,7 +6,7 @@ import { ObrasService } from '../../../core/services/obras.service';
 import { ProveedoresService } from '../../../core/services/proveedores.service';
 import { PresupuestosService } from '../../../core/services/presupuestos.service';
 import { PartidasService, PartidaDto } from '../../../core/services/partidas.service';
-import { ObraListDto, ProveedorDto } from '../../../core/models';
+import { ObraListDto, ProveedorDto, TicketPendienteDto } from '../../../core/models';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -20,6 +20,9 @@ import { TextareaModule } from 'primeng/textarea';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { FacturaImputarDialogComponent } from '../../facturas/components/factura-imputar-dialog.component';
+import { TicketsPendientesBandejaComponent } from '../../facturas/components/tickets-pendientes-bandeja.component';
+import { TicketCapturaModalComponent } from '../../facturas/components/ticket-captura-modal.component';
 
 interface MaterialGlobalDto {
   id: string; obraId: string; obraNombre: string; obraCodigo: string;
@@ -27,6 +30,7 @@ interface MaterialGlobalDto {
   descripcion: string; unidad: string;
   cantidad: number; precioUnitario: number; importeReal: number;
   fecha: string; numeroAlbaran?: string; numeroFactura?: string; observaciones?: string;
+  documentoAdjuntoUrl?: string; documentoHash?: string; cifProveedor?: string;
 }
 
 @Component({
@@ -34,10 +38,12 @@ interface MaterialGlobalDto {
   standalone: true,
   imports: [CommonModule, FormsModule, TableModule, ButtonModule, DialogModule,
             ConfirmDialogModule, InputTextModule, InputNumberModule, SelectModule,
-            DatePickerModule, TextareaModule, TagModule, TooltipModule, ToggleSwitchModule],
+            DatePickerModule, TextareaModule, TagModule, TooltipModule, ToggleSwitchModule,
+            FacturaImputarDialogComponent, TicketsPendientesBandejaComponent, TicketCapturaModalComponent],
   providers: [ConfirmationService],
   templateUrl: './materiales-global.component.html'
 })
+
 export class MaterialesGlobalComponent implements OnInit {
   private materialesService = inject(MaterialesObraService);
   private obrasService = inject(ObrasService);
@@ -55,7 +61,30 @@ export class MaterialesGlobalComponent implements OnInit {
   saving = signal(false);
   dialogVisible = false;
   dlgProveedor = false;
+  dlgFacturaIaVisible = signal<boolean>(false);
+
+  dlgTicketCapturaVisible = signal<boolean>(false);
+  vistaActiva = signal<'materiales' | 'tickets'>('materiales');
+  contadorTicketsPendientes = signal<number>(0);
+  ticketParaRevisar = signal<TicketPendienteDto | null>(null);
   editingMaterialId = signal<string | null>(null);
+
+  abrirRevisionTicket(t: TicketPendienteDto) {
+    this.ticketParaRevisar.set(t);
+    this.dlgFacturaIaVisible.set(true);
+  }
+
+  onDlgFacturaVisibleChange(visible: boolean) {
+    this.dlgFacturaIaVisible.set(visible);
+    if (!visible) {
+      this.ticketParaRevisar.set(null);
+    }
+  }
+
+  onTicketSubido() {
+    this.vistaActiva.set('tickets');
+  }
+
 
   @HostListener('document:keydown.escape')
   handleEscape() {
@@ -269,6 +298,14 @@ export class MaterialesGlobalComponent implements OnInit {
         this.msg.add({ severity: 'error', summary: 'Error al crear proveedor' });
       }
     });
+  }
+
+  onFacturaImputadaSuccess(resultado: any) {
+    this.loadMateriales();
+  }
+
+  abrirDocumento(materialId: string) {
+    window.open(`/api/materialesobra/documento/${materialId}`, '_blank');
   }
 
   private formatDate(d: Date): string {

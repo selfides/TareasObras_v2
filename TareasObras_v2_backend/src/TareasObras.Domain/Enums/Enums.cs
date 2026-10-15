@@ -1,4 +1,4 @@
-﻿namespace TareasObras.Domain.Enums;
+namespace TareasObras.Domain.Enums;
 
 public enum EstadoObra
 {
@@ -35,3 +35,10 @@ public enum RolUsuario
 
 
 public enum EstadoPresupuesto { Borrador = 0, Aprobado = 1, Anulado = 2 }
+
+public enum EstadoTicketPendiente
+{
+    Pendiente = 0,
+    Aprobado = 1,
+    Rechazado = 2
+}

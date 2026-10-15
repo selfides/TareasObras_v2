@@ -19,6 +19,12 @@ public record MaterialObraDto
     public string? NumeroAlbaran { get; init; }
     public string? NumeroFactura { get; init; }
     public string? Observaciones { get; init; }
+    public string? DocumentoAdjuntoUrl { get; init; }
+    public string? DocumentoHash { get; init; }
+    public string? CifProveedor { get; init; }
+    public decimal? PorcentajeIva { get; init; }
+    public decimal? ImporteIva { get; init; }
+    public decimal? BaseImponible { get; init; }
 }
 
 public record GetMaterialesByObraQuery(Guid ObraId) : IRequest<IEnumerable<MaterialObraDto>>;
@@ -36,7 +42,10 @@ public class GetMaterialesByObraHandler : IRequestHandler<GetMaterialesByObraQue
             LineaPartidaNombre = m.LineaPartida?.Descripcion,
             Descripcion = m.Descripcion, Unidad = m.Unidad, Cantidad = m.Cantidad,
             PrecioUnitario = m.PrecioUnitario, ImporteReal = m.ImporteReal, Fecha = m.Fecha, 
-            NumeroAlbaran = m.NumeroAlbaran, NumeroFactura = m.NumeroFactura, Observaciones = m.Observaciones
+            NumeroAlbaran = m.NumeroAlbaran, NumeroFactura = m.NumeroFactura, Observaciones = m.Observaciones,
+            DocumentoAdjuntoUrl = m.DocumentoAdjuntoUrl, DocumentoHash = m.DocumentoHash,
+            CifProveedor = m.CifProveedor, PorcentajeIva = m.PorcentajeIva,
+            ImporteIva = m.ImporteIva, BaseImponible = m.BaseImponible
         });
     }
 }

@@ -89,6 +89,10 @@ try
     Log.Information("🚀 TareasObras API iniciando en {Env}", app.Environment.EnvironmentName);
     await app.RunAsync();
 }
+catch (HostAbortedException)
+{
+    throw;
+}
 catch (Exception ex)
 {
     Log.Fatal(ex, "La aplicación falló al iniciar.");

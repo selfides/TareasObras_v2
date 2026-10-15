@@ -242,6 +242,10 @@ public class MaterialObraRepository : IMaterialObraRepository
             .Where(m => m.Fecha.Date == fecha.Date)
             .OrderByDescending(m => m.Fecha).ToListAsync(ct);
 
+    public async Task<MaterialObra?> GetByHashAsync(string hash, CancellationToken ct = default)
+        => await _ctx.MaterialesObra.Include(m => m.Obra).Include(m => m.LineaPartida)
+            .FirstOrDefaultAsync(m => m.DocumentoHash == hash, ct);
+
     public async Task AddAsync(MaterialObra m, CancellationToken ct = default) => await _ctx.MaterialesObra.AddAsync(m, ct);
     public void Update(MaterialObra m) => _ctx.MaterialesObra.Update(m);
     public void Delete(MaterialObra m) => _ctx.MaterialesObra.Remove(m);
@@ -294,6 +298,44 @@ public class ProveedorRepository : IProveedorRepository
     public void Delete(Proveedor p) => _ctx.Proveedores.Remove(p);
 }
 
+public class TicketPendienteRepository : ITicketPendienteRepository
+{
+    private readonly AppDbContext _ctx;
+    public TicketPendienteRepository(AppDbContext ctx) => _ctx = ctx;
+
+    public async Task<TicketPendiente?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => await _ctx.TicketsPendientes.Include(t => t.Obra).FirstOrDefaultAsync(t => t.Id == id, ct);
+
+    public async Task<TicketPendiente?> GetByHashAsync(string hash, CancellationToken ct = default)
+        => await _ctx.TicketsPendientes.FirstOrDefaultAsync(t => t.DocumentoHash == hash, ct);
+
+    public async Task<IEnumerable<TicketPendiente>> GetAllAsync(
+        Domain.Enums.EstadoTicketPendiente? estado = null,
+        Guid? obraId = null,
+        string? usuarioId = null,
+        CancellationToken ct = default)
+    {
+        var query = _ctx.TicketsPendientes.Include(t => t.Obra).AsQueryable();
+
+        if (estado.HasValue)
+            query = query.Where(t => t.Estado == estado.Value);
+
+        if (obraId.HasValue && obraId.Value != Guid.Empty)
+            query = query.Where(t => t.ObraId == obraId.Value);
+
+        if (!string.IsNullOrWhiteSpace(usuarioId))
+            query = query.Where(t => t.UsuarioId == usuarioId);
+
+        return await query.OrderByDescending(t => t.CreatedAt).ToListAsync(ct);
+    }
+
+    public async Task AddAsync(TicketPendiente ticket, CancellationToken ct = default)
+        => await _ctx.TicketsPendientes.AddAsync(ticket, ct);
+
+    public void Update(TicketPendiente ticket) => _ctx.TicketsPendientes.Update(ticket);
+    public void Delete(TicketPendiente ticket) => _ctx.TicketsPendientes.Remove(ticket);
+}
+
 public class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _ctx;
@@ -311,6 +353,7 @@ public class UnitOfWork : IUnitOfWork
     public IPartidaPresupuestoRepository PartidasPresupuesto { get; }
     public ILineaPartidaRepository LineasPartida { get; }
     public IProveedorRepository Proveedores { get; }
+    public ITicketPendienteRepository TicketsPendientes { get; }
 
     public UnitOfWork(AppDbContext ctx)
     {
@@ -328,7 +371,8 @@ public class UnitOfWork : IUnitOfWork
         PartidasPresupuesto = new PartidaPresupuestoRepository(ctx);
         LineasPartida = new LineaPartidaRepository(ctx);
         Proveedores = new ProveedorRepository(ctx);
+        TicketsPendientes = new TicketPendienteRepository(ctx);
     }
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default) => _ctx.SaveChangesAsync(ct);
-}
+}
