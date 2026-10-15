@@ -9,15 +9,27 @@
 
     <!-- Quick Actions Bar -->
     <div class="flex flex-wrap items-center gap-2">
-      <a routerLink="/diario">
-        <p-button label="Partes / Horas" icon="pi pi-calendar-plus" size="small" [outlined]="true" severity="secondary" />
-      </a>
-      <a routerLink="/materiales">
-        <p-button label="Materiales" icon="pi pi-box" size="small" [outlined]="true" severity="secondary" />
-      </a>
-      <a routerLink="/tareas">
-        <p-button label="Kanban Tareas" icon="pi pi-th-large" size="small" [outlined]="true" severity="secondary" />
-      </a>
+      <p-button 
+        label="Partes / Horas" 
+        icon="pi pi-calendar-plus" 
+        size="small" 
+        [outlined]="true" 
+        severity="secondary" 
+        routerLink="/partes-trabajo" />
+      <p-button 
+        label="Materiales" 
+        icon="pi pi-box" 
+        size="small" 
+        [outlined]="true" 
+        severity="secondary" 
+        routerLink="/materiales" />
+      <p-button 
+        label="Kanban Tareas" 
+        icon="pi pi-th-large" 
+        size="small" 
+        [outlined]="true" 
+        severity="secondary" 
+        routerLink="/tareas" />
       @if (auth.isSupervisor()) {
         <p-button label="Nueva Obra" icon="pi pi-plus" size="small" (onClick)="abrirNuevaObra()" />
       }

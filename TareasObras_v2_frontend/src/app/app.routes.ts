@@ -54,6 +54,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/diario/components/partes-trabajo.component').then(m => m.PartesTrabajoComponent)
       },
       {
+        path: 'diario',
+        redirectTo: 'partes-trabajo'
+      },
+      {
         path: 'usuarios',
         loadComponent: () => import('./features/usuarios/components/usuarios.component').then(m => m.UsuariosComponent),
         canActivate: [adminGuard]

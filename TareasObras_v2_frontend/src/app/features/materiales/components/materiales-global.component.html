@@ -13,13 +13,6 @@
     </div>
     <div class="flex items-center gap-2">
       <p-button
-        label="Subir Ticket Móvil"
-        icon="pi pi-camera"
-        severity="secondary"
-        size="small"
-        (onClick)="dlgTicketCapturaVisible.set(true)"
-      />
-      <p-button
         label="Importar Factura (IA)"
         icon="pi pi-sparkles"
         severity="help"
@@ -637,12 +630,5 @@
   [ticketPendiente]="ticketParaRevisar()"
   (onVisibleChange)="onDlgFacturaVisibleChange($event)"
   (onFacturaImputada)="onFacturaImputadaSuccess($event)"
-/>
-
-<!-- Modal Rápido de Captura de Ticket -->
-<app-ticket-captura-modal
-  [visible]="dlgTicketCapturaVisible()"
-  (onVisibleChange)="dlgTicketCapturaVisible.set($event)"
-  (onTicketEnviado)="onTicketSubido()"
 />
 

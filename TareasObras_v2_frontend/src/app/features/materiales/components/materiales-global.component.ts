@@ -22,7 +22,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FacturaImputarDialogComponent } from '../../facturas/components/factura-imputar-dialog.component';
 import { TicketsPendientesBandejaComponent } from '../../facturas/components/tickets-pendientes-bandeja.component';
-import { TicketCapturaModalComponent } from '../../facturas/components/ticket-captura-modal.component';
 
 interface MaterialGlobalDto {
   id: string; obraId: string; obraNombre: string; obraCodigo: string;
@@ -39,7 +38,7 @@ interface MaterialGlobalDto {
   imports: [CommonModule, FormsModule, TableModule, ButtonModule, DialogModule,
             ConfirmDialogModule, InputTextModule, InputNumberModule, SelectModule,
             DatePickerModule, TextareaModule, TagModule, TooltipModule, ToggleSwitchModule,
-            FacturaImputarDialogComponent, TicketsPendientesBandejaComponent, TicketCapturaModalComponent],
+            FacturaImputarDialogComponent, TicketsPendientesBandejaComponent],
   providers: [ConfirmationService],
   templateUrl: './materiales-global.component.html'
 })
@@ -63,7 +62,6 @@ export class MaterialesGlobalComponent implements OnInit {
   dlgProveedor = false;
   dlgFacturaIaVisible = signal<boolean>(false);
 
-  dlgTicketCapturaVisible = signal<boolean>(false);
   vistaActiva = signal<'materiales' | 'tickets'>('materiales');
   contadorTicketsPendientes = signal<number>(0);
   ticketParaRevisar = signal<TicketPendienteDto | null>(null);
@@ -79,10 +77,6 @@ export class MaterialesGlobalComponent implements OnInit {
     if (!visible) {
       this.ticketParaRevisar.set(null);
     }
-  }
-
-  onTicketSubido() {
-    this.vistaActiva.set('tickets');
   }
 
 

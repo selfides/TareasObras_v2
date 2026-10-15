@@ -18,7 +18,6 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { TicketCapturaModalComponent } from '../../facturas/components/ticket-captura-modal.component';
 
 interface RegistroHorasGlobalDto {
   id: string; obraId: string; obraNombre: string; obraCodigo: string;
@@ -32,14 +31,11 @@ interface RegistroHorasGlobalDto {
   standalone: true,
   imports: [CommonModule, FormsModule, TableModule, ButtonModule, DialogModule,
             ConfirmDialogModule, InputTextModule, InputNumberModule, SelectModule,
-            DatePickerModule, TextareaModule, TooltipModule, ToggleSwitchModule,
-            TicketCapturaModalComponent],
+            DatePickerModule, TextareaModule, TooltipModule, ToggleSwitchModule],
   providers: [ConfirmationService],
   templateUrl: './partes-trabajo.component.html'
 })
 export class PartesTrabajoComponent implements OnInit {
-  dlgTicketCapturaVisible = signal<boolean>(false);
-
   private registroService = inject(RegistroHorasService);
   private obrasService = inject(ObrasService);
   private operariosService = inject(OperariosService);

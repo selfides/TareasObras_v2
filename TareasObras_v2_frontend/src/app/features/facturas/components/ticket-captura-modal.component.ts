@@ -15,6 +15,8 @@ import { ObraListDto, TicketPendienteDto } from '../../../core/models';
 import { OfflineDbService } from '../../../core/services/offline-db.service';
 import { OperarioPortalService } from '../../../core/services/operario-portal.service';
 
+import { DocumentCropperComponent } from './document-cropper.component';
+
 @Component({
   selector: 'app-ticket-captura-modal',
   standalone: true,
@@ -25,7 +27,8 @@ import { OperarioPortalService } from '../../../core/services/operario-portal.se
     ButtonModule,
     SelectModule,
     TextareaModule,
-    ProgressBarModule
+    ProgressBarModule,
+    DocumentCropperComponent
   ],
   template: `
     <p-dialog 
@@ -34,159 +37,185 @@ import { OperarioPortalService } from '../../../core/services/operario-portal.se
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      styleClass="w-full max-w-lg mx-3 rounded-2xl overflow-hidden shadow-2xl border-0"
-      header="Subir Ticket / Compra Rápida">
+      [styleClass]="mostrarCropper() ? 'w-full max-w-xl mx-2 rounded-2xl overflow-hidden shadow-2xl border-0' : 'w-full max-w-lg mx-3 rounded-2xl overflow-hidden shadow-2xl border-0'"
+      [header]="mostrarCropper() ? 'Escáner de Documento' : 'Subir Ticket / Compra Rápida'">
 
-      <div class="space-y-4 p-1">
-
-        <!-- Selector de Obra -->
-        <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
-            Obra Asignada <span class="text-red-500">*</span>
-          </label>
-          <p-select 
-            [options]="obras()" 
-            [ngModel]="obraSeleccionadaId()"
-            (ngModelChange)="obraSeleccionadaId.set($event)"
-            optionLabel="nombre" 
-            optionValue="id" 
-            placeholder="Selecciona la obra..."
-            [filter]="true"
-            filterBy="nombre,codigo"
-            styleClass="w-full">
-            <ng-template #item let-item>
-              <div class="flex items-center justify-between w-full">
-                <span class="font-medium text-surface-900 dark:text-surface-100">{{ item.nombre }}</span>
-                <span class="text-xs px-2 py-0.5 rounded bg-surface-100 dark:bg-surface-800 text-surface-600">{{ item.codigo }}</span>
-              </div>
-            </ng-template>
-          </p-select>
+      @if (mostrarCropper() && rawImageSrc()) {
+        <!-- Modo Escáner de 4 esquinas táctiles y filtros -->
+        <div class="h-[74vh] max-h-[600px] -m-3">
+          <app-document-cropper
+            [imageSrc]="rawImageSrc()!"
+            [fileName]="archivo()?.name || 'ticket.jpg'"
+            (onCropped)="onCropperFinished($event)"
+            (onCancel)="onCropperCanceled()">
+          </app-document-cropper>
         </div>
+      } @else {
+        <!-- Modo Normal de Subida y Revisión -->
+        <div class="space-y-4 p-1">
 
-        <!-- Área de Captura de Foto o Archivo -->
-        <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
-            Foto del Ticket / Factura <span class="text-red-500">*</span>
-          </label>
-
-          <!-- Input oculto para cámara directa móvil -->
-          <input #cameraInput type="file" accept="image/*" capture="environment" class="hidden" (change)="onFileChanged($event)">
-          <!-- Input oculto para explorador de archivos / galería -->
-          <input #fileInput type="file" accept="image/*,application/pdf" class="hidden" (change)="onFileChanged($event)">
-
-          @if (!archivo()) {
-            <div class="grid grid-cols-2 gap-3">
-              <!-- Botón Hacer Foto -->
-              <button 
-                type="button" 
-                (click)="cameraInput.click()"
-                class="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-primary-300 dark:border-primary-700 bg-primary-50/50 dark:bg-primary-950/30 hover:bg-primary-100/60 transition-all text-primary-700 dark:text-primary-300 group cursor-pointer">
-                <div class="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                  <i class="pi pi-camera text-2xl text-primary-600 dark:text-primary-400"></i>
+          <!-- Selector de Obra -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+              Obra Asignada <span class="text-red-500">*</span>
+            </label>
+            <p-select 
+              [options]="obras()" 
+              [ngModel]="obraSeleccionadaId()"
+              (ngModelChange)="obraSeleccionadaId.set($event)"
+              optionLabel="nombre" 
+              optionValue="id" 
+              placeholder="Selecciona la obra..."
+              [filter]="true"
+              filterBy="nombre,codigo"
+              styleClass="w-full">
+              <ng-template #item let-item>
+                <div class="flex items-center justify-between w-full">
+                  <span class="font-medium text-surface-900 dark:text-surface-100">{{ item.nombre }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-surface-100 dark:bg-surface-800 text-surface-600">{{ item.codigo }}</span>
                 </div>
-                <span class="font-semibold text-sm">Hacer Foto</span>
-                <span class="text-xs text-surface-500">Cámara del móvil</span>
-              </button>
-
-              <!-- Botón Subir Archivo -->
-              <button 
-                type="button" 
-                (click)="fileInput.click()"
-                class="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-900/50 hover:bg-surface-100 transition-all text-surface-700 dark:text-surface-300 group cursor-pointer">
-                <div class="w-12 h-12 rounded-full bg-surface-200 dark:bg-surface-800 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                  <i class="pi pi-upload text-2xl text-surface-600 dark:text-surface-400"></i>
-                </div>
-                <span class="font-semibold text-sm">Galería / PDF</span>
-                <span class="text-xs text-surface-500">Documento guardado</span>
-              </button>
-            </div>
-          } @else {
-            <!-- Previsualización del archivo seleccionado -->
-            <div class="relative rounded-xl overflow-hidden border border-surface-200 dark:border-surface-700 bg-surface-900 flex items-center justify-center min-h-[220px] max-h-[300px]">
-              @if (previewUrl()) {
-                <img [src]="previewUrl()" alt="Ticket" class="max-h-[300px] w-auto object-contain">
-              } @else {
-                <div class="flex flex-col items-center p-6 text-white text-center">
-                  <i class="pi pi-file-pdf text-5xl text-red-400 mb-2"></i>
-                  <span class="font-medium text-sm truncate max-w-xs">{{ archivo()?.name }}</span>
-                </div>
-              }
-
-              <!-- Botón para cambiar foto -->
-              <button 
-                type="button" 
-                (click)="quitarArchivo()"
-                class="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors">
-                <i class="pi pi-times text-xs"></i>
-              </button>
-
-              <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2.5 py-1 rounded-md backdrop-blur-sm">
-                {{ archivo()?.name }}
-              </div>
-            </div>
-          }
-        </div>
-
-        <!-- Comentario u Observaciones -->
-        <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
-            Comentario / Concepto (Opcional)
-          </label>
-          <textarea 
-            pTextarea 
-            [(ngModel)]="comentario" 
-            rows="2" 
-            placeholder="Ej. Tornillos y tacos para montaje baño 1..."
-            class="w-full text-sm">
-          </textarea>
-        </div>
-
-        @if (subiendo()) {
-          <div class="p-3 bg-primary-50 dark:bg-primary-950/40 rounded-xl space-y-2">
-            <div class="flex items-center justify-between text-xs font-medium text-primary-700 dark:text-primary-300">
-              <span class="flex items-center gap-2">
-                <i class="pi pi-spin pi-spinner"></i>
-                Procesando ticket y analizando con IA...
-              </span>
-            </div>
-            <p-progressBar mode="indeterminate" styleClass="h-1.5"></p-progressBar>
+              </ng-template>
+            </p-select>
           </div>
-        }
 
-      </div>
+          <!-- Área de Captura de Foto o Archivo -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+              Foto del Ticket / Factura <span class="text-red-500">*</span>
+            </label>
 
-      <ng-template #footer>
-        <div class="flex flex-col sm:flex-row items-center justify-end gap-2 w-full pt-3 border-t border-surface-200 dark:border-surface-700">
-          <p-button 
-            label="Cancelar" 
-            severity="secondary" 
-            [text]="true" 
-            (onClick)="cerrar()" 
-            [disabled]="subiendo()">
-          </p-button>
+            <!-- Input oculto para cámara directa móvil -->
+            <input #cameraInput type="file" accept="image/*" capture="environment" class="hidden" (change)="onFileChanged($event)">
+            <!-- Input oculto para explorador de archivos / galería -->
+            <input #fileInput type="file" accept="image/*,application/pdf" class="hidden" (change)="onFileChanged($event)">
 
-          <!-- Modo Express: Enviar para validar en oficina -->
-          <p-button 
-            label="Enviar a Oficina (Express)" 
-            icon="pi pi-send" 
-            severity="success" 
-            [loading]="subiendo()"
-            [disabled]="!archivo() || !obraSeleccionadaId()" 
-            (onClick)="enviarExpress()">
-          </p-button>
+            @if (!archivo()) {
+              <div class="grid grid-cols-2 gap-3">
+                <!-- Botón Hacer Foto -->
+                <button 
+                  type="button" 
+                  (click)="cameraInput.click()"
+                  class="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-primary-300 dark:border-primary-700 bg-primary-50/50 dark:bg-primary-950/30 hover:bg-primary-100/60 transition-all text-primary-700 dark:text-primary-300 group cursor-pointer">
+                  <div class="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <i class="pi pi-camera text-2xl text-primary-600 dark:text-primary-400"></i>
+                  </div>
+                  <span class="font-semibold text-sm">Hacer Foto</span>
+                  <span class="text-xs text-surface-500">Cámara del móvil</span>
+                </button>
 
-          <!-- Si es Supervisor/Admin, opción de abrir imputación completa -->
-          @if (puedeImputarDirecto()) {
-            <p-button 
-              label="Revisar e Imputar Ahora" 
-              icon="pi pi-sparkles" 
-              severity="primary" 
-              [disabled]="!archivo() || !obraSeleccionadaId() || subiendo()" 
-              (onClick)="abrirImputacionCompleta()">
-            </p-button>
+                <!-- Botón Subir Archivo -->
+                <button 
+                  type="button" 
+                  (click)="fileInput.click()"
+                  class="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-900/50 hover:bg-surface-100 transition-all text-surface-700 dark:text-surface-300 group cursor-pointer">
+                  <div class="w-12 h-12 rounded-full bg-surface-200 dark:bg-surface-800 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <i class="pi pi-upload text-2xl text-surface-600 dark:text-surface-400"></i>
+                  </div>
+                  <span class="font-semibold text-sm">Galería / PDF</span>
+                  <span class="text-xs text-surface-500">Documento guardado</span>
+                </button>
+              </div>
+            } @else {
+              <!-- Previsualización del archivo seleccionado -->
+              <div class="relative rounded-xl overflow-hidden border border-surface-200 dark:border-surface-700 bg-surface-900 flex items-center justify-center min-h-[220px] max-h-[300px]">
+                @if (previewUrl()) {
+                  <img [src]="previewUrl()" alt="Ticket" class="max-h-[300px] w-auto object-contain">
+                  
+                  <!-- Botón Reencuadrar / Ajustar Esquinas si es una imagen -->
+                  @if (rawImageSrc()) {
+                    <button 
+                      type="button" 
+                      (click)="reabrirCropper()"
+                      class="absolute top-2 left-2 bg-emerald-600/90 hover:bg-emerald-500 text-white text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-md flex items-center gap-1.5 transition shadow-lg cursor-pointer">
+                      <i class="pi pi-crop text-xs"></i>
+                      <span>Reencuadrar</span>
+                    </button>
+                  }
+                } @else {
+                  <div class="flex flex-col items-center p-6 text-white text-center">
+                    <i class="pi pi-file-pdf text-5xl text-red-400 mb-2"></i>
+                    <span class="font-medium text-sm truncate max-w-xs">{{ archivo()?.name }}</span>
+                  </div>
+                }
+
+                <!-- Botón para cambiar foto -->
+                <button 
+                  type="button" 
+                  (click)="quitarArchivo()"
+                  class="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                  <i class="pi pi-times text-xs"></i>
+                </button>
+
+                <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2.5 py-1 rounded-md backdrop-blur-sm">
+                  {{ archivo()?.name }}
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Comentario u Observaciones -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+              Comentario / Concepto (Opcional)
+            </label>
+            <textarea 
+              pTextarea 
+              [(ngModel)]="comentario" 
+              rows="2" 
+              placeholder="Ej. Tornillos y tacos para montaje baño 1..."
+              class="w-full text-sm">
+            </textarea>
+          </div>
+
+          @if (subiendo()) {
+            <div class="p-3 bg-primary-50 dark:bg-primary-950/40 rounded-xl space-y-2">
+              <div class="flex items-center justify-between text-xs font-medium text-primary-700 dark:text-primary-300">
+                <span class="flex items-center gap-2">
+                  <i class="pi pi-spin pi-spinner"></i>
+                  Procesando ticket y analizando con IA...
+                </span>
+              </div>
+              <p-progressBar mode="indeterminate" styleClass="h-1.5"></p-progressBar>
+            </div>
           }
+
         </div>
-      </ng-template>
+      }
+
+      @if (!mostrarCropper()) {
+        <ng-template #footer>
+          <div class="flex flex-col sm:flex-row items-center justify-end gap-2 w-full pt-3 border-t border-surface-200 dark:border-surface-700">
+            <p-button 
+              label="Cancelar" 
+              severity="secondary" 
+              [text]="true" 
+              (onClick)="cerrar()" 
+              [disabled]="subiendo()">
+            </p-button>
+
+            <!-- Modo Express: Enviar para validar en oficina -->
+            <p-button 
+              label="Enviar a Oficina (Express)" 
+              icon="pi pi-send" 
+              severity="success" 
+              [loading]="subiendo()"
+              [disabled]="!archivo() || !obraSeleccionadaId()" 
+              (onClick)="enviarExpress()">
+            </p-button>
+
+            <!-- Si es Supervisor/Admin, opción de abrir imputación completa -->
+            @if (puedeImputarDirecto()) {
+              <p-button 
+                label="Revisar e Imputar Ahora" 
+                icon="pi pi-sparkles" 
+                severity="primary" 
+                [disabled]="!archivo() || !obraSeleccionadaId() || subiendo()" 
+                (onClick)="abrirImputacionCompleta()">
+              </p-button>
+            }
+          </div>
+        </ng-template>
+      }
 
     </p-dialog>
   `
@@ -209,6 +238,8 @@ export class TicketCapturaModalComponent {
   obraSeleccionadaId = signal<string | null>(null);
   archivo = signal<File | null>(null);
   previewUrl = signal<string | null>(null);
+  rawImageSrc = signal<string | null>(null);
+  mostrarCropper = signal<boolean>(false);
   comentario = signal<string>('');
   subiendo = signal<boolean>(false);
 
@@ -249,17 +280,45 @@ export class TicketCapturaModalComponent {
 
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
-        reader.onload = (e) => this.previewUrl.set(e.target?.result as string);
+        reader.onload = (e) => {
+          const res = e.target?.result as string;
+          this.rawImageSrc.set(res);
+          this.mostrarCropper.set(true);
+        };
         reader.readAsDataURL(file);
       } else {
+        this.rawImageSrc.set(null);
         this.previewUrl.set(null);
+        this.mostrarCropper.set(false);
       }
+    }
+  }
+
+  onCropperFinished(event: { file: File; dataUrl: string }) {
+    this.archivo.set(event.file);
+    this.previewUrl.set(event.dataUrl);
+    this.mostrarCropper.set(false);
+  }
+
+  onCropperCanceled() {
+    this.mostrarCropper.set(false);
+    if (!this.previewUrl()) {
+      this.archivo.set(null);
+      this.rawImageSrc.set(null);
+    }
+  }
+
+  reabrirCropper() {
+    if (this.rawImageSrc()) {
+      this.mostrarCropper.set(true);
     }
   }
 
   quitarArchivo() {
     this.archivo.set(null);
     this.previewUrl.set(null);
+    this.rawImageSrc.set(null);
+    this.mostrarCropper.set(false);
   }
 
   enviarExpress() {
@@ -352,6 +411,8 @@ export class TicketCapturaModalComponent {
   reset() {
     this.archivo.set(null);
     this.previewUrl.set(null);
+    this.rawImageSrc.set(null);
+    this.mostrarCropper.set(false);
     this.comentario.set('');
     this.subiendo.set(false);
   }

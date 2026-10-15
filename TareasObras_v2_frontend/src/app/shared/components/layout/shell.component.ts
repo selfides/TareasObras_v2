@@ -6,14 +6,13 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { AvatarModule } from 'primeng/avatar';
 import { CommonModule } from '@angular/common';
-import { TicketCapturaModalComponent } from '../../../features/facturas/components/ticket-captura-modal.component';
 
 interface NavItem { label: string; icon: string; route: string; roles?: string[]; }
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, TooltipModule, AvatarModule, CommonModule, TicketCapturaModalComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, TooltipModule, AvatarModule, CommonModule],
 
   template: `
     <div class="flex h-screen overflow-hidden bg-surface-50 dark:bg-surface-950">
@@ -81,14 +80,6 @@ interface NavItem { label: string; icon: string; route: string; roles?: string[]
               <span class="hidden sm:inline">Portal Operario</span>
             </a>
 
-            <!-- Botón Subir Ticket Móvil / Rápido -->
-            <button (click)="ticketModalVisible.set(true)"
-                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-700 dark:bg-primary-950 dark:hover:bg-primary-900 dark:text-primary-300 font-semibold text-xs transition-colors cursor-pointer"
-                    pTooltip="Capturar foto de ticket o albarán" tooltipPosition="bottom">
-              <i class="pi pi-camera text-sm"></i>
-              <span class="hidden sm:inline">Subir Ticket</span>
-            </button>
-
             <button (click)="toggleTheme()"
                     class="w-9 h-9 flex items-center justify-center rounded-lg text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors">
               <i [class]="(theme.isDark() ? 'pi pi-sun' : 'pi pi-moon')"></i>
@@ -107,19 +98,12 @@ interface NavItem { label: string; icon: string; route: string; roles?: string[]
         </main>
       </div>
     </div>
-
-    <!-- Modal Rápido de Captura de Ticket -->
-    <app-ticket-captura-modal 
-      [visible]="ticketModalVisible()" 
-      (onVisibleChange)="ticketModalVisible.set($event)">
-    </app-ticket-captura-modal>
   `
 })
 export class ShellComponent {
   auth = inject(AuthService);
   theme = inject(ThemeService);
   collapsed = signal(false);
-  ticketModalVisible = signal(false);
 
 
   private navItems: NavItem[] = [
