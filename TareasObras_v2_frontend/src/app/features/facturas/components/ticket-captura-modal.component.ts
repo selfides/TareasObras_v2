@@ -12,6 +12,8 @@ import { FacturasService } from '../../../core/services/facturas.service';
 import { ObrasService } from '../../../core/services/obras.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ObraListDto, TicketPendienteDto } from '../../../core/models';
+import { OfflineDbService } from '../../../core/services/offline-db.service';
+import { OperarioPortalService } from '../../../core/services/operario-portal.service';
 
 @Component({
   selector: 'app-ticket-captura-modal',
@@ -194,6 +196,8 @@ export class TicketCapturaModalComponent {
   private obrasSvc = inject(ObrasService);
   private auth = inject(AuthService);
   private msg = inject(MessageService);
+  private offlineDb = inject(OfflineDbService);
+  private portalSvc = inject(OperarioPortalService);
 
   visible = input<boolean>(false);
   obraIdDefecto = input<string | undefined>(undefined);
@@ -263,6 +267,11 @@ export class TicketCapturaModalComponent {
     const obraId = this.obraSeleccionadaId();
     if (!file || !obraId) return;
 
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.guardarTicketOfflineLocal(file, obraId);
+      return;
+    }
+
     this.subiendo.set(true);
     this.facturasSvc.subirTicketPendiente(file, obraId, this.comentario(), true).subscribe({
       next: (ticket) => {
@@ -277,13 +286,54 @@ export class TicketCapturaModalComponent {
       },
       error: (err) => {
         this.subiendo.set(false);
-        this.msg.add({
-          severity: 'error',
-          summary: 'Error al subir',
-          detail: err?.error?.message || 'No se pudo enviar el ticket.'
-        });
+        if (err.status === 0 || err.status >= 500) {
+          this.guardarTicketOfflineLocal(file, obraId);
+        } else {
+          this.msg.add({
+            severity: 'error',
+            summary: 'Error al subir',
+            detail: err?.error?.message || 'No se pudo enviar el ticket.'
+          });
+        }
       }
     });
+  }
+
+  private guardarTicketOfflineLocal(file: File, obraId: string) {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64 = reader.result as string;
+        await this.offlineDb.guardarTicketOffline({
+          id: `ticket-offline-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          archivoBase64: base64,
+          nombreArchivo: file.name,
+          obraId: obraId,
+          creadoEn: Date.now()
+        });
+        await this.portalSvc.actualizarContadorPendientes();
+        this.portalSvc.vibrar([50, 50, 100]);
+
+        this.msg.add({
+          severity: 'warn',
+          summary: 'Guardado Offline',
+          detail: 'Albarán guardado en el teléfono sin cobertura. Se enviará a la central automáticamente en cuanto recuperes señal.'
+        });
+        this.onTicketEnviado.emit({
+          id: 'offline-temp',
+          nombreArchivoOriginal: file.name,
+          obraId: obraId,
+          obraNombre: 'Obra actual',
+          estado: 'Pendiente',
+          estadoNombre: 'Pendiente de sincronización',
+          createdAt: new Date().toISOString()
+        } as any);
+        this.cerrar();
+      } catch (e) {
+        this.msg.add({ severity: 'error', summary: 'Error local', detail: 'No se pudo guardar el archivo en la memoria del dispositivo.' });
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   abrirImputacionCompleta() {

@@ -37,12 +37,21 @@ public class Operario : BaseEntity
     public bool Activo { get; private set; } = true;
     public Guid CategoriaOperarioId { get; private set; }
     public Guid? CuadrillaId { get; private set; }
+    public string? UserId { get; private set; }
+
 
     public CategoriaOperario Categoria { get; private set; } = null!;
     public Cuadrilla? Cuadrilla { get; private set; }
     public ICollection<RegistroHoras> RegistrosHoras { get; private set; } = new List<RegistroHoras>();
 
     private Operario() { }
+
+    public void VincularUsuario(string? userId)
+    {
+        UserId = userId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
 
     public static Operario Create(string nombre, string apellidos, string? dni, string? telefono, Guid categoriaOperarioId, Guid? cuadrillaId = null)
     {

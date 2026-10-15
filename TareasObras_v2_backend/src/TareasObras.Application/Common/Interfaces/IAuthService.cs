@@ -2,7 +2,8 @@ namespace TareasObras.Application.Common.Interfaces;
 
 public record AuthResult(bool Success, string? Token, string? RefreshToken, string? Error, UserDto? User);
 
-public record UserDto(string Id, string Email, string NombreCompleto, string Rol);
+public record UserDto(string Id, string Email, string NombreCompleto, string Rol, Guid? OperarioId = null);
+
 
 public interface IAuthService
 {

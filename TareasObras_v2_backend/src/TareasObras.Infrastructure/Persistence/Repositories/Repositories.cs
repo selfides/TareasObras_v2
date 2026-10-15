@@ -137,6 +137,9 @@ public class OperarioRepository : IOperarioRepository
     public async Task<Operario?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => await _ctx.Operarios.Include(o => o.Categoria).Include(o => o.Cuadrilla).FirstOrDefaultAsync(o => o.Id == id, ct);
 
+    public async Task<Operario?> GetByUserIdAsync(string userId, CancellationToken ct = default)
+        => await _ctx.Operarios.Include(o => o.Categoria).Include(o => o.Cuadrilla).FirstOrDefaultAsync(o => o.UserId == userId, ct);
+
     public async Task<IEnumerable<Operario>> GetAllAsync(CancellationToken ct = default)
         => await _ctx.Operarios.OrderBy(o => o.Apellidos).ToListAsync(ct);
 
@@ -168,10 +171,35 @@ public class RegistroHorasRepository : IRegistroHorasRepository
         => await _ctx.RegistrosHoras.Include(r => r.Operario).Include(r => r.Categoria).Include(r => r.Obra).Include(r => r.Tarea)
             .Where(r => r.Fecha.Date == fecha.Date).OrderByDescending(r => r.Fecha).ToListAsync(ct);
 
+    public async Task<Domain.Entities.RegistroHoras?> GetFichajeActivoAsync(Guid operarioId, CancellationToken ct = default)
+        => await _ctx.RegistrosHoras
+            .Include(r => r.Obra)
+            .Include(r => r.Tarea)
+            .Include(r => r.Categoria)
+            .FirstOrDefaultAsync(r => r.OperarioId == operarioId && r.EnCurso, ct);
+
+    public async Task<IEnumerable<Domain.Entities.RegistroHoras>> GetByOperarioAsync(Guid operarioId, DateTime? desde = null, DateTime? hasta = null, CancellationToken ct = default)
+    {
+        var query = _ctx.RegistrosHoras
+            .Include(r => r.Obra)
+            .Include(r => r.Tarea)
+            .Include(r => r.Categoria)
+            .Where(r => r.OperarioId == operarioId);
+
+        if (desde.HasValue)
+            query = query.Where(r => r.Fecha >= desde.Value.Date);
+
+        if (hasta.HasValue)
+            query = query.Where(r => r.Fecha <= hasta.Value.Date);
+
+        return await query.OrderByDescending(r => r.Fecha).ThenByDescending(r => r.HoraInicio).ToListAsync(ct);
+    }
+
     public async Task AddAsync(Domain.Entities.RegistroHoras reg, CancellationToken ct = default) => await _ctx.RegistrosHoras.AddAsync(reg, ct);
     public void Update(Domain.Entities.RegistroHoras reg) => _ctx.RegistrosHoras.Update(reg);
     public void Delete(Domain.Entities.RegistroHoras reg) => _ctx.RegistrosHoras.Remove(reg);
 }
+
 
 public class PresupuestoRepository : IPresupuestoRepository
 {

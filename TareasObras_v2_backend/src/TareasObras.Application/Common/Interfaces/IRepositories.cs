@@ -47,6 +47,7 @@ public interface ICategoriaOperarioRepository
 public interface IOperarioRepository
 {
     Task<Operario?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<Operario?> GetByUserIdAsync(string userId, CancellationToken ct = default);
     Task<IEnumerable<Operario>> GetAllAsync(CancellationToken ct = default);
     Task<IEnumerable<Operario>> GetAllWithDetailsAsync(CancellationToken ct = default);
     Task AddAsync(Operario operario, CancellationToken ct = default);
@@ -60,10 +61,13 @@ public interface IRegistroHorasRepository
     Task<IEnumerable<RegistroHoras>> GetAllAsync(CancellationToken ct = default);
     Task<IEnumerable<RegistroHoras>> GetByObraIdAsync(Guid obraId, CancellationToken ct = default);
     Task<IEnumerable<RegistroHoras>> GetByFechaAsync(DateTime fecha, CancellationToken ct = default);
+    Task<RegistroHoras?> GetFichajeActivoAsync(Guid operarioId, CancellationToken ct = default);
+    Task<IEnumerable<RegistroHoras>> GetByOperarioAsync(Guid operarioId, DateTime? desde = null, DateTime? hasta = null, CancellationToken ct = default);
     Task AddAsync(RegistroHoras registro, CancellationToken ct = default);
     void Update(RegistroHoras registro);
     void Delete(RegistroHoras registro);
 }
+
 
 public interface IPresupuestoRepository
 {
@@ -161,8 +165,10 @@ public interface ICurrentUserService
     string? UserId { get; }
     string? UserName { get; }
     string? Role { get; }
+    Guid? OperarioId { get; }
     bool IsAuthenticated { get; }
 }
+
 
 public interface IAuditService
 {

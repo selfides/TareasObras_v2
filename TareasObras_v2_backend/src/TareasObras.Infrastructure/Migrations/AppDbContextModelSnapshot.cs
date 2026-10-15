@@ -619,6 +619,9 @@ namespace TareasObras.Infrastructure.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CategoriaOperarioId");
@@ -768,6 +771,9 @@ namespace TareasObras.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("EnCurso")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("datetime2");
 
@@ -784,6 +790,22 @@ namespace TareasObras.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<decimal?>("LatitudFin")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)");
+
+                    b.Property<decimal?>("LatitudInicio")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)");
+
+                    b.Property<decimal?>("LongitudFin")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)");
+
+                    b.Property<decimal?>("LongitudInicio")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)");
+
                     b.Property<Guid>("ObraId")
                         .HasColumnType("uniqueidentifier");
 
@@ -793,8 +815,17 @@ namespace TareasObras.Infrastructure.Migrations
                     b.Property<Guid>("OperarioId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("SincronizadoOffline")
+                        .HasColumnType("bit");
+
                     b.Property<Guid?>("TareaId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("TimestampFinDispositivo")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("TimestampInicioDispositivo")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1030,6 +1061,9 @@ namespace TareasObras.Infrastructure.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<Guid?>("OperarioId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
 
@@ -1058,6 +1092,8 @@ namespace TareasObras.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.HasIndex("OperarioId");
 
                     b.ToTable("Usuarios", (string)null);
                 });
@@ -1298,6 +1334,16 @@ namespace TareasObras.Infrastructure.Migrations
                     b.Navigation("MaterialObra");
 
                     b.Navigation("Obra");
+                });
+
+            modelBuilder.Entity("TareasObras.Infrastructure.Persistence.AppUser", b =>
+                {
+                    b.HasOne("TareasObras.Domain.Entities.Operario", "Operario")
+                        .WithMany()
+                        .HasForeignKey("OperarioId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Operario");
                 });
 
             modelBuilder.Entity("TareasObras.Domain.Entities.CategoriaOperario", b =>

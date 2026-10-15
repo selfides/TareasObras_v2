@@ -14,7 +14,10 @@ public class AppUser : IdentityUser
     public string Apellidos { get; set; } = string.Empty;
     public bool Activo { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public Guid? OperarioId { get; set; }
+    public Operario? Operario { get; set; }
 }
+
 
 public class AppDbContext : IdentityDbContext<AppUser>
 {
@@ -213,7 +216,23 @@ public class AppDbContext : IdentityDbContext<AppUser>
             .HasIndex(t => t.DocumentoHash);
         builder.Entity<TicketPendiente>()
             .Property(t => t.TotalEstimado).HasPrecision(12, 2);
+
+        builder.Entity<AppUser>()
+            .HasOne(u => u.Operario)
+            .WithMany()
+            .HasForeignKey(u => u.OperarioId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<RegistroHoras>()
+            .Property(r => r.LatitudInicio).HasPrecision(10, 7);
+        builder.Entity<RegistroHoras>()
+            .Property(r => r.LongitudInicio).HasPrecision(10, 7);
+        builder.Entity<RegistroHoras>()
+            .Property(r => r.LatitudFin).HasPrecision(10, 7);
+        builder.Entity<RegistroHoras>()
+            .Property(r => r.LongitudFin).HasPrecision(10, 7);
     }
+
 
 
     public override Task<int> SaveChangesAsync(CancellationToken ct = default)

@@ -73,6 +73,14 @@ interface NavItem { label: string; icon: string; route: string; roles?: string[]
             Bienvenido, <span class="text-primary-600 dark:text-primary-400">{{ auth.user()?.nombreCompleto }}</span>
           </h1>
           <div class="flex items-center gap-2">
+            <!-- Botón Modo Móvil Operario -->
+            <a routerLink="/portal-operario"
+               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 dark:text-emerald-300 font-semibold text-xs transition-colors cursor-pointer"
+               pTooltip="Abrir Portal Móvil de Fichaje y Albaranes" tooltipPosition="bottom">
+              <i class="pi pi-mobile text-sm"></i>
+              <span class="hidden sm:inline">Portal Operario</span>
+            </a>
+
             <!-- Botón Subir Ticket Móvil / Rápido -->
             <button (click)="ticketModalVisible.set(true)"
                     class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-700 dark:bg-primary-950 dark:hover:bg-primary-900 dark:text-primary-300 font-semibold text-xs transition-colors cursor-pointer"
@@ -123,6 +131,7 @@ export class ShellComponent {
     { label: 'Proveedores', icon: 'pi pi-truck',       route: '/proveedores', roles: ['Admin', 'Supervisor'] },
     { label: 'Usuarios',    icon: 'pi pi-users',       route: '/usuarios',    roles: ['Admin'] },
     { label: 'Operarios',   icon: 'pi pi-id-card',     route: '/operarios',   roles: ['Admin', 'Supervisor'] },
+    { label: 'Portal Móvil', icon: 'pi pi-mobile',      route: '/portal-operario' },
   ];
 
   visibleNav() {

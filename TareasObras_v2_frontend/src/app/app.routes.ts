@@ -2,6 +2,11 @@ import { Routes } from '@angular/router';
 import { authGuard, adminGuard } from './core/guards/guards';
 
 export const routes: Routes = [
+  {
+    path: 'portal-operario',
+    loadComponent: () => import('./features/portal-operario/portal-operario.component').then(m => m.PortalOperarioComponent),
+    canActivate: [authGuard]
+  },
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
   {
     path: 'auth',

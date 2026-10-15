@@ -1,0 +1,47 @@
+{
+  "name": "TareasObras - Portal de Operarios",
+  "short_name": "TareasObras",
+  "description": "Fichaje de horas, control de presencia en obra y subida ágil de albaranes y tickets para montadores.",
+  "start_url": "/portal-operario",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Fichar Jornada",
+      "short_name": "Fichar",
+      "description": "Registrar entrada o salida de obra",
+      "url": "/portal-operario?tab=fichaje",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Subir Albarán",
+      "short_name": "Albarán",
+      "description": "Hacer foto a un albarán o ticket",
+      "url": "/portal-operario?tab=albaran",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

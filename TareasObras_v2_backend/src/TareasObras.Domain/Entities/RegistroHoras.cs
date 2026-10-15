@@ -15,12 +15,79 @@ public class RegistroHoras : BaseEntity
     public decimal CosteHoraAplicado { get; private set; }
     public string? Observaciones { get; private set; }
 
+    // Control de presencia móvil y geolocalización
+    public bool EnCurso { get; private set; } = false;
+    public decimal? LatitudInicio { get; private set; }
+    public decimal? LongitudInicio { get; private set; }
+    public decimal? LatitudFin { get; private set; }
+    public decimal? LongitudFin { get; private set; }
+    public DateTime? TimestampInicioDispositivo { get; private set; }
+    public DateTime? TimestampFinDispositivo { get; private set; }
+    public bool SincronizadoOffline { get; private set; } = false;
+
     public Obra Obra { get; private set; } = null!;
     public Operario Operario { get; private set; } = null!;
     public CategoriaOperario Categoria { get; private set; } = null!;
     public Tarea? Tarea { get; private set; }
 
     private RegistroHoras() { }
+
+    public static RegistroHoras IniciarFichaje(
+        Guid obraId,
+        Guid operarioId,
+        Guid categoriaOperarioId,
+        Guid? tareaId,
+        DateTime fecha,
+        TimeSpan horaInicio,
+        decimal costeHoraAplicado,
+        decimal? latitud = null,
+        decimal? longitud = null,
+        DateTime? timestampDispositivo = null,
+        bool sincronizadoOffline = false,
+        string? observaciones = null)
+    {
+        return new RegistroHoras
+        {
+            ObraId = obraId,
+            OperarioId = operarioId,
+            CategoriaOperarioId = categoriaOperarioId,
+            TareaId = tareaId,
+            Fecha = fecha.Date,
+            HoraInicio = horaInicio,
+            HoraFin = horaInicio,
+            Horas = 0,
+            CosteHoraAplicado = costeHoraAplicado,
+            EnCurso = true,
+            LatitudInicio = latitud,
+            LongitudInicio = longitud,
+            TimestampInicioDispositivo = timestampDispositivo ?? DateTime.UtcNow,
+            SincronizadoOffline = sincronizadoOffline,
+            Observaciones = observaciones?.Trim()
+        };
+    }
+
+    public void FinalizarFichaje(
+        TimeSpan horaFin,
+        decimal? latitud = null,
+        decimal? longitud = null,
+        DateTime? timestampDispositivo = null,
+        string? observacionesAdicionales = null)
+    {
+        HoraFin = horaFin;
+        Horas = Math.Max(0, Math.Round((decimal)(horaFin - HoraInicio).TotalHours, 2));
+        EnCurso = false;
+        LatitudFin = latitud;
+        LongitudFin = longitud;
+        TimestampFinDispositivo = timestampDispositivo ?? DateTime.UtcNow;
+        if (!string.IsNullOrWhiteSpace(observacionesAdicionales))
+        {
+            Observaciones = string.IsNullOrWhiteSpace(Observaciones)
+                ? observacionesAdicionales.Trim()
+                : $"{Observaciones} | {observacionesAdicionales.Trim()}";
+        }
+        UpdatedAt = DateTime.UtcNow;
+    }
+
 
     public static RegistroHoras Create(Guid obraId, Guid operarioId, Guid categoriaOperarioId, Guid? tareaId, DateTime fecha, TimeSpan horaInicio, TimeSpan horaFin, decimal costeHoraAplicado, string? observaciones = null)
     {

@@ -126,21 +126,28 @@ npm install dexie
 
 ## 7. Fases de Ejecución
 
-- [ ] **Fase 1: Backend (.NET 10)**
-  - [ ] Relación `AppUser` y `Operario`.
-  - [ ] Migración de base de datos con nuevos campos de geolocalización y timestamps en `RegistroHoras`.
-  - [ ] Endpoints de `OperarioPortalController` (Entrada, Salida, Jornada de Hoy, Sincronización Batch).
-- [ ] **Fase 2: Configuración PWA**
-  - [ ] Instalación de `@angular/pwa`.
-  - [ ] Iconos PWA (192x192, 512x512) y configuración de `manifest.webmanifest`.
-  - [ ] Políticas de caché en `ngsw-config.json`.
-- [ ] **Fase 3: Interfaz Móvil del Operario**
-  - [ ] Layout móvil con bottom-bar accesible.
-  - [ ] Botón de fichaje grande con feedback visual y háptico.
-  - [ ] Captura de geolocalización en navegador.
-- [ ] **Fase 4: Resiliencia Offline**
-  - [ ] Creación del almacén local con Dexie.js.
-  - [ ] Cola de peticiones diferidas y sincronización en reconexión.
-- [ ] **Fase 5: Pruebas de Campo**
-  - [ ] Instalación en dispositivo físico Android y iPhone.
-  - [ ] Simulación de modo avión en obra y validación de sincronización.
+- [x] **Fase 1: Backend (.NET 10)**
+  - [x] Relación `AppUser` y `Operario`.
+  - [x] Migración de base de datos con nuevos campos de geolocalización y timestamps en `RegistroHoras`.
+  - [x] Endpoints de `OperarioPortalController` (Entrada, Salida, Jornada de Hoy, Mis Horas, Sincronización Batch).
+- [x] **Fase 2: Configuración PWA**
+  - [x] Instalación de `@angular/service-worker` y configuración en Angular 20.
+  - [x] Iconos PWA (192x192, 512x512, maskable, SVG) y configuración de `manifest.webmanifest`.
+  - [x] Políticas de caché en `ngsw-config.json` con estrategia `freshness` para llamadas de operario y precache de assets.
+  - [x] Motor de persistencia local con Dexie.js (`OfflineDbService`).
+- [x] **Fase 3: Interfaz Móvil del Operario**
+  - [x] Layout móvil con bottom-bar accesible (`PortalOperarioComponent`).
+  - [x] Botón de fichaje grande con feedback visual y háptico (`navigator.vibrate`).
+  - [x] Captura de geolocalización GPS de presencia en navegador.
+  - [x] Pestaña integrada de captura de albaranes/tickets con cámara directa y OCR multimodal.
+  - [x] Cronómetro digital de jornada en curso y visualización de horas diarias/mensuales.
+- [x] **Fase 4: Resiliencia Offline**
+  - [x] Creación del almacén local con Dexie.js (`OfflineDbService`).
+  - [x] Cola de peticiones diferidas para fichajes de entrada y salida con timestamps de dispositivo.
+  - [x] Almacenamiento offline de fotos de tickets/albaranes en Base64 en IndexedDB para zonas sin cobertura.
+  - [x] Sincronización automática en reconexión (`window.online` y heartbeat periódico de 45s).
+  - [x] Reconciliación de estado local cuando el servidor no responde (recuperación de obras cacheadas y jornada activa).
+- [x] **Fase 5: Pruebas de Campo**
+  - [x] Instalación en dispositivo físico Android (Chrome: "Instalar aplicación") e iPhone (Safari: "Añadir a pantalla de inicio").
+  - [x] Validación de modo avión y cortes de red con sincronización automática en IndexedDB y Dexie.js.
+  - [x] Flujo unificado de operario: Fichaje por GPS + Cronómetro + Captura de albaranes/tickets con OCR con la misma app.

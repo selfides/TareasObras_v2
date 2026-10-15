@@ -23,9 +23,19 @@ public class CurrentUserService : ICurrentUserService
     public string? Role
         => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role);
 
+    public Guid? OperarioId
+    {
+        get
+        {
+            var claim = _httpContextAccessor.HttpContext?.User?.FindFirstValue("operario_id");
+            return Guid.TryParse(claim, out var id) ? id : null;
+        }
+    }
+
     public bool IsAuthenticated
         => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 }
+
 
 public class AuditService : IAuditService
 {

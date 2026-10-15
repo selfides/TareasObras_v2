@@ -2,7 +2,7 @@
 export interface LoginRequest { email: string; password: string; }
 export interface RegisterRequest { email: string; password: string; nombre: string; apellidos: string; rol: string; }
 export interface AuthResponse { token: string; user: UserDto; }
-export interface UserDto { id: string; email: string; nombreCompleto: string; rol: string; }
+export interface UserDto { id: string; email: string; nombreCompleto: string; rol: string; operarioId?: string; }
 
 // ─── Obras ─────────────────────────────────────────────────────────────────
 export interface ObraListDto {
@@ -290,3 +290,113 @@ export interface CreateProveedorRequest {
   email?: string;
   observaciones?: string;
 }
+
+// ─── Portal Operario ────────────────────────────────────────────────────────
+export interface ObraActivaOperarioDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+  direccion?: string;
+  cliente?: string;
+  estado: string;
+}
+
+export interface OperarioPerfilDto {
+  id: string;
+  nombre: string;
+  apellidos: string;
+  nombreCompleto: string;
+  dni?: string;
+  telefono?: string;
+  activo: boolean;
+  categoria: {
+    id: string;
+    nombre: string;
+    costeHoraBase: number;
+  };
+  cuadrilla?: {
+    id: string;
+    nombre: string;
+  };
+  obrasActivas: ObraActivaOperarioDto[];
+}
+
+export interface FichajeActivoDto {
+  id: string;
+  obraId: string;
+  obraNombre: string;
+  obraCodigo: string;
+  tareaId?: string;
+  tareaTitulo?: string;
+  fecha: string;
+  horaInicio: string;
+  minutosTranscurridos: number;
+  latitudInicio?: number;
+  longitudInicio?: number;
+  observaciones?: string;
+}
+
+export interface RegistroHoyDto {
+  id: string;
+  obraId: string;
+  obraNombre: string;
+  horaInicio: string;
+  horaFin: string;
+  horas: number;
+  enCurso: boolean;
+  observaciones?: string;
+}
+
+export interface OperarioEstadoHoyDto {
+  operarioId: string;
+  fecha: string;
+  hayFichajeActivo: boolean;
+  fichajeActivo: FichajeActivoDto | null;
+  totalHorasHoy: number;
+  registros: RegistroHoyDto[];
+}
+
+export interface FicharEntradaRequest {
+  obraId: string;
+  tareaId?: string;
+  latitud?: number;
+  longitud?: number;
+  timestampDispositivo?: string;
+  sincronizadoOffline?: boolean;
+  observaciones?: string;
+}
+
+export interface FicharSalidaRequest {
+  registroHorasId?: string;
+  latitud?: number;
+  longitud?: number;
+  timestampDispositivo?: string;
+  observacionesAdicionales?: string;
+}
+
+export interface MisHorasItemDto {
+  id: string;
+  obraId: string;
+  obraNombre: string;
+  obraCodigo: string;
+  tareaId?: string;
+  tareaTitulo?: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  horas: number;
+  enCurso: boolean;
+  observaciones?: string;
+  sincronizadoOffline: boolean;
+  latitudInicio?: number;
+  longitudInicio?: number;
+}
+
+export interface MisHorasResponseDto {
+  operarioId: string;
+  desde: string;
+  hasta: string;
+  totalHoras: number;
+  diasTrabajados: number;
+  registros: MisHorasItemDto[];
+}
