@@ -12,7 +12,7 @@ using TareasObras.Infrastructure.Persistence;
 namespace TareasObras.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261017150944_InitialPostgreSql")]
+    [Migration("20261017152609_InitialPostgreSql")]
     partial class InitialPostgreSql
     {
         /// <inheritdoc />
@@ -195,10 +195,10 @@ namespace TareasObras.Infrastructure.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.Property<string>("ValoresAnteriores")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ValoresNuevos")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

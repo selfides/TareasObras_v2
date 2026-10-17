@@ -16,7 +16,7 @@ export class AuthService {
 
   readonly user = this._user.asReadonly();
   readonly token = this._token.asReadonly();
-  readonly isAuthenticated = computed(() => !!this._token());
+  readonly isAuthenticated = computed(() => !!this._token() && !!this._user());
   readonly isAdmin = computed(() => this._user()?.rol === 'Admin');
   readonly isSupervisor = computed(() => this._user()?.rol === 'Supervisor' || this.isAdmin());
   readonly currentRole = computed(() => this._user()?.rol ?? '');
@@ -46,8 +46,18 @@ export class AuthService {
 
   private loadUser(): UserDto | null {
     try {
+      const token = localStorage.getItem('token');
       const u = localStorage.getItem('user');
-      return u ? JSON.parse(u) : null;
-    } catch { return null; }
+      if (!token || !u) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        return null;
+      }
+      return JSON.parse(u);
+    } catch {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return null;
+    }
   }
 }

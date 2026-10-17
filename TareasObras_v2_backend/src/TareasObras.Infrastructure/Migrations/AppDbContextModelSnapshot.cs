@@ -192,10 +192,10 @@ namespace TareasObras.Infrastructure.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.Property<string>("ValoresAnteriores")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ValoresNuevos")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

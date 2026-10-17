@@ -83,8 +83,8 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.Property(a => a.UsuarioNombre).HasMaxLength(200);
         builder.Property(a => a.EntidadId).HasMaxLength(100);
         builder.Property(a => a.IpAddress).HasMaxLength(50);
-        builder.Property(a => a.ValoresAnteriores).HasColumnType("nvarchar(max)");
-        builder.Property(a => a.ValoresNuevos).HasColumnType("nvarchar(max)");
+        builder.Property(a => a.ValoresAnteriores).HasColumnType("text");
+        builder.Property(a => a.ValoresNuevos).HasColumnType("text");
 
         builder.HasIndex(a => a.FechaHora);
         builder.HasIndex(a => new { a.Entidad, a.EntidadId });
