@@ -31,8 +31,8 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<CategoriaOperario> CategoriasOperario => Set<CategoriaOperario>();
     public DbSet<RegistroHoras> RegistrosHoras => Set<RegistroHoras>();
     public DbSet<Presupuesto> Presupuestos => Set<Presupuesto>();
-    public DbSet<PartidaPresupuesto> PartidasPresupuesto { get; set; }
-    public DbSet<LineaPartida> LineasPartida { get; set; }
+    public DbSet<PartidaPresupuesto> PartidasPresupuesto => Set<PartidaPresupuesto>();
+    public DbSet<LineaPartida> LineasPartida => Set<LineaPartida>();
     public DbSet<LineaPresupuestoMaterial> LineasPresupuestoMaterial => Set<LineaPresupuestoMaterial>();
     public DbSet<LineaPresupuestoHoras> LineasPresupuestoHoras => Set<LineaPresupuestoHoras>();
     public DbSet<MaterialObra> MaterialesObra => Set<MaterialObra>();
