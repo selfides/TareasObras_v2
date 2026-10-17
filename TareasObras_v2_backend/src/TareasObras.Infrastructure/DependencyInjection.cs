@@ -23,7 +23,7 @@ public static class DependencyInjection
         // ─── Database ──────────────────────────────────────────────────────
         services.AddDbContext<AppDbContext>(options =>
         {
-            options.UseSqlServer(
+            options.UseNpgsql(
                 config.GetConnectionString("DefaultConnection"),
                 sql => sql.MigrationsAssembly(typeof(AppDbContext).Assembly.GetName().Name));
             options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
