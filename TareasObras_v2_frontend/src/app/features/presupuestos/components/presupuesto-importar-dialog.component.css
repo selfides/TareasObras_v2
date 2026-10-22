@@ -1,0 +1,14 @@
+:host ::ng-deep .p-dialog-presupuesto .p-dialog-content {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+}
+
+:host ::ng-deep .p-datatable-sm .p-datatable-tbody > tr > td {
+  padding: 0.5rem 0.5rem;
+  vertical-align: top;
+}
+
+:host ::ng-deep .p-datatable-sm .p-datatable-thead > tr > th {
+  padding: 0.6rem 0.5rem;
+  font-weight: 600;
+}

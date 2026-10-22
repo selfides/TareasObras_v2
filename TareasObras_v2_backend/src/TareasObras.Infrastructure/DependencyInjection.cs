@@ -78,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddHttpClient<IFacturaOcrService, GeminiFacturaOcrService>();
+        services.AddHttpClient<IPresupuestoOcrService, GeminiPresupuestoOcrService>();
 
         return services;
     }

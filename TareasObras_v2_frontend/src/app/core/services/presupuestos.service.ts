@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { PresupuestoDto } from '../models';
+import { PresupuestoDto, PresupuestoExtraidoDto, ImportarPresupuestoEscaneadoDto } from '../models';
 
 const API = '/api';
 
@@ -15,4 +15,15 @@ export class PresupuestosService {
   aprobar(id: string)         { return this.http.patch(`${API}/presupuestos/${id}/aprobar`, {}); }
   generarTareas(id: string)   { return this.http.post<{tareasGeneradas: number}>(`${API}/presupuestos/${id}/generar-tareas`, {}); }
   delete(id: string)          { return this.http.delete(`${API}/presupuestos/${id}`); }
+
+  analizarDocumento(archivo: File, obraId?: string) {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    const params = obraId ? `?obraId=${obraId}` : '';
+    return this.http.post<PresupuestoExtraidoDto>(`${API}/presupuestos/analizar-documento${params}`, formData);
+  }
+
+  importarEscaneado(data: ImportarPresupuestoEscaneadoDto) {
+    return this.http.post<{ id: string; mensaje: string }>(`${API}/presupuestos/importar-escaneado`, data);
+  }
 }

@@ -3,7 +3,10 @@
   <div class="flex justify-between items-center">
     <h3 class="font-semibold text-surface-900 dark:text-surface-50">Versiones de presupuesto</h3>
     @if (auth.isSupervisor()) {
-      <p-button label="Nuevo presupuesto" icon="pi pi-plus" size="small" (onClick)="abrirNuevoPresupuesto()" />
+      <div class="flex items-center gap-2">
+        <p-button label="Escanear con IA" icon="pi pi-sparkles" size="small" severity="help" [outlined]="true" (onClick)="abrirEscanearPresupuesto()" />
+        <p-button label="Nuevo presupuesto" icon="pi pi-plus" size="small" (onClick)="abrirNuevoPresupuesto()" />
+      </div>
     }
   </div>
 
@@ -227,3 +230,10 @@
     </div>
   </ng-template>
 </p-dialog>
+
+<app-presupuesto-importar-dialog
+  [visible]="dlgEscanearPresupuesto()"
+  [obraIdContexto]="obraId()"
+  (onVisibleChange)="dlgEscanearPresupuesto.set($event)"
+  (onPresupuestoImportado)="onPresupuestoImportado($event)"
+/>

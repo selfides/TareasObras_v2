@@ -399,4 +399,55 @@ export interface MisHorasResponseDto {
   totalHoras: number;
   diasTrabajados: number;
   registros: MisHorasItemDto[];
-}
+}
+
+// ─── Presupuesto Escaneado / OCR IA ───────────────────────────────────────
+export interface PartidaExtraidaDto {
+  orden: number;
+  numeroPosicion?: string;
+  nombre: string;
+  descripcion?: string;
+  unidad: string;
+  cantidad: number;
+  precioUnitario: number;
+  importe: number;
+  generarTareaKanban: boolean;
+}
+
+export interface PresupuestoExtraidoDto {
+  numero?: string;
+  fecha?: string;
+  clienteNombre?: string;
+  obraIdentificadaTexto?: string;
+  obraIdSugerida?: string;
+  descripcion?: string;
+  observacionesCondiciones?: string;
+  baseImponible: number;
+  porcentajeIva: number;
+  importeIva: number;
+  importeTotal: number;
+  documentoTemporalUrl: string;
+  documentoHash: string;
+  advertencia?: string;
+  partidas: PartidaExtraidaDto[];
+}
+
+export interface ImportarPresupuestoEscaneadoDto {
+  obraId: string;
+  numero?: string;
+  fecha: string;
+  descripcion?: string;
+  observacionesCondiciones?: string;
+  aprobarInmediatamente: boolean;
+  documentoTemporalUrl?: string;
+  partidas: {
+    nombre: string;
+    descripcion?: string;
+    orden: number;
+    unidad: string;
+    cantidad: number;
+    precioUnitario: number;
+    generarTareaKanban: boolean;
+  }[];
+}
+

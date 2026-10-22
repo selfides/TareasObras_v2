@@ -18,11 +18,26 @@ import { PresupuestosService } from '../../../../../core/services/presupuestos.s
 import { PartidasService, PartidaDto, LineaPartidaDto } from '../../../../../core/services/partidas.service';
 import { CategoriasOperarioService } from '../../../../../core/services/categorias-operario.service';
 import { PresupuestoDto, CategoriaOperarioDto } from '../../../../../core/models';
+import { PresupuestoImportarDialogComponent } from '../../../../presupuestos/components/presupuesto-importar-dialog.component';
 
 @Component({
   selector: 'app-obra-tab-presupuestos',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableModule, DialogModule, ConfirmDialogModule, ButtonModule, SelectModule, DatePickerModule, InputTextModule, InputNumberModule, TextareaModule, TooltipModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    TableModule, 
+    DialogModule, 
+    ConfirmDialogModule, 
+    ButtonModule, 
+    SelectModule, 
+    DatePickerModule, 
+    InputTextModule, 
+    InputNumberModule, 
+    TextareaModule, 
+    TooltipModule,
+    PresupuestoImportarDialogComponent
+  ],
   providers: [ConfirmationService],
   templateUrl: './obra-tab-presupuestos.component.html'
 })
@@ -48,6 +63,7 @@ export class ObraTabPresupuestosComponent implements OnInit {
   dlgPresupuesto = false;
   dlgPartida = false;
   dlgLinea = false;
+  dlgEscanearPresupuesto = signal<boolean>(false);
 
   @HostListener('document:keydown.escape')
   handleEscape() {
@@ -96,6 +112,15 @@ export class ObraTabPresupuestosComponent implements OnInit {
   }
 
   // ── Presupuesto ──────────────────────────────────────────────────────────
+  abrirEscanearPresupuesto() {
+    this.dlgEscanearPresupuesto.set(true);
+  }
+
+  onPresupuestoImportado(presupuestoId: string) {
+    this.cargarDatos();
+    this.presupuestoSeleccionado.set(presupuestoId);
+  }
+
   abrirNuevoPresupuesto() {
     this.editandoPresupuestoId.set(null);
     const m = new Date().getFullYear();

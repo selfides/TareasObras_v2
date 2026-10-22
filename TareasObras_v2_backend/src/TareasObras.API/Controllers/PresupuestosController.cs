@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using TareasObras.Application.Features.Presupuestos.Commands;
 using TareasObras.Application.Features.Presupuestos.Queries;
 
+using TareasObras.Application.Common.Interfaces;
+using TareasObras.Application.Features.Presupuestos.DTOs;
+
 namespace TareasObras.API.Controllers;
 
 [ApiController]
@@ -12,7 +15,13 @@ namespace TareasObras.API.Controllers;
 public class PresupuestosController : ControllerBase
 {
     private readonly IMediator _mediator;
-    public PresupuestosController(IMediator mediator) => _mediator = mediator;
+    private readonly IPresupuestoOcrService _presupuestoOcrService;
+
+    public PresupuestosController(IMediator mediator, IPresupuestoOcrService presupuestoOcrService)
+    {
+        _mediator = mediator;
+        _presupuestoOcrService = presupuestoOcrService;
+    }
 
     [HttpGet("obra/{obraId:guid}")]
     public async Task<IActionResult> GetByObra(Guid obraId, CancellationToken ct)
@@ -64,6 +73,56 @@ public class PresupuestosController : ControllerBase
     {
         var count = await _mediator.Send(new GenerarTareasPresupuestoCommand(id), ct);
         return Ok(new { tareasGeneradas = count });
+    }
+
+    /// <summary>
+    /// Sube un documento de presupuesto (PDF o imagen) y extrae sus partidas, cabecera y condiciones mediante IA multimodal.
+    /// </summary>
+    [HttpPost("analizar-documento")]
+    [Consumes("multipart/form-data")]
+    [Authorize(Roles = "Admin,Supervisor")]
+    [ProducesResponseType(typeof(PresupuestoExtraidoDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> AnalizarDocumento(
+        [FromForm] IFormFile archivo,
+        [FromQuery] Guid? obraId,
+        CancellationToken ct)
+    {
+        if (archivo == null || archivo.Length == 0)
+            return BadRequest(new { mensaje = "Debe proporcionar un archivo de presupuesto válido (PDF o Imagen)." });
+
+        var extensionesPermitidas = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".webp" };
+        var ext = Path.GetExtension(archivo.FileName).ToLowerInvariant();
+        if (!extensionesPermitidas.Contains(ext))
+            return BadRequest(new { mensaje = $"Formato no soportado ({ext}). Formatos válidos: PDF, JPG, PNG, WEBP." });
+
+        if (archivo.Length > 25 * 1024 * 1024)
+            return BadRequest(new { mensaje = "El archivo excede el límite máximo permitido (25 MB)." });
+
+        using var stream = archivo.OpenReadStream();
+        var resultado = await _presupuestoOcrService.AnalizarDocumentoAsync(
+            stream,
+            archivo.FileName,
+            archivo.ContentType,
+            obraId,
+            ct);
+
+        return Ok(resultado);
+    }
+
+    /// <summary>
+    /// Guarda el presupuesto escaneado tras la revisión del usuario, creando sus partidas y opcionalmente las tareas en Kanban.
+    /// </summary>
+    [HttpPost("importar-escaneado")]
+    [Authorize(Roles = "Admin,Supervisor")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ImportarEscaneado(
+        [FromBody] ImportarPresupuestoEscaneadoCommand command,
+        CancellationToken ct)
+    {
+        var id = await _mediator.Send(command, ct);
+        return Ok(new { id, mensaje = "Presupuesto importado exitosamente." });
     }
 }
 

@@ -148,3 +148,102 @@ public class DeletePresupuestoHandler : IRequestHandler<DeletePresupuestoCommand
         return true;
     }
 }
+
+public record PartidaImportarRequest(
+    string Nombre,
+    string? Descripcion,
+    int Orden,
+    string Unidad,
+    decimal Cantidad,
+    decimal PrecioUnitario,
+    bool GenerarTareaKanban
+);
+
+public record ImportarPresupuestoEscaneadoCommand(
+    Guid ObraId,
+    string? Numero,
+    DateTime Fecha,
+    string? Descripcion,
+    string? ObservacionesCondiciones,
+    bool AprobarInmediatamente,
+    string? DocumentoTemporalUrl,
+    List<PartidaImportarRequest> Partidas
+) : IRequest<Guid>;
+
+public class ImportarPresupuestoEscaneadoHandler : IRequestHandler<ImportarPresupuestoEscaneadoCommand, Guid>
+{
+    private readonly IUnitOfWork _uow;
+    public ImportarPresupuestoEscaneadoHandler(IUnitOfWork uow) => _uow = uow;
+
+    public async Task<Guid> Handle(ImportarPresupuestoEscaneadoCommand r, CancellationToken ct)
+    {
+        var version = await _uow.Presupuestos.GetNextVersionAsync(r.ObraId, ct);
+
+        var descripcionCompleta = r.Descripcion;
+        if (!string.IsNullOrWhiteSpace(r.ObservacionesCondiciones))
+        {
+            descripcionCompleta = string.IsNullOrWhiteSpace(descripcionCompleta)
+                ? $"Condiciones: {r.ObservacionesCondiciones}"
+                : $"{descripcionCompleta}\n\nCondiciones: {r.ObservacionesCondiciones}";
+        }
+
+        var presupuesto = Presupuesto.Create(r.ObraId, r.Numero, version, r.Fecha, descripcionCompleta);
+        if (r.AprobarInmediatamente)
+        {
+            presupuesto.Aprobar();
+        }
+
+        await _uow.Presupuestos.AddAsync(presupuesto, ct);
+        await _uow.SaveChangesAsync(ct);
+
+        int orden = 1;
+        foreach (var p in r.Partidas)
+        {
+            var partida = PartidaPresupuesto.Create(presupuesto.Id, p.Nombre, p.Descripcion, p.Orden > 0 ? p.Orden : orden++);
+            await _uow.PartidasPresupuesto.AddAsync(partida, ct);
+            await _uow.SaveChangesAsync(ct);
+
+            // Crear línea representativa de la unidad de obra completa
+            var linea = LineaPartida.CreateMaterial(
+                partida.Id,
+                string.IsNullOrWhiteSpace(p.Descripcion) ? p.Nombre : p.Descripcion,
+                string.IsNullOrWhiteSpace(p.Unidad) ? "ud" : p.Unidad,
+                p.Cantidad > 0 ? p.Cantidad : 1m,
+                p.PrecioUnitario
+            );
+            await _uow.LineasPartida.AddAsync(linea, ct);
+            await _uow.SaveChangesAsync(ct);
+
+            // Generar tarea en Kanban si está seleccionado
+            if (p.GenerarTareaKanban)
+            {
+                var nombreTarea = p.Nombre;
+                if (!string.IsNullOrWhiteSpace(p.Descripcion))
+                {
+                    nombreTarea = $"{p.Nombre} - {p.Descripcion}";
+                }
+                if (nombreTarea.Length > 290)
+                {
+                    nombreTarea = nombreTarea[..290] + "...";
+                }
+
+                var tarea = Tarea.Create(
+                    r.ObraId,
+                    nombreTarea,
+                    $"Tarea generada desde el presupuesto {presupuesto.Numero ?? "S/N"}. Posición: {p.Nombre}. Cantidad: {p.Cantidad} {p.Unidad}.",
+                    Domain.Enums.PrioridadTarea.Media,
+                    null,
+                    0,
+                    null,
+                    null,
+                    linea.Id
+                );
+                await _uow.Tareas.AddAsync(tarea, ct);
+            }
+        }
+
+        await _uow.SaveChangesAsync(ct);
+        return presupuesto.Id;
+    }
+}
+

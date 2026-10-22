@@ -1,0 +1,518 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="cerrar()"
+  [modal]="true"
+  [maximizable]="true"
+  [dismissableMask]="false"
+  [style]="{ width: '96vw', maxWidth: '1550px' }"
+  styleClass="p-dialog-presupuesto"
+  header="Escanear e Importar Presupuesto con IA"
+>
+  <!-- PASO 1: SUBIDA DEL DOCUMENTO -->
+  @if (paso() === 'subida') {
+    <div class="py-10 px-4 flex flex-col items-center justify-center text-center space-y-6">
+      <div class="w-20 h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-3xl shadow-sm border border-indigo-100 dark:border-indigo-900/50">
+        <i class="pi pi-sparkles"></i>
+      </div>
+
+      <div class="max-w-md space-y-1">
+        <h2 class="text-xl font-bold text-surface-900 dark:text-surface-50">
+          Sube el Presupuesto u Oferta Comercial
+        </h2>
+        <p class="text-sm text-surface-500 dark:text-surface-400">
+          El modelo de Visión IA extraerá el número de presupuesto, cliente, fechas, condiciones y todas las posiciones de obra con sus importes unitarios.
+        </p>
+      </div>
+
+      <!-- Dropzone interactiva -->
+      <div
+        class="w-full max-w-xl border-2 border-dashed rounded-2xl p-10 transition-colors duration-200 cursor-pointer flex flex-col items-center justify-center space-y-4"
+        [ngClass]="{
+          'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20': isDragOver(),
+          'border-surface-300 dark:border-surface-700 hover:border-indigo-400 dark:hover:border-indigo-600 bg-surface-50/50 dark:bg-surface-800/40': !isDragOver()
+        }"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onFileDropped($event)"
+        (click)="fileInput.click()"
+      >
+        <input
+          #fileInput
+          type="file"
+          class="hidden"
+          accept=".pdf,.jpg,.jpeg,.png,.webp"
+          (change)="onFileSelected($event)"
+        />
+
+        <div class="w-16 h-16 rounded-full bg-surface-200/70 dark:bg-surface-700/70 flex items-center justify-center text-surface-600 dark:text-surface-300 text-3xl">
+          <i class="pi pi-cloud-upload"></i>
+        </div>
+
+        <div>
+          <span class="font-semibold text-indigo-600 dark:text-indigo-400">Haz clic para seleccionar</span>
+          <span class="text-surface-500 dark:text-surface-400"> o arrastra el documento PDF / Imagen</span>
+        </div>
+
+        <p class="text-xs text-surface-400 dark:text-surface-500">
+          Formatos compatibles: PDF, JPG, PNG, WEBP (hasta 25 MB)
+        </p>
+      </div>
+
+      <!-- Captura con móvil -->
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          class="sm:hidden px-4 py-2 bg-surface-200 dark:bg-surface-700 hover:bg-surface-300 rounded-lg text-sm font-medium flex items-center gap-2"
+          (click)="cameraInput.click()"
+        >
+          <i class="pi pi-camera"></i> Tomar foto con la cámara
+        </button>
+        <input
+          #cameraInput
+          type="file"
+          class="hidden"
+          accept="image/*"
+          capture="environment"
+          (change)="onFileSelected($event)"
+        />
+      </div>
+    </div>
+  }
+
+  <!-- PASO 2: ANIMACIÓN DE ANÁLISIS IA -->
+  @if (paso() === 'analizando') {
+    <div class="py-16 px-4 flex flex-col items-center justify-center text-center space-y-6">
+      <div class="relative flex items-center justify-center">
+        <div class="w-24 h-24 rounded-full border-4 border-indigo-200 dark:border-indigo-900 border-t-indigo-600 dark:border-t-indigo-400 animate-spin"></div>
+        <i class="pi pi-sparkles text-2xl text-indigo-600 dark:text-indigo-400 absolute"></i>
+      </div>
+
+      <div class="space-y-2 max-w-sm">
+        <h3 class="text-lg font-bold text-surface-900 dark:text-surface-50">
+          Analizando presupuesto con IA
+        </h3>
+        <p class="text-sm text-surface-500 dark:text-surface-400 animate-pulse">
+          Identificando partidas, precios unitarios, mediciones y condiciones comerciales...
+        </p>
+      </div>
+
+      <div class="w-full max-w-md">
+        <p-progressBar mode="indeterminate" [style]="{ height: '6px' }"></p-progressBar>
+      </div>
+    </div>
+  }
+
+  <!-- PASO 3: REVISIÓN EN PANTALLA DIVIDIDA (SPLIT-VIEW) -->
+  @if (paso() === 'revision') {
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[680px]">
+      
+      <!-- PANEL IZQUIERDO (50% en pantallas grandes): VISOR DEL DOCUMENTO ORIGINAL -->
+      <div class="lg:col-span-5 xl:col-span-6 flex flex-col bg-surface-100 dark:bg-surface-950 rounded-xl border border-surface-200 dark:border-surface-800 overflow-hidden">
+        <!-- Barra de herramientas del visor -->
+        <div class="px-4 py-2.5 bg-surface-200/80 dark:bg-surface-900 border-b border-surface-300 dark:border-surface-700 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2 font-medium text-surface-700 dark:text-surface-200 truncate">
+            <i [class]="esPdf() ? 'pi pi-file-pdf text-red-500' : 'pi pi-image text-blue-500'"></i>
+            <span class="truncate">{{ archivoSeleccionado()?.name }}</span>
+          </div>
+
+          @if (!esPdf()) {
+            <div class="flex items-center gap-1">
+              <button type="button" class="p-1 hover:bg-surface-300 dark:hover:bg-surface-700 rounded" (click)="zoomOut()" pTooltip="Reducir zoom">
+                <i class="pi pi-search-minus"></i>
+              </button>
+              <span class="text-surface-500 px-1">{{ (zoom() * 100) | number:'1.0-0' }}%</span>
+              <button type="button" class="p-1 hover:bg-surface-300 dark:hover:bg-surface-700 rounded" (click)="zoomIn()" pTooltip="Aumentar zoom">
+                <i class="pi pi-search-plus"></i>
+              </button>
+              <button type="button" class="p-1 hover:bg-surface-300 dark:hover:bg-surface-700 rounded" (click)="rotarDerecha()" pTooltip="Girar 90°">
+                <i class="pi pi-refresh"></i>
+              </button>
+              <button type="button" class="p-1 hover:bg-surface-300 dark:hover:bg-surface-700 rounded text-surface-400" (click)="zoomReset()" pTooltip="Restablecer">
+                <i class="pi pi-undo"></i>
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Área de visualización -->
+        <div class="flex-1 overflow-auto flex items-center justify-center p-2 relative bg-surface-200/40 dark:bg-surface-950/60 min-h-[500px]">
+          @if (esPdf()) {
+            <iframe
+              [src]="documentoUrlSegura()"
+              class="w-full h-full min-h-[620px] rounded border-0"
+              title="Visor de Presupuesto PDF"
+            ></iframe>
+          } @else {
+            <div class="overflow-auto max-h-[620px] max-w-full flex items-center justify-center">
+              <img
+                [src]="documentoUrlSegura()"
+                alt="Presupuesto a importar"
+                class="transition-transform duration-200 max-w-full object-contain origin-center rounded shadow-sm"
+                [style.transform]="'rotate(' + rotacion() + 'deg) scale(' + zoom() + ')'"
+              />
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- PANEL DERECHO: FORMULARIO Y TABLA EDITABLE DE PARTIDAS -->
+      <div class="lg:col-span-7 xl:col-span-6 flex flex-col space-y-4 overflow-y-auto max-h-[760px] pr-1">
+        
+        <!-- Alerta informativa si detectó obra o notas -->
+        @if (datosExtraidos()?.obraIdentificadaTexto) {
+          <div class="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-lg flex items-center gap-3 text-xs text-blue-800 dark:text-blue-300">
+            <i class="pi pi-info-circle text-base text-blue-600"></i>
+            <div>
+              Obra detectada en documento: <strong>{{ datosExtraidos()?.obraIdentificadaTexto }}</strong>
+              @if (clienteNombre()) {
+                &nbsp;|&nbsp; Cliente: <strong>{{ clienteNombre() }}</strong>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- 1. Cabecera del Presupuesto -->
+        <div class="bg-surface-50 dark:bg-surface-900/60 p-4 rounded-xl border border-surface-200 dark:border-surface-800 space-y-3">
+          <div class="text-xs font-bold uppercase tracking-wider text-surface-500">Datos Principales</div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <!-- Obra Destino -->
+            <div class="space-y-1">
+              <label class="font-medium text-xs text-surface-700 dark:text-surface-300">Obra de Destino <span class="text-red-500">*</span></label>
+              <p-select
+                [options]="obras()"
+                optionLabel="nombre"
+                optionValue="id"
+                [ngModel]="obraSeleccionadaId()"
+                (ngModelChange)="obraSeleccionadaId.set($event)"
+                placeholder="Seleccione la obra"
+                [filter]="true"
+                filterBy="nombre,codigo"
+                styleClass="w-full p-inputtext-sm"
+              >
+                <ng-template let-obra #item>
+                  <div class="flex items-center justify-between text-xs w-full">
+                    <span class="font-medium">{{ obra.nombre }}</span>
+                    <span class="text-surface-400 font-mono">{{ obra.codigo }}</span>
+                  </div>
+                </ng-template>
+              </p-select>
+            </div>
+
+            <!-- Nº Presupuesto -->
+            <div class="space-y-1">
+              <label class="font-medium text-xs text-surface-700 dark:text-surface-300">Nº Presupuesto</label>
+              <input
+                pInputText
+                type="text"
+                class="w-full p-inputtext-sm font-mono"
+                [ngModel]="numeroPresupuesto()"
+                (ngModelChange)="numeroPresupuesto.set($event)"
+                placeholder="ej. 2.026.000.102/1"
+              />
+            </div>
+
+            <!-- Fecha -->
+            <div class="space-y-1">
+              <label class="font-medium text-xs text-surface-700 dark:text-surface-300">Fecha</label>
+              <p-datePicker
+                [ngModel]="fechaPresupuesto()"
+                (ngModelChange)="fechaPresupuesto.set($event)"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
+                styleClass="w-full p-inputtext-sm"
+              ></p-datePicker>
+            </div>
+
+            <!-- Cliente / Empresa -->
+            <div class="space-y-1">
+              <label class="font-medium text-xs text-surface-700 dark:text-surface-300">Cliente / Destinatario</label>
+              <input
+                pInputText
+                type="text"
+                class="w-full p-inputtext-sm"
+                [ngModel]="clienteNombre()"
+                (ngModelChange)="clienteNombre.set($event)"
+                placeholder="Nombre del cliente"
+              />
+            </div>
+          </div>
+
+          <!-- Concepto / Descripción -->
+          <div class="space-y-1">
+            <label class="font-medium text-xs text-surface-700 dark:text-surface-300">Concepto / Objeto del Presupuesto</label>
+            <input
+              pInputText
+              type="text"
+              class="w-full p-inputtext-sm"
+              [ngModel]="descripcionPresupuesto()"
+              (ngModelChange)="descripcionPresupuesto.set($event)"
+              placeholder="ej. Sustitución de motores grupo zeta"
+            />
+          </div>
+
+          <!-- Observaciones y Condiciones Comerciales -->
+          @if (observacionesCondiciones() || datosExtraidos()?.observacionesCondiciones) {
+            <div class="space-y-1">
+              <label class="font-medium text-xs text-surface-700 dark:text-surface-300 flex items-center justify-between">
+                <span>Condiciones Comerciales y Notas (detectadas por IA)</span>
+                <span class="text-surface-400 text-[10px]">No facturables como partidas</span>
+              </label>
+              <textarea
+                pTextarea
+                rows="2"
+                class="w-full text-xs p-2 rounded border border-surface-300 dark:border-surface-700 bg-surface-0 dark:bg-surface-800"
+                [ngModel]="observacionesCondiciones()"
+                (ngModelChange)="observacionesCondiciones.set($event)"
+                placeholder="Validez 30 días, formas de pago, etc."
+              ></textarea>
+            </div>
+          }
+        </div>
+
+        <!-- 2. Partidas del Presupuesto -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <h4 class="font-semibold text-sm text-surface-800 dark:text-surface-100">
+                Partidas y Unidades de Obra
+              </h4>
+              <p-tag [value]="partidas().length + ' partidas'" severity="info"></p-tag>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                (click)="toggleGenerarTareasTodas(true)"
+              >
+                Marcar todas para Kanban
+              </button>
+              <span class="text-surface-300">|</span>
+              <button
+                type="button"
+                class="text-xs text-surface-500 hover:underline"
+                (click)="toggleGenerarTareasTodas(false)"
+              >
+                Desmarcar todas
+              </button>
+              <p-button
+                label="Añadir partida"
+                icon="pi pi-plus"
+                size="small"
+                [outlined]="true"
+                (onClick)="agregarPartidaManual()"
+              ></p-button>
+            </div>
+          </div>
+
+          <!-- Tabla de partidas editables -->
+          <div class="border border-surface-200 dark:border-surface-800 rounded-xl overflow-hidden bg-white dark:bg-surface-900 shadow-sm">
+            <p-table [value]="partidas()" [responsiveLayout]="'scroll'" styleClass="p-datatable-sm">
+              <ng-template #header>
+                <tr class="text-xs text-surface-600 dark:text-surface-300 bg-surface-50 dark:bg-surface-800/60">
+                  <th style="width: 80px">Pos.</th>
+                  <th>Título y Descripción de la Partida</th>
+                  <th style="width: 85px">Cant.</th>
+                  <th style="width: 65px">Ud.</th>
+                  <th style="width: 105px">Precio (€)</th>
+                  <th style="width: 105px">Total (€)</th>
+                  <th style="width: 80px" class="text-center" pTooltip="Genera una tarea ejecutable en el tablero Kanban de la obra">
+                    Kanban
+                  </th>
+                  <th style="width: 45px"></th>
+                </tr>
+              </ng-template>
+
+              <ng-template #body let-p let-rowIndex="rowIndex">
+                <tr class="text-xs border-b border-surface-100 dark:border-surface-800 hover:bg-surface-50/50">
+                  <!-- Posición -->
+                  <td>
+                    <input
+                      pInputText
+                      type="text"
+                      class="w-full p-inputtext-sm font-mono text-center text-xs"
+                      [(ngModel)]="p.numeroPosicion"
+                    />
+                  </td>
+
+                  <!-- Nombre y Descripción técnica -->
+                  <td>
+                    <div class="space-y-1">
+                      <input
+                        pInputText
+                        type="text"
+                        class="w-full p-inputtext-sm font-semibold text-xs"
+                        [(ngModel)]="p.nombre"
+                        placeholder="Nombre / Título de la partida"
+                      />
+                      <textarea
+                        pTextarea
+                        rows="2"
+                        class="w-full text-xs p-1.5 rounded border border-surface-200 dark:border-surface-700 bg-surface-50/60 dark:bg-surface-800/60"
+                        [(ngModel)]="p.descripcion"
+                        placeholder="Descripción técnica completa y despiece..."
+                      ></textarea>
+                    </div>
+                  </td>
+
+                  <!-- Cantidad -->
+                  <td>
+                    <p-inputNumber
+                      [(ngModel)]="p.cantidad"
+                      (ngModelChange)="recalcularImporte(p)"
+                      [minFractionDigits]="0"
+                      [maxFractionDigits]="2"
+                      styleClass="w-full p-inputtext-sm"
+                      inputStyleClass="w-full text-center text-xs"
+                    ></p-inputNumber>
+                  </td>
+
+                  <!-- Unidad -->
+                  <td>
+                    <input
+                      pInputText
+                      type="text"
+                      class="w-full p-inputtext-sm text-center text-xs"
+                      [(ngModel)]="p.unidad"
+                      placeholder="ud"
+                    />
+                  </td>
+
+                  <!-- Precio Unitario -->
+                  <td>
+                    <p-inputNumber
+                      [(ngModel)]="p.precioUnitario"
+                      (ngModelChange)="recalcularImporte(p)"
+                      mode="currency"
+                      currency="EUR"
+                      locale="es-ES"
+                      styleClass="w-full p-inputtext-sm"
+                      inputStyleClass="w-full text-right text-xs"
+                    ></p-inputNumber>
+                  </td>
+
+                  <!-- Total Calculado -->
+                  <td class="text-right font-bold text-surface-900 dark:text-surface-100">
+                    {{ p.importe | number:'1.2-2' }} €
+                  </td>
+
+                  <!-- Switch Kanban -->
+                  <td class="text-center">
+                    <p-toggleSwitch [(ngModel)]="p.generarTareaKanban"></p-toggleSwitch>
+                  </td>
+
+                  <!-- Eliminar -->
+                  <td class="text-center">
+                    <button
+                      type="button"
+                      class="text-red-500 hover:text-red-700 p-1"
+                      (click)="eliminarPartida(rowIndex)"
+                      pTooltip="Eliminar partida"
+                    >
+                      <i class="pi pi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </ng-template>
+
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="8" class="text-center py-6 text-surface-400">
+                    No hay partidas añadidas. Pulse "Añadir partida" para crear una.
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </div>
+
+        <!-- 3. Totales y Opciones de Aprobación -->
+        <div class="bg-surface-50 dark:bg-surface-900/80 p-4 rounded-xl border border-surface-200 dark:border-surface-800 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="aprobarInmediatamenteCheck"
+                  class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                  [ngModel]="aprobarInmediatamente()"
+                  (ngModelChange)="aprobarInmediatamente.set($event)"
+                />
+                <label for="aprobarInmediatamenteCheck" class="text-xs font-semibold text-surface-800 dark:text-surface-100 cursor-pointer">
+                  Aprobar presupuesto automáticamente al importar
+                </label>
+              </div>
+              <p class="text-[11px] text-surface-500 dark:text-surface-400 pl-6">
+                @if (aprobarInmediatamente()) {
+                  <span class="text-indigo-600 dark:text-indigo-400 font-medium">
+                    ⚡ Se generarán {{ totalPartidasConTarea() }} tareas en el tablero Kanban de la obra.
+                  </span>
+                } @else {
+                  <span>El presupuesto quedará en estado Borrador para su posterior revisión.</span>
+                }
+              </p>
+            </div>
+
+            <!-- Resumen económico -->
+            <div class="flex items-center gap-6 text-right">
+              <div>
+                <span class="text-xs text-surface-500 block">Base Imponible</span>
+                <span class="text-sm font-semibold text-surface-800 dark:text-surface-200">
+                  {{ totalBaseImponible() | number:'1.2-2' }} €
+                </span>
+              </div>
+              <div>
+                <span class="text-xs text-surface-500 block">IVA (21%)</span>
+                <span class="text-sm font-semibold text-surface-800 dark:text-surface-200">
+                  {{ cuotaIvaEstimada() | number:'1.2-2' }} €
+                </span>
+              </div>
+              <div class="border-l border-surface-200 dark:border-surface-700 pl-4">
+                <span class="text-xs text-indigo-600 dark:text-indigo-400 font-bold block uppercase">Total Oferta</span>
+                <span class="text-lg font-bold text-indigo-700 dark:text-indigo-300">
+                  {{ totalGeneralCalculado() | number:'1.2-2' }} €
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  }
+
+  <!-- FOOTER DIÁLOGO -->
+  <ng-template #footer>
+    <div class="flex items-center justify-between w-full pt-2">
+      <div class="text-xs text-surface-400">
+        @if (paso() === 'revision') {
+          <span>Documento analizado con Gemini 2.0 Flash</span>
+        }
+      </div>
+
+      <div class="flex items-center gap-2">
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          [text]="true"
+          severity="secondary"
+          (onClick)="cerrar()"
+        ></p-button>
+
+        @if (paso() === 'revision') {
+          <p-button
+            label="Guardar e Importar Presupuesto"
+            icon="pi pi-check"
+            severity="primary"
+            [loading]="guardando()"
+            (onClick)="guardarPresupuesto()"
+          ></p-button>
+        }
+      </div>
+    </div>
+  </ng-template>
+</p-dialog>
