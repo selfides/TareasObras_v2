@@ -1,5 +1,4 @@
 {
-  "workbench.colorTheme": "Dark Modern",
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[csharp]": {
@@ -23,6 +22,15 @@
     "**/Thumbs.db": true,
     "**/bin": true,
     "**/obj": true,
-    "**/node_modules": true
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.angular": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.angular": true,
+    "**/bin": true,
+    "**/obj": true
   }
 }
