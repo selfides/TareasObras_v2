@@ -25,7 +25,9 @@ import {
   ObraListDto 
 } from '../../../core/models';
 
-export interface PartidaEditable extends PartidaExtraidaDto {}
+export interface PartidaEditable extends PartidaExtraidaDto {
+  importeBeneficioMaterial: number;
+}
 
 @Component({
   selector: 'app-presupuesto-importar-dialog',
@@ -87,12 +89,29 @@ export class PresupuestoImportarDialogComponent {
   aprobarInmediatamente = signal<boolean>(false);
   partidas = signal<PartidaEditable[]>([]);
 
+  // Beneficio global en el asistente
+  beneficioGlobalInput = signal<number>(0);
+
   // Estado de guardado
   guardando = signal<boolean>(false);
 
   // Cálculos reactivos
+  totalCosteMateriales = computed(() => {
+    return this.partidas().reduce((acc, p) => acc + ((p.cantidad || 0) * (p.precioUnitario || 0)), 0);
+  });
+
+  totalBeneficioMateriales = computed(() => {
+    return this.partidas().reduce((acc, p) => acc + (p.importeBeneficioMaterial || 0), 0);
+  });
+
+  porcentajeBeneficioTotal = computed(() => {
+    const coste = this.totalCosteMateriales();
+    if (coste <= 0) return 0;
+    return Math.round((this.totalBeneficioMateriales() / coste) * 10000) / 100;
+  });
+
   totalBaseImponible = computed(() => {
-    return this.partidas().reduce((acc, p) => acc + (p.cantidad * p.precioUnitario), 0);
+    return this.totalCosteMateriales() + this.totalBeneficioMateriales();
   });
 
   totalPartidasConTarea = computed(() => {
@@ -201,9 +220,11 @@ export class PresupuestoImportarDialogComponent {
         const partidasEdit: PartidaEditable[] = (res.partidas || []).map((p, idx) => ({
           ...p,
           orden: p.orden || (idx + 1),
-          generarTareaKanban: p.generarTareaKanban !== false
+          generarTareaKanban: p.generarTareaKanban !== false,
+          importeBeneficioMaterial: 0
         }));
         this.partidas.set(partidasEdit);
+        this.beneficioGlobalInput.set(0);
 
         this.paso.set('revision');
         this.msg.add({
@@ -241,9 +262,44 @@ export class PresupuestoImportarDialogComponent {
     this.rotacion.set(0);
   }
 
-  // ── Gestión de Partidas ──
+  // ── Gestión de Partidas y Beneficios ──
   recalcularImporte(partida: PartidaEditable) {
-    partida.importe = Math.round((partida.cantidad * partida.precioUnitario) * 100) / 100;
+    partida.importe = Math.round(((partida.cantidad || 0) * (partida.precioUnitario || 0)) * 100) / 100;
+    this.partidas.update(list => [...list]);
+  }
+
+  notificarCambioBeneficio() {
+    this.partidas.update(list => [...list]);
+  }
+
+  calcularPorcentajeBeneficioPartida(p: PartidaEditable): number {
+    const coste = (p.cantidad || 0) * (p.precioUnitario || 0);
+    if (coste <= 0) return 0;
+    return Math.round(((p.importeBeneficioMaterial || 0) / coste) * 10000) / 100;
+  }
+
+  repartirBeneficioGlobalEnTabla() {
+    const importeGlobal = Math.round((this.beneficioGlobalInput() || 0) * 100) / 100;
+    const lista = [...this.partidas()];
+    const conCoste = lista.filter(p => ((p.cantidad || 0) * (p.precioUnitario || 0)) > 0);
+
+    if (conCoste.length === 0) return;
+
+    const costeTotal = conCoste.reduce((acc, p) => acc + ((p.cantidad || 0) * (p.precioUnitario || 0)), 0);
+    let acumulado = 0;
+
+    conCoste.forEach((p, idx) => {
+      const costePartida = (p.cantidad || 0) * (p.precioUnitario || 0);
+      if (idx === conCoste.length - 1) {
+        p.importeBeneficioMaterial = Math.round((importeGlobal - acumulado) * 100) / 100;
+      } else {
+        const prop = Math.round((importeGlobal * (costePartida / costeTotal)) * 100) / 100;
+        p.importeBeneficioMaterial = prop;
+        acumulado += prop;
+      }
+    });
+
+    this.partidas.set(lista);
   }
 
   agregarPartidaManual() {
@@ -259,7 +315,8 @@ export class PresupuestoImportarDialogComponent {
         cantidad: 1,
         precioUnitario: 0,
         importe: 0,
-        generarTareaKanban: true
+        generarTareaKanban: true,
+        importeBeneficioMaterial: 0
       }
     ]);
   }
@@ -302,7 +359,8 @@ export class PresupuestoImportarDialogComponent {
         unidad: p.unidad?.trim() || 'ud',
         cantidad: p.cantidad,
         precioUnitario: p.precioUnitario,
-        generarTareaKanban: p.generarTareaKanban
+        generarTareaKanban: p.generarTareaKanban,
+        importeBeneficioMaterial: p.importeBeneficioMaterial || 0
       }))
     };
 
@@ -345,6 +403,7 @@ export class PresupuestoImportarDialogComponent {
     this.documentoBlobUrl.set(null);
     this.datosExtraidos.set(null);
     this.partidas.set([]);
+    this.beneficioGlobalInput.set(0);
     this.numeroPresupuesto.set('');
     this.descripcionPresupuesto.set('');
     this.observacionesCondiciones.set('');

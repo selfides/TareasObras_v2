@@ -225,6 +225,8 @@ public class AppDbContext : IdentityDbContext<AppUser>
             .HasIndex(m => m.DocumentoHash);
         builder.Entity<LineaPartida>()
             .Property(l => l.PrecioUnitario).HasPrecision(10, 2);
+        builder.Entity<PartidaPresupuesto>()
+            .Property(p => p.ImporteBeneficioMaterial).HasPrecision(12, 2);
 
         builder.Entity<TicketPendiente>()
             .HasOne(t => t.Obra)

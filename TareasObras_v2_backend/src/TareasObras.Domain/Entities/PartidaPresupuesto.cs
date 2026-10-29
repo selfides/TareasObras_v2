@@ -1,4 +1,4 @@
-﻿namespace TareasObras.Domain.Entities;
+namespace TareasObras.Domain.Entities;
 
 public class PartidaPresupuesto
 {
@@ -7,25 +7,35 @@ public class PartidaPresupuesto
     public string Nombre { get; private set; } = "";
     public string? Descripcion { get; private set; }
     public int Orden { get; private set; }
+    public decimal ImporteBeneficioMaterial { get; private set; }
     public bool IsDeleted { get; private set; }
 
     public Presupuesto Presupuesto { get; private set; } = null!;
     public ICollection<LineaPartida> Lineas { get; private set; } = new List<LineaPartida>();
 
-    public decimal TotalMaterial => Lineas.Where(l => !l.IsDeleted && l.Tipo == TipoLineaPartida.Material).Sum(l => l.Importe);
+    public decimal CosteMaterial => Lineas.Where(l => !l.IsDeleted && l.Tipo == TipoLineaPartida.Material).Sum(l => l.Importe);
+    public decimal PorcentajeBeneficioMaterial => CosteMaterial > 0
+        ? Math.Round((ImporteBeneficioMaterial / CosteMaterial) * 100, 2)
+        : 0;
+    public decimal TotalMaterial => CosteMaterial + ImporteBeneficioMaterial;
     public decimal TotalManoObra => Lineas.Where(l => !l.IsDeleted && l.Tipo == TipoLineaPartida.ManoObra).Sum(l => l.Importe);
     public decimal Total => TotalMaterial + TotalManoObra;
 
     private PartidaPresupuesto() { }
 
-    public static PartidaPresupuesto Create(Guid presupuestoId, string nombre, string? descripcion, int orden)
-        => new() { Id = Guid.NewGuid(), PresupuestoId = presupuestoId, Nombre = nombre, Descripcion = descripcion, Orden = orden };
+    public static PartidaPresupuesto Create(Guid presupuestoId, string nombre, string? descripcion, int orden, decimal importeBeneficioMaterial = 0)
+        => new() { Id = Guid.NewGuid(), PresupuestoId = presupuestoId, Nombre = nombre, Descripcion = descripcion, Orden = orden, ImporteBeneficioMaterial = Math.Round(importeBeneficioMaterial, 2) };
 
     public void Update(string nombre, string? descripcion, int orden)
     {
         Nombre = nombre;
         Descripcion = descripcion;
         Orden = orden;
+    }
+
+    public void SetBeneficioMaterial(decimal importe)
+    {
+        ImporteBeneficioMaterial = Math.Round(importe, 2);
     }
 
     public void Delete() => IsDeleted = true;

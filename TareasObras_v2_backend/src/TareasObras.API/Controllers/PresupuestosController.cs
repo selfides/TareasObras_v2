@@ -50,6 +50,14 @@ public class PresupuestosController : ControllerBase
         return result ? NoContent() : NotFound();
     }
 
+    [HttpPatch("{id:guid}/beneficio-global")]
+    [Authorize(Roles = "Admin,Supervisor")]
+    public async Task<IActionResult> AplicarBeneficioGlobal(Guid id, [FromBody] AplicarBeneficioGlobalRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new AplicarBeneficioGlobalCommand(id, request.ImporteBeneficioGlobal), ct);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,Supervisor")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePresupuestoRequest request, CancellationToken ct)
@@ -127,3 +135,4 @@ public class PresupuestosController : ControllerBase
 }
 
 public record UpdatePresupuestoRequest(string? Numero, DateTime Fecha, string? Descripcion);
+public record AplicarBeneficioGlobalRequest(decimal ImporteBeneficioGlobal);

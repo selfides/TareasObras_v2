@@ -34,6 +34,14 @@ public class PartidasController : ControllerBase
         return result ? NoContent() : NotFound();
     }
 
+    [HttpPatch("{id:guid}/beneficio")]
+    [Authorize(Roles = "Admin,Supervisor")]
+    public async Task<IActionResult> UpdateBeneficio(Guid id, [FromBody] UpdateBeneficioPartidaRequest req, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new UpdateBeneficioPartidaCommand(id, req.ImporteBeneficioMaterial), ct);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin,Supervisor")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
@@ -76,6 +84,7 @@ public class PartidasController : ControllerBase
 }
 
 public record UpdatePartidaRequest(string Nombre, string? Descripcion, int Orden);
+public record UpdateBeneficioPartidaRequest(decimal ImporteBeneficioMaterial);
 public record AddLineaMaterialRequest(string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario);
 public record AddLineaManoObraRequest(Guid CategoriaOperarioId, string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario);
 public record UpdateLineaRequest(string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario, Guid? CategoriaOperarioId);

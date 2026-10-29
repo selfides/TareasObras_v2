@@ -43,9 +43,54 @@ public class Presupuesto : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public decimal TotalCosteMaterial => (Partidas?.Where(p => !p.IsDeleted).Sum(p => p.CosteMaterial) ?? 0) + (LineasMaterial?.Sum(l => l.ImporteEstimado) ?? 0);
+    public decimal TotalBeneficioMaterial => Partidas?.Where(p => !p.IsDeleted).Sum(p => p.ImporteBeneficioMaterial) ?? 0;
+    public decimal PorcentajeBeneficioMaterial => TotalCosteMaterial > 0
+        ? Math.Round((TotalBeneficioMaterial / TotalCosteMaterial) * 100, 2)
+        : 0;
     public decimal TotalMaterial => (Partidas?.Where(p => !p.IsDeleted).Sum(p => p.TotalMaterial) ?? 0) + (LineasMaterial?.Sum(l => l.ImporteEstimado) ?? 0);
     public decimal TotalHoras    => (Partidas?.Where(p => !p.IsDeleted).Sum(p => p.TotalManoObra) ?? 0) + (LineasHoras?.Sum(l => l.ImporteEstimado) ?? 0);
     public decimal Total         => TotalMaterial + TotalHoras;
+
+    public void AplicarBeneficioGlobal(decimal importeBeneficioGlobal)
+    {
+        var importeRedondeado = Math.Round(importeBeneficioGlobal, 2);
+        var partidasActivas = Partidas?.Where(p => !p.IsDeleted).OrderBy(p => p.Orden).ToList() ?? [];
+        if (!partidasActivas.Any()) return;
+
+        var partidasConMaterial = partidasActivas.Where(p => p.CosteMaterial > 0).ToList();
+        if (!partidasConMaterial.Any())
+        {
+            foreach (var p in partidasActivas) p.SetBeneficioMaterial(0);
+            partidasActivas[0].SetBeneficioMaterial(importeRedondeado);
+            UpdatedAt = DateTime.UtcNow;
+            return;
+        }
+
+        foreach (var p in partidasActivas.Where(p => p.CosteMaterial <= 0))
+        {
+            p.SetBeneficioMaterial(0);
+        }
+
+        var costeTotal = partidasConMaterial.Sum(p => p.CosteMaterial);
+        decimal acumulado = 0;
+
+        for (int i = 0; i < partidasConMaterial.Count; i++)
+        {
+            var partida = partidasConMaterial[i];
+            if (i == partidasConMaterial.Count - 1)
+            {
+                partida.SetBeneficioMaterial(importeRedondeado - acumulado);
+            }
+            else
+            {
+                var proporcion = Math.Round(importeRedondeado * (partida.CosteMaterial / costeTotal), 2);
+                partida.SetBeneficioMaterial(proporcion);
+                acumulado += proporcion;
+            }
+        }
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
 
 public class LineaPresupuestoMaterial : BaseEntity

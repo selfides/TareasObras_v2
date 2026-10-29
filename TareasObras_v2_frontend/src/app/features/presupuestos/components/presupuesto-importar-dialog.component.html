@@ -106,8 +106,8 @@
   @if (paso() === 'revision') {
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[680px]">
       
-      <!-- PANEL IZQUIERDO (50% en pantallas grandes): VISOR DEL DOCUMENTO ORIGINAL -->
-      <div class="lg:col-span-5 xl:col-span-6 flex flex-col bg-surface-100 dark:bg-surface-950 rounded-xl border border-surface-200 dark:border-surface-800 overflow-hidden">
+      <!-- PANEL IZQUIERDO: VISOR DEL DOCUMENTO ORIGINAL -->
+      <div class="lg:col-span-5 xl:col-span-5 flex flex-col bg-surface-100 dark:bg-surface-950 rounded-xl border border-surface-200 dark:border-surface-800 overflow-hidden">
         <!-- Barra de herramientas del visor -->
         <div class="px-4 py-2.5 bg-surface-200/80 dark:bg-surface-900 border-b border-surface-300 dark:border-surface-700 flex items-center justify-between text-xs">
           <div class="flex items-center gap-2 font-medium text-surface-700 dark:text-surface-200 truncate">
@@ -156,7 +156,7 @@
       </div>
 
       <!-- PANEL DERECHO: FORMULARIO Y TABLA EDITABLE DE PARTIDAS -->
-      <div class="lg:col-span-7 xl:col-span-6 flex flex-col space-y-4 overflow-y-auto max-h-[760px] pr-1">
+      <div class="lg:col-span-7 xl:col-span-7 flex flex-col space-y-4 overflow-y-auto max-h-[760px] pr-1">
         
         <!-- Alerta informativa si detectó obra o notas -->
         @if (datosExtraidos()?.obraIdentificadaTexto) {
@@ -270,23 +270,47 @@
           }
         </div>
 
-        <!-- 2. Partidas del Presupuesto -->
+        <!-- 2. Partidas del Presupuesto y Beneficio -->
         <div class="space-y-2">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-2">
               <h4 class="font-semibold text-sm text-surface-800 dark:text-surface-100">
-                Partidas y Unidades de Obra
+                Partidas y Beneficio de Materiales
               </h4>
               <p-tag [value]="partidas().length + ' partidas'" severity="info"></p-tag>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <!-- Barra rápida de Beneficio Global -->
+              <div class="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg px-2.5 py-1 text-xs">
+                <span class="font-medium text-emerald-700 dark:text-emerald-300">Beneficio Global (€):</span>
+                <p-inputNumber
+                  [ngModel]="beneficioGlobalInput()"
+                  (ngModelChange)="beneficioGlobalInput.set($event ?? 0)"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  suffix=" €"
+                  inputStyleClass="w-24 px-1.5 py-0.5 text-xs text-right font-semibold"
+                  placeholder="0,00 €"
+                ></p-inputNumber>
+                <p-button
+                  label="Repartir"
+                  icon="pi pi-sliders-h"
+                  size="small"
+                  severity="success"
+                  [outlined]="true"
+                  pTooltip="Repartir este importe proporcionalmente según el coste de cada partida"
+                  (onClick)="repartirBeneficioGlobalEnTabla()"
+                ></p-button>
+              </div>
+
               <button
                 type="button"
                 class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
                 (click)="toggleGenerarTareasTodas(true)"
               >
-                Marcar todas para Kanban
+                Marcar todas Kanban
               </button>
               <span class="text-surface-300">|</span>
               <button
@@ -294,7 +318,7 @@
                 class="text-xs text-surface-500 hover:underline"
                 (click)="toggleGenerarTareasTodas(false)"
               >
-                Desmarcar todas
+                Desmarcar
               </button>
               <p-button
                 label="Añadir partida"
@@ -311,16 +335,18 @@
             <p-table [value]="partidas()" [responsiveLayout]="'scroll'" styleClass="p-datatable-sm">
               <ng-template #header>
                 <tr class="text-xs text-surface-600 dark:text-surface-300 bg-surface-50 dark:bg-surface-800/60">
-                  <th style="width: 80px">Pos.</th>
+                  <th style="width: 65px">Pos.</th>
                   <th>Título y Descripción de la Partida</th>
-                  <th style="width: 85px">Cant.</th>
-                  <th style="width: 65px">Ud.</th>
-                  <th style="width: 105px">Precio (€)</th>
-                  <th style="width: 105px">Total (€)</th>
-                  <th style="width: 80px" class="text-center" pTooltip="Genera una tarea ejecutable en el tablero Kanban de la obra">
+                  <th style="width: 75px">Cant.</th>
+                  <th style="width: 55px">Ud.</th>
+                  <th style="width: 95px">Coste Ud. (€)</th>
+                  <th style="width: 95px">Coste Total</th>
+                  <th style="width: 145px" class="text-emerald-700 dark:text-emerald-300">Beneficio (€ y %)</th>
+                  <th style="width: 95px">Total Venta</th>
+                  <th style="width: 65px" class="text-center" pTooltip="Genera una tarea ejecutable en el tablero Kanban de la obra">
                     Kanban
                   </th>
-                  <th style="width: 45px"></th>
+                  <th style="width: 40px"></th>
                 </tr>
               </ng-template>
 
@@ -379,7 +405,7 @@
                     />
                   </td>
 
-                  <!-- Precio Unitario -->
+                  <!-- Precio Unitario (Coste) -->
                   <td>
                     <p-inputNumber
                       [(ngModel)]="p.precioUnitario"
@@ -392,9 +418,34 @@
                     ></p-inputNumber>
                   </td>
 
-                  <!-- Total Calculado -->
-                  <td class="text-right font-bold text-surface-900 dark:text-surface-100">
+                  <!-- Coste Total -->
+                  <td class="text-right font-medium text-surface-700 dark:text-surface-300">
                     {{ p.importe | number:'1.2-2' }} €
+                  </td>
+
+                  <!-- Beneficio (€ y % resultante) -->
+                  <td>
+                    <div class="flex flex-col items-end gap-1">
+                      <p-inputNumber
+                        [(ngModel)]="p.importeBeneficioMaterial"
+                        (ngModelChange)="notificarCambioBeneficio()"
+                        mode="decimal"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="2"
+                        suffix=" €"
+                        styleClass="w-full p-inputtext-sm"
+                        inputStyleClass="w-full text-right text-xs font-semibold text-emerald-700"
+                        placeholder="0,00 €"
+                      ></p-inputNumber>
+                      <span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/70 dark:text-emerald-200">
+                        +{{ calcularPorcentajeBeneficioPartida(p) | number:'1.2-2' }} % s/coste
+                      </span>
+                    </div>
+                  </td>
+
+                  <!-- Total Venta (Coste + Beneficio) -->
+                  <td class="text-right font-bold text-surface-900 dark:text-surface-100">
+                    {{ ((p.importe || 0) + (p.importeBeneficioMaterial || 0)) | number:'1.2-2' }} €
                   </td>
 
                   <!-- Switch Kanban -->
@@ -418,7 +469,7 @@
 
               <ng-template #emptymessage>
                 <tr>
-                  <td colspan="8" class="text-center py-6 text-surface-400">
+                  <td colspan="10" class="text-center py-6 text-surface-400">
                     No hay partidas añadidas. Pulse "Añadir partida" para crear una.
                   </td>
                 </tr>
@@ -456,7 +507,19 @@
             </div>
 
             <!-- Resumen económico -->
-            <div class="flex items-center gap-6 text-right">
+            <div class="flex items-center gap-5 text-right flex-wrap">
+              <div>
+                <span class="text-xs text-surface-500 block">Coste Materiales</span>
+                <span class="text-sm font-semibold text-surface-800 dark:text-surface-200">
+                  {{ totalCosteMateriales() | number:'1.2-2' }} €
+                </span>
+              </div>
+              <div>
+                <span class="text-xs text-emerald-600 dark:text-emerald-400 block">Beneficio ({{ porcentajeBeneficioTotal() | number:'1.2-2' }}%)</span>
+                <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  +{{ totalBeneficioMateriales() | number:'1.2-2' }} €
+                </span>
+              </div>
               <div>
                 <span class="text-xs text-surface-500 block">Base Imponible</span>
                 <span class="text-sm font-semibold text-surface-800 dark:text-surface-200">

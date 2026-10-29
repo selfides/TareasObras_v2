@@ -20,8 +20,13 @@
           <span class="text-xs text-surface-400">{{ p.fecha | date:'dd/MM/yyyy' }}</span>
           @if (p.descripcion) { <span class="text-xs text-surface-500 italic">{{ p.descripcion }}</span> }
         </div>
-          <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <span class="font-bold text-blue-600 text-sm">{{ p.total | number:'1.2-2' }} €</span>
+          @if (auth.isSupervisor()) {
+            <p-button label="Beneficio global" icon="pi pi-percentage" size="small" severity="success" [outlined]="true"
+                      pTooltip="Aplicar un importe de beneficio global y repartirlo proporcionalmente entre las partidas" tooltipPosition="top"
+                      (onClick)="abrirDialogoBeneficioGlobal(p)" />
+          }
           @if (!p.esAprobado && auth.isSupervisor()) {
             <p-button label="Aprobar" icon="pi pi-check" size="small" severity="success" (onClick)="aprobarPresupuesto(p.id)" />
             <p-button icon="pi pi-pencil" [text]="true" size="small" severity="info" pTooltip="Editar" (onClick)="abrirEditarPresupuesto(p)" />
@@ -39,18 +44,39 @@
         </div>
       </div>
 
-      <!-- Totales -->
-      <div class="grid grid-cols-3 gap-0 text-sm border-b border-surface-100 dark:border-surface-700">
+      <!-- Totales desglosados -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-0 text-sm border-b border-surface-100 dark:border-surface-700">
+        <div class="text-center p-3 border-r border-b sm:border-b-0 border-surface-100 dark:border-surface-700">
+          <p class="text-surface-400 text-xs">Coste Materiales</p>
+          <p class="font-semibold text-surface-700 dark:text-surface-200">{{ p.totalCosteMaterial | number:'1.2-2' }} €</p>
+        </div>
+        <div class="text-center p-3 border-r border-b sm:border-b-0 border-surface-100 dark:border-surface-700 bg-emerald-50/40 dark:bg-emerald-950/20">
+          <div class="flex items-center justify-center gap-1">
+            <p class="text-emerald-600 dark:text-emerald-400 text-xs font-medium">Beneficio Mat.</p>
+            @if (auth.isSupervisor()) {
+              <button type="button" class="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 cursor-pointer text-xs"
+                      pTooltip="Editar beneficio global" (click)="abrirDialogoBeneficioGlobal(p)">
+                <i class="pi pi-sliders-h text-[11px]"></i>
+              </button>
+            }
+          </div>
+          <div class="flex items-center justify-center gap-1.5 mt-0.5">
+            <span class="font-semibold text-emerald-700 dark:text-emerald-300">+{{ p.totalBeneficioMaterial | number:'1.2-2' }} €</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200">
+              {{ p.porcentajeBeneficioMaterial | number:'1.2-2' }}%
+            </span>
+          </div>
+        </div>
         <div class="text-center p-3 border-r border-surface-100 dark:border-surface-700">
-          <p class="text-surface-400 text-xs">Materiales</p>
+          <p class="text-surface-400 text-xs">Materiales (Venta)</p>
           <p class="font-semibold">{{ p.totalMaterial | number:'1.2-2' }} €</p>
         </div>
         <div class="text-center p-3 border-r border-surface-100 dark:border-surface-700">
           <p class="text-surface-400 text-xs">Mano de obra</p>
           <p class="font-semibold">{{ p.totalHoras | number:'1.2-2' }} €</p>
         </div>
-        <div class="text-center p-3">
-          <p class="text-blue-500 text-xs">Total</p>
+        <div class="text-center p-3 col-span-2 sm:col-span-1">
+          <p class="text-blue-500 text-xs font-medium">Total Presupuesto</p>
           <p class="font-bold text-blue-600">{{ p.total | number:'1.2-2' }} €</p>
         </div>
       </div>
@@ -61,7 +87,10 @@
           <div class="flex justify-between items-center">
             <p class="text-sm font-semibold text-surface-700 dark:text-surface-300">Partidas</p>
             @if (auth.isSupervisor()) {
-              <p-button label="Nueva partida" icon="pi pi-plus" size="small" [text]="true" (onClick)="abrirNuevaPartida()" />
+              <div class="flex items-center gap-2">
+                <p-button label="Repartir beneficio global" icon="pi pi-percentage" size="small" severity="success" [text]="true" (onClick)="abrirDialogoBeneficioGlobal(p)" />
+                <p-button label="Nueva partida" icon="pi pi-plus" size="small" [text]="true" (onClick)="abrirNuevaPartida()" />
+              </div>
             }
           </div>
 
@@ -74,7 +103,7 @@
                   @if (partida.descripcion) { <span class="text-xs text-surface-400">{{ partida.descripcion }}</span> }
                 </div>
                 <div class="flex items-center gap-1">
-                  <span class="text-sm font-bold text-blue-600 mr-2">{{ partida.total | number:'1.2-2' }} €</span>
+                  <span class="text-sm font-bold text-blue-600 mr-2">{{ calcularTotalPartida(partida) | number:'1.2-2' }} €</span>
                   @if (auth.isSupervisor()) {
                     <p-button icon="pi pi-pencil" [text]="true" size="small" pTooltip="Editar partida" (onClick)="abrirEditarPartida(partida)" />
                     <p-button icon="pi pi-plus" [text]="true" size="small" severity="success" pTooltip="Anadir material" (onClick)="abrirNuevaLinea(partida.id, 'Material')" />
@@ -92,8 +121,8 @@
                       <th class="py-1.5">Descripcion</th>
                       <th class="py-1.5">Ud</th>
                       <th class="py-1.5 text-right">Cantidad</th>
-                      <th class="py-1.5 text-right">Precio</th>
-                      <th class="py-1.5 text-right pr-3">Importe</th>
+                      <th class="py-1.5 text-right">Precio Coste</th>
+                      <th class="py-1.5 text-right pr-3">Importe Coste</th>
                       @if (auth.isSupervisor()) { <th class="py-1.5 pr-1"></th> }
                     </tr>
                   </thead>
@@ -122,6 +151,63 @@
                     }
                   </tbody>
                 </table>
+
+                <!-- Pie de Partida: Línea de Beneficio sobre Materiales -->
+                <div class="px-3 py-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 border-t border-surface-100 dark:border-surface-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div class="flex items-center gap-4 flex-wrap">
+                    <span class="text-surface-500">
+                      Coste materiales: <strong class="text-surface-700 dark:text-surface-200">{{ partida.costeMaterial | number:'1.2-2' }} €</strong>
+                    </span>
+
+                    <div class="flex items-center gap-2">
+                      <span class="font-medium text-emerald-700 dark:text-emerald-300">Beneficio (€):</span>
+                      @if (auth.isSupervisor()) {
+                        <div class="flex items-center gap-1.5">
+                          <p-inputNumber
+                            [(ngModel)]="partida.importeBeneficioMaterial"
+                            mode="decimal"
+                            [minFractionDigits]="2"
+                            [maxFractionDigits]="2"
+                            suffix=" €"
+                            placeholder="0,00 €"
+                            inputStyleClass="w-28 px-2 py-1 text-xs text-right font-semibold"
+                            (onBlur)="guardarBeneficioPartida(partida)"
+                            (keydown.enter)="guardarBeneficioPartida(partida, true)"
+                          />
+                          @if (haCambiadoBeneficioPartida(partida)) {
+                            <p-button
+                              icon="pi pi-check"
+                              size="small"
+                              severity="success"
+                              [loading]="guardandoBeneficioPartidaId() === partida.id"
+                              pTooltip="Guardar beneficio"
+                              (onClick)="guardarBeneficioPartida(partida, true)"
+                            />
+                          }
+                        </div>
+                      } @else {
+                        <strong class="text-emerald-700 dark:text-emerald-300">+{{ partida.importeBeneficioMaterial | number:'1.2-2' }} €</strong>
+                      }
+
+                      <!-- Badge con el % resultante sobre el coste de materiales -->
+                      <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/70 dark:text-emerald-200"
+                            pTooltip="Porcentaje de beneficio sobre el coste de materiales de esta partida">
+                        +{{ calcularPorcentajePartida(partida) | number:'1.2-2' }} % s/coste
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-3 ml-auto">
+                    <span class="text-surface-500">
+                      Total Mat. c/Beneficio: <strong class="text-emerald-700 dark:text-emerald-300">{{ calcularTotalMaterialPartida(partida) | number:'1.2-2' }} €</strong>
+                    </span>
+                    @if (partida.totalManoObra > 0) {
+                      <span class="text-surface-500">
+                        M.O.: <strong class="text-surface-700 dark:text-surface-200">{{ partida.totalManoObra | number:'1.2-2' }} €</strong>
+                      </span>
+                    }
+                  </div>
+                </div>
               } @else {
                 <p class="text-center py-3 text-surface-400 text-xs bg-white dark:bg-surface-900">Sin lineas. Usa los botones + para anadir materiales o mano de obra.</p>
               }
@@ -141,6 +227,65 @@
     </div>
   }
 </div>
+
+<!-- Diálogo Aplicar Beneficio Global -->
+<p-dialog [(visible)]="dlgBeneficioGlobal" header="Aplicar Beneficio Global a Materiales" [modal]="true" appendTo="body" [style]="{width:'min(460px, 95vw)'}" [draggable]="false" [closeOnEscape]="true" class="p-fluid">
+  @if (presupuestoBeneficioGlobal(); as pGlobal) {
+    <div class="space-y-4 pt-2">
+      <p class="text-xs text-surface-500">
+        Introduce el importe total en <strong>€</strong> de beneficio que deseas aplicar al presupuesto. El sistema calculará el porcentaje que representa y lo repartirá proporcionalmente entre todas las partidas según su coste de materiales.
+      </p>
+
+      <div class="bg-surface-50 dark:bg-surface-800 rounded-lg p-3 space-y-2 text-sm">
+        <div class="flex justify-between items-center">
+          <span class="text-surface-500">Coste base de materiales:</span>
+          <span class="font-semibold">{{ pGlobal.totalCosteMaterial | number:'1.2-2' }} €</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-surface-500">Mano de obra:</span>
+          <span class="font-semibold">{{ pGlobal.totalHoras | number:'1.2-2' }} €</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Importe de Beneficio Global (€) *</label>
+        <p-inputNumber
+          [ngModel]="beneficioGlobalImporte()"
+          (ngModelChange)="beneficioGlobalImporte.set($event ?? 0)"
+          mode="decimal"
+          [minFractionDigits]="2"
+          [maxFractionDigits]="2"
+          suffix=" €"
+          styleClass="w-full"
+          inputStyleClass="w-full font-bold text-emerald-700"
+          class="w-full block"
+          placeholder="Ej: 1.500,00 €"
+        />
+      </div>
+
+      <div class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 space-y-2 text-sm">
+        <div class="flex justify-between items-center">
+          <span class="text-emerald-700 dark:text-emerald-300 font-medium">% Beneficio resultante s/coste:</span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+            +{{ calcularPorcentajeGlobalPreview() | number:'1.2-2' }} %
+          </span>
+        </div>
+        <div class="flex justify-between items-center text-xs text-surface-600 dark:text-surface-300">
+          <span>Total Materiales con Beneficio:</span>
+          <span class="font-semibold">{{ (pGlobal.totalCosteMaterial + beneficioGlobalImporte()) | number:'1.2-2' }} €</span>
+        </div>
+        <div class="flex justify-between items-center pt-1 border-t border-emerald-200/60 dark:border-emerald-800/60">
+          <span class="font-semibold text-surface-700 dark:text-surface-200">Nuevo Total Presupuesto:</span>
+          <span class="font-bold text-blue-600 text-base">{{ (pGlobal.totalCosteMaterial + beneficioGlobalImporte() + pGlobal.totalHoras) | number:'1.2-2' }} €</span>
+        </div>
+      </div>
+    </div>
+  }
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dlgBeneficioGlobal = false" />
+    <p-button label="Repartir y Guardar" icon="pi pi-check" severity="success" (onClick)="aplicarBeneficioGlobal()" [loading]="saving()" />
+  </ng-template>
+</p-dialog>
 
 <p-dialog [(visible)]="dlgPresupuesto" [header]="editandoPresupuestoId() ? 'Editar Presupuesto' : 'Nuevo Presupuesto'" [modal]="true" appendTo="body" [style]="{width:'min(480px, 95vw)'}" [draggable]="false" [closeOnEscape]="true" class="p-fluid">
   <div class="space-y-4 pt-2">

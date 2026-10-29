@@ -690,6 +690,10 @@ namespace TareasObras.Infrastructure.Migrations
                     b.Property<string>("Descripcion")
                         .HasColumnType("text");
 
+                    b.Property<decimal>("ImporteBeneficioMaterial")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 

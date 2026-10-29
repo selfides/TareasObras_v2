@@ -34,6 +34,9 @@ public record PresupuestoDto
     public string? Numero { get; init; }
     public string EstadoNombre { get; init; } = "";
     public bool EsAprobado { get; init; }
+    public decimal TotalCosteMaterial { get; init; }
+    public decimal TotalBeneficioMaterial { get; init; }
+    public decimal PorcentajeBeneficioMaterial { get; init; }
     public decimal TotalMaterial { get; init; }
     public decimal TotalHoras { get; init; }
     public decimal Total { get; init; }
@@ -75,8 +78,12 @@ internal static class PresupuestoDtoMapper
         Version = p.Version,
         Fecha = p.Fecha,
         Descripcion = p.Descripcion,
+        Numero = p.Numero,
         EstadoNombre = p.Estado.ToString(),
         EsAprobado = p.Estado == EstadoPresupuesto.Aprobado,
+        TotalCosteMaterial = p.TotalCosteMaterial,
+        TotalBeneficioMaterial = p.TotalBeneficioMaterial,
+        PorcentajeBeneficioMaterial = p.PorcentajeBeneficioMaterial,
         TotalMaterial = p.TotalMaterial,
         TotalHoras = p.TotalHoras,
         Total = p.Total,

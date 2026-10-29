@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, input, output, signal, computed, HostListener } from '@angular/core';
+import { Component, inject, OnInit, input, output, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessageService, ConfirmationService } from 'primeng/api';
@@ -63,6 +63,7 @@ export class ObraTabPresupuestosComponent implements OnInit {
   dlgPresupuesto = false;
   dlgPartida = false;
   dlgLinea = false;
+  dlgBeneficioGlobal = false;
   dlgEscanearPresupuesto = signal<boolean>(false);
 
   @HostListener('document:keydown.escape')
@@ -71,6 +72,8 @@ export class ObraTabPresupuestosComponent implements OnInit {
       this.dlgLinea = false;
     } else if (this.dlgPartida) {
       this.dlgPartida = false;
+    } else if (this.dlgBeneficioGlobal) {
+      this.dlgBeneficioGlobal = false;
     } else if (this.dlgPresupuesto) {
       this.dlgPresupuesto = false;
     }
@@ -83,6 +86,14 @@ export class ObraTabPresupuestosComponent implements OnInit {
   lineaPartidaId = signal<string | null>(null);
   tipoLinea = signal<'Material' | 'ManoObra'>('Material');
   saving = signal(false);
+  guardandoBeneficioPartidaId = signal<string | null>(null);
+
+  // Beneficio Global state
+  presupuestoBeneficioGlobal = signal<PresupuestoDto | null>(null);
+  beneficioGlobalImporte = signal<number>(0);
+
+  // Track original beneficio values per partida to detect changes on blur
+  private beneficioOriginalMap = new Map<string, number>();
 
   // Forms
   presupuestoForm: any = { numero: '', fecha: new Date(), descripcion: '' };
@@ -100,6 +111,7 @@ export class ObraTabPresupuestosComponent implements OnInit {
       this.presupuestoAprobadoChange.emit(aprobado || null);
       if (aprobado) {
         this.partidasSvc.getByPresupuesto(aprobado.id).subscribe(part => {
+          this.sincronizarMapaBeneficios(part);
           this.partidas.set(part);
           this.partidasChange.emit(part);
         });
@@ -111,6 +123,101 @@ export class ObraTabPresupuestosComponent implements OnInit {
     this.categoriasSvc.getAll().subscribe(c => this.categorias.set(c));
   }
 
+  private sincronizarMapaBeneficios(partidas: PartidaDto[]) {
+    this.beneficioOriginalMap.clear();
+    for (const pt of partidas) {
+      this.beneficioOriginalMap.set(pt.id, pt.importeBeneficioMaterial ?? 0);
+    }
+  }
+
+  // ── Beneficio Partida a Partida ──────────────────────────────────────────
+  calcularPorcentajePartida(partida: PartidaDto): number {
+    const coste = partida.costeMaterial ?? 0;
+    const beneficio = partida.importeBeneficioMaterial ?? 0;
+    if (coste <= 0) return 0;
+    return Math.round((beneficio / coste) * 10000) / 100;
+  }
+
+  calcularTotalMaterialPartida(partida: PartidaDto): number {
+    return (partida.costeMaterial ?? 0) + (partida.importeBeneficioMaterial ?? 0);
+  }
+
+  calcularTotalPartida(partida: PartidaDto): number {
+    return this.calcularTotalMaterialPartida(partida) + (partida.totalManoObra ?? 0);
+  }
+
+  haCambiadoBeneficioPartida(partida: PartidaDto): boolean {
+    const original = this.beneficioOriginalMap.get(partida.id) ?? 0;
+    const actual = partida.importeBeneficioMaterial ?? 0;
+    return Math.abs(actual - original) >= 0.005;
+  }
+
+  guardarBeneficioPartida(partida: PartidaDto, forzar = false) {
+    if (!forzar && !this.haCambiadoBeneficioPartida(partida)) return;
+
+    const importe = Math.round((partida.importeBeneficioMaterial ?? 0) * 100) / 100;
+    this.guardandoBeneficioPartidaId.set(partida.id);
+
+    this.partidasSvc.updateBeneficio(partida.id, importe).subscribe({
+      next: () => {
+        this.beneficioOriginalMap.set(partida.id, importe);
+        this.guardandoBeneficioPartidaId.set(null);
+        this.recargarPartidasSeleccionadas();
+        this.recargarPresupuestos();
+        this.msg.add({
+          severity: 'success',
+          summary: 'Beneficio actualizado',
+          detail: `${partida.nombre}: ${importe.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € (${this.calcularPorcentajePartida(partida).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)`
+        });
+      },
+      error: () => {
+        this.guardandoBeneficioPartidaId.set(null);
+        this.msg.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el beneficio de la partida' });
+      }
+    });
+  }
+
+  // ── Beneficio Global del Presupuesto ─────────────────────────────────────
+  abrirDialogoBeneficioGlobal(p: PresupuestoDto) {
+    this.presupuestoBeneficioGlobal.set(p);
+    this.beneficioGlobalImporte.set(p.totalBeneficioMaterial ?? 0);
+    this.dlgBeneficioGlobal = true;
+  }
+
+  calcularPorcentajeGlobalPreview(): number {
+    const p = this.presupuestoBeneficioGlobal();
+    if (!p || !p.totalCosteMaterial || p.totalCosteMaterial <= 0) return 0;
+    return Math.round(((this.beneficioGlobalImporte() ?? 0) / p.totalCosteMaterial) * 10000) / 100;
+  }
+
+  aplicarBeneficioGlobal() {
+    const p = this.presupuestoBeneficioGlobal();
+    if (!p) return;
+
+    const importe = Math.round((this.beneficioGlobalImporte() ?? 0) * 100) / 100;
+    this.saving.set(true);
+
+    this.presupuestosSvc.aplicarBeneficioGlobal(p.id, importe).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.dlgBeneficioGlobal = false;
+        this.recargarPresupuestos();
+        if (this.presupuestoSeleccionado() === p.id) {
+          this.recargarPartidasSeleccionadas();
+        }
+        this.msg.add({
+          severity: 'success',
+          summary: 'Beneficio global aplicado',
+          detail: `Se han repartido ${importe.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € proporcionalmente entre las partidas.`
+        });
+      },
+      error: () => {
+        this.saving.set(false);
+        this.msg.add({ severity: 'error', summary: 'Error', detail: 'No se pudo aplicar el beneficio global' });
+      }
+    });
+  }
+
   // ── Presupuesto ──────────────────────────────────────────────────────────
   abrirEscanearPresupuesto() {
     this.dlgEscanearPresupuesto.set(true);
@@ -118,7 +225,7 @@ export class ObraTabPresupuestosComponent implements OnInit {
 
   onPresupuestoImportado(presupuestoId: string) {
     this.cargarDatos();
-    this.presupuestoSeleccionado.set(presupuestoId);
+    this.seleccionarPresupuesto(presupuestoId);
   }
 
   abrirNuevoPresupuesto() {
@@ -204,6 +311,7 @@ export class ObraTabPresupuestosComponent implements OnInit {
   seleccionarPresupuesto(id: string) {
     this.presupuestoSeleccionado.set(id);
     this.partidasSvc.getByPresupuesto(id).subscribe(p => { 
+      this.sincronizarMapaBeneficios(p);
       this.partidas.set(p);
       this.partidasChange.emit(p);
     });
@@ -240,7 +348,7 @@ export class ObraTabPresupuestosComponent implements OnInit {
       next: () => {
         this.dlgPartida = false; this.saving.set(false); this.editandoPartidaId.set(null);
         this.recargarPartidasSeleccionadas();
-        this.recargarPresupuestos(); // para refresh del total
+        this.recargarPresupuestos();
         this.msg.add({ severity: 'success', summary: 'Guardado' });
       },
       error: () => { this.saving.set(false); this.msg.add({ severity: 'error', summary: 'Error al guardar' }); }
@@ -309,6 +417,7 @@ export class ObraTabPresupuestosComponent implements OnInit {
   private recargarPartidasSeleccionadas() {
     if (this.presupuestoSeleccionado()) {
       this.partidasSvc.getByPresupuesto(this.presupuestoSeleccionado()!).subscribe(p => {
+        this.sincronizarMapaBeneficios(p);
         this.partidas.set(p);
         this.partidasChange.emit(p);
       });

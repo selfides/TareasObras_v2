@@ -167,6 +167,9 @@ export interface PresupuestoDto {
   descripcion?: string;
   estadoNombre: string;
   esAprobado: boolean;
+  totalCosteMaterial: number;
+  totalBeneficioMaterial: number;
+  porcentajeBeneficioMaterial: number;
   totalMaterial: number;
   totalHoras: number;
   total: number;
@@ -471,6 +474,7 @@ export interface ImportarPresupuestoEscaneadoDto {
     cantidad: number;
     precioUnitario: number;
     generarTareaKanban: boolean;
+    importeBeneficioMaterial?: number;
   }[];
 }
-
+

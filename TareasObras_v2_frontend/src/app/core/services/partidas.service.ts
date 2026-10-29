@@ -21,6 +21,9 @@ export interface PartidaDto {
   nombre: string;
   descripcion?: string;
   orden: number;
+  costeMaterial: number;
+  importeBeneficioMaterial: number;
+  porcentajeBeneficioMaterial: number;
   totalMaterial: number;
   totalManoObra: number;
   total: number;
@@ -39,6 +42,9 @@ export class PartidasService {
   }
   update(id: string, data: { nombre: string; descripcion?: string; orden: number }) {
     return this.http.put(`${API}/partidas/${id}`, data);
+  }
+  updateBeneficio(id: string, importeBeneficioMaterial: number) {
+    return this.http.patch(`${API}/partidas/${id}/beneficio`, { importeBeneficioMaterial });
   }
   delete(id: string) { return this.http.delete(`${API}/partidas/${id}`); }
 

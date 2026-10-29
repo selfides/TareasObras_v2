@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
 
@@ -24,6 +24,9 @@ public record PartidaDto
     public string Nombre { get; init; } = "";
     public string? Descripcion { get; init; }
     public int Orden { get; init; }
+    public decimal CosteMaterial { get; init; }
+    public decimal ImporteBeneficioMaterial { get; init; }
+    public decimal PorcentajeBeneficioMaterial { get; init; }
     public decimal TotalMaterial { get; init; }
     public decimal TotalManoObra { get; init; }
     public decimal Total { get; init; }
@@ -43,6 +46,9 @@ public class GetPartidasByPresupuestoHandler : IRequestHandler<GetPartidasByPres
         {
             Id = p.Id, PresupuestoId = p.PresupuestoId, Nombre = p.Nombre,
             Descripcion = p.Descripcion, Orden = p.Orden,
+            CosteMaterial = p.CosteMaterial,
+            ImporteBeneficioMaterial = p.ImporteBeneficioMaterial,
+            PorcentajeBeneficioMaterial = p.PorcentajeBeneficioMaterial,
             TotalMaterial = p.TotalMaterial, TotalManoObra = p.TotalManoObra, Total = p.Total,
             Lineas = p.Lineas.Select(l => new LineaPartidaDto
             {

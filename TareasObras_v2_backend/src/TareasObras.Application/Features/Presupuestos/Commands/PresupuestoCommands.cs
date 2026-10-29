@@ -9,6 +9,7 @@ public record LineaHorasRequest(Guid CategoriaOperarioId, decimal HorasEstimadas
 
 public record CreatePresupuestoCommand(Guid ObraId, string? Numero, DateTime Fecha, string? Descripcion, List<LineaMaterialRequest> LineasMaterial, List<LineaHorasRequest> LineasHoras) : IRequest<Guid>;
 public record UpdatePresupuestoCommand(Guid Id, string? Numero, DateTime Fecha, string? Descripcion) : IRequest<bool>;
+public record AplicarBeneficioGlobalCommand(Guid Id, decimal ImporteBeneficioGlobal) : IRequest<bool>;
 public record AprobarPresupuestoCommand(Guid Id) : IRequest<bool>;
 public record DeletePresupuestoCommand(Guid Id) : IRequest<bool>;
 
@@ -22,6 +23,21 @@ public class UpdatePresupuestoHandler : IRequestHandler<UpdatePresupuestoCommand
         if (p is null) return false;
         
         p.Update(r.Numero, r.Fecha, r.Descripcion);
+        await _uow.SaveChangesAsync(ct);
+        return true;
+    }
+}
+
+public class AplicarBeneficioGlobalHandler : IRequestHandler<AplicarBeneficioGlobalCommand, bool>
+{
+    private readonly IUnitOfWork _uow;
+    public AplicarBeneficioGlobalHandler(IUnitOfWork uow) => _uow = uow;
+    public async Task<bool> Handle(AplicarBeneficioGlobalCommand r, CancellationToken ct)
+    {
+        var p = await _uow.Presupuestos.GetByIdWithLinesAsync(r.Id, ct);
+        if (p is null) return false;
+
+        p.AplicarBeneficioGlobal(r.ImporteBeneficioGlobal);
         await _uow.SaveChangesAsync(ct);
         return true;
     }
@@ -163,7 +179,8 @@ public record PartidaImportarRequest(
     string Unidad,
     decimal Cantidad,
     decimal PrecioUnitario,
-    bool GenerarTareaKanban
+    bool GenerarTareaKanban,
+    decimal ImporteBeneficioMaterial = 0
 );
 
 public record ImportarPresupuestoEscaneadoCommand(
@@ -212,7 +229,7 @@ public class ImportarPresupuestoEscaneadoHandler : IRequestHandler<ImportarPresu
         int orden = 1;
         foreach (var p in r.Partidas)
         {
-            var partida = PartidaPresupuesto.Create(presupuesto.Id, p.Nombre, p.Descripcion, p.Orden > 0 ? p.Orden : orden++);
+            var partida = PartidaPresupuesto.Create(presupuesto.Id, p.Nombre, p.Descripcion, p.Orden > 0 ? p.Orden : orden++, p.ImporteBeneficioMaterial);
             await _uow.PartidasPresupuesto.AddAsync(partida, ct);
             await _uow.SaveChangesAsync(ct);
 
@@ -259,4 +276,3 @@ public class ImportarPresupuestoEscaneadoHandler : IRequestHandler<ImportarPresu
         return presupuesto.Id;
     }
 }
-

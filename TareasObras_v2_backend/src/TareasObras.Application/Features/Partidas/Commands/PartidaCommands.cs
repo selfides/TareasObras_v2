@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
 
@@ -6,6 +6,7 @@ namespace TareasObras.Application.Features.Partidas.Commands;
 
 public record CreatePartidaCommand(Guid PresupuestoId, string Nombre, string? Descripcion, int Orden) : IRequest<Guid>;
 public record UpdatePartidaCommand(Guid Id, string Nombre, string? Descripcion, int Orden) : IRequest<bool>;
+public record UpdateBeneficioPartidaCommand(Guid Id, decimal ImporteBeneficioMaterial) : IRequest<bool>;
 public record DeletePartidaCommand(Guid Id) : IRequest<bool>;
 public record AddLineaMaterialCommand(Guid PartidaId, string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario) : IRequest<Guid>;
 public record AddLineaManoObraCommand(Guid PartidaId, Guid CategoriaOperarioId, string Descripcion, string Unidad, decimal Cantidad, decimal PrecioUnitario) : IRequest<Guid>;
@@ -34,6 +35,20 @@ public class UpdatePartidaHandler : IRequestHandler<UpdatePartidaCommand, bool>
         var p = await _uow.PartidasPresupuesto.GetByIdAsync(r.Id, ct);
         if (p is null) return false;
         p.Update(r.Nombre, r.Descripcion, r.Orden);
+        await _uow.SaveChangesAsync(ct);
+        return true;
+    }
+}
+
+public class UpdateBeneficioPartidaHandler : IRequestHandler<UpdateBeneficioPartidaCommand, bool>
+{
+    private readonly IUnitOfWork _uow;
+    public UpdateBeneficioPartidaHandler(IUnitOfWork uow) => _uow = uow;
+    public async Task<bool> Handle(UpdateBeneficioPartidaCommand r, CancellationToken ct)
+    {
+        var p = await _uow.PartidasPresupuesto.GetByIdAsync(r.Id, ct);
+        if (p is null) return false;
+        p.SetBeneficioMaterial(r.ImporteBeneficioMaterial);
         await _uow.SaveChangesAsync(ct);
         return true;
     }
