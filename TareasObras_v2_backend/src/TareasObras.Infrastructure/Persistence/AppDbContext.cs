@@ -38,6 +38,8 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<MaterialObra> MaterialesObra => Set<MaterialObra>();
     public DbSet<Proveedor> Proveedores => Set<Proveedor>();
     public DbSet<TicketPendiente> TicketsPendientes => Set<TicketPendiente>();
+    public DbSet<Secuencia> Secuencias => Set<Secuencia>();
+    public DbSet<ConfiguracionNumeracion> ConfiguracionesNumeracion => Set<ConfiguracionNumeracion>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserService currentUser)
         : base(options)
@@ -166,6 +168,27 @@ public class AppDbContext : IdentityDbContext<AppUser>
         builder.Entity<Presupuesto>()
             .HasIndex(p => new { p.ObraId, p.Version })
             .IsUnique();
+
+        // ─── Numeración ───────────────────────────────────────────────────
+        builder.Entity<Secuencia>(e =>
+        {
+            e.ToTable("Secuencias");
+            e.HasKey(s => new { s.Clave, s.Anio });
+            e.Property(s => s.Clave).HasMaxLength(100);
+        });
+
+        builder.Entity<ConfiguracionNumeracion>(e =>
+        {
+            e.ToTable("ConfiguracionesNumeracion");
+            e.HasKey(c => c.Tipo);
+            e.Property(c => c.Tipo).ValueGeneratedNever();
+            e.Property(c => c.Formato).IsRequired().HasMaxLength(50);
+            e.Property(c => c.UpdatedBy).HasMaxLength(256);
+            e.HasData(
+                new ConfiguracionNumeracion { Tipo = Domain.Enums.TipoNumeracion.Obra,        Formato = "OBR-{yyyy}-{n}", Relleno = 4, ReinicioAnual = true },
+                new ConfiguracionNumeracion { Tipo = Domain.Enums.TipoNumeracion.Presupuesto, Formato = "PRE-{yyyy}-{n}", Relleno = 4, ReinicioAnual = true },
+                new ConfiguracionNumeracion { Tipo = Domain.Enums.TipoNumeracion.Tarea,       Formato = "{obra}-T{n}",    Relleno = 3, ReinicioAnual = false });
+        });
 
         // Decimales precision
         builder.Entity<CategoriaOperario>()

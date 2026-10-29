@@ -243,6 +243,57 @@ namespace TareasObras.Infrastructure.Migrations
                     b.ToTable("CategoriasOperario");
                 });
 
+            modelBuilder.Entity("TareasObras.Domain.Entities.ConfiguracionNumeracion", b =>
+                {
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Formato")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("ReinicioAnual")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Relleno")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Tipo");
+
+                    b.ToTable("ConfiguracionesNumeracion", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Tipo = 1,
+                            Formato = "OBR-{yyyy}-{n}",
+                            ReinicioAnual = true,
+                            Relleno = 4
+                        },
+                        new
+                        {
+                            Tipo = 2,
+                            Formato = "PRE-{yyyy}-{n}",
+                            ReinicioAnual = true,
+                            Relleno = 4
+                        },
+                        new
+                        {
+                            Tipo = 3,
+                            Formato = "{obra}-T{n}",
+                            ReinicioAnual = false,
+                            Relleno = 3
+                        });
+                });
+
             modelBuilder.Entity("TareasObras.Domain.Entities.Cuadrilla", b =>
                 {
                     b.Property<Guid>("Id")
@@ -843,6 +894,23 @@ namespace TareasObras.Infrastructure.Migrations
                     b.HasIndex("TareaId");
 
                     b.ToTable("RegistrosHoras");
+                });
+
+            modelBuilder.Entity("TareasObras.Domain.Entities.Secuencia", b =>
+                {
+                    b.Property<string>("Clave")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Anio")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UltimoValor")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Clave", "Anio");
+
+                    b.ToTable("Secuencias", (string)null);
                 });
 
             modelBuilder.Entity("TareasObras.Domain.Entities.Tarea", b =>

@@ -28,6 +28,7 @@ public class ObraConfiguration : IEntityTypeConfiguration<Obra>
         builder.Property(o => o.PresupuestoReal)
             .HasColumnType("decimal(18,2)");
 
+        // Unicidad global (incluye obras eliminadas): los códigos nunca se reutilizan.
         builder.HasIndex(o => o.Codigo).IsUnique();
 
         builder.HasMany(o => o.Tareas)

@@ -2,11 +2,12 @@ using FluentValidation;
 using MediatR;
 using TareasObras.Application.Common.Interfaces;
 using TareasObras.Domain.Entities;
+using TareasObras.Domain.Enums;
 
 namespace TareasObras.Application.Features.Obras.Commands.CreateObra
 {
     public record CreateObraCommand(
-        string Codigo,
+        string? Codigo,
         string Nombre,
         string? Descripcion,
         string? Direccion,
@@ -20,8 +21,8 @@ namespace TareasObras.Application.Features.Obras.Commands.CreateObra
         public CreateObraValidator()
         {
             RuleFor(x => x.Codigo)
-                .NotEmpty().WithMessage("El código es obligatorio.")
-                .MaximumLength(20).WithMessage("El código no puede superar 20 caracteres.");
+                .MaximumLength(20).WithMessage("El código no puede superar 20 caracteres.")
+                .When(x => !string.IsNullOrWhiteSpace(x.Codigo));
 
             RuleFor(x => x.Nombre)
                 .NotEmpty().WithMessage("El nombre es obligatorio.")
@@ -44,18 +45,36 @@ namespace TareasObras.Application.Features.Obras.Commands.CreateObra
     {
         private readonly IUnitOfWork _uow;
         private readonly IAuditService _audit;
+        private readonly INumeracionService _numeracion;
 
-        public CreateObraHandler(IUnitOfWork uow, IAuditService audit)
-            => (_uow, _audit) = (uow, audit);
+        public CreateObraHandler(IUnitOfWork uow, IAuditService audit, INumeracionService numeracion)
+            => (_uow, _audit, _numeracion) = (uow, audit, numeracion);
 
         public async Task<Guid> Handle(CreateObraCommand request, CancellationToken ct)
         {
-            var existing = await _uow.Obras.GetByCodigoAsync(request.Codigo, ct);
-            if (existing is not null)
-                throw new InvalidOperationException($"Ya existe una obra con el código '{request.Codigo}'.");
+            string codigoFinal;
+
+            if (string.IsNullOrWhiteSpace(request.Codigo) || request.Codigo.Trim().Equals("AUTO", StringComparison.OrdinalIgnoreCase))
+            {
+                codigoFinal = await _numeracion.ReservarAsync(TipoNumeracion.Obra, null, ct);
+            }
+            else
+            {
+                var normalizado = request.Codigo.Trim().ToUpperInvariant();
+                var disp = await _numeracion.ComprobarAsync(TipoNumeracion.Obra, normalizado, ct);
+                if (!disp.Disponible)
+                {
+                    if (disp.Motivo == "Eliminada")
+                    {
+                        throw new InvalidOperationException($"El código '{normalizado}' pertenece a la obra eliminada '{disp.Nombre}'. Puede restaurarla (Id: {disp.EntidadId}) o usar un código diferente.");
+                    }
+                    throw new InvalidOperationException($"Ya existe una obra con el código '{normalizado}'.");
+                }
+                codigoFinal = normalizado;
+            }
 
             var obra = Obra.Create(
-                request.Codigo,
+                codigoFinal,
                 request.Nombre,
                 request.Descripcion,
                 request.Direccion,

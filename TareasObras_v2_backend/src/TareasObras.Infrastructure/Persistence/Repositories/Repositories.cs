@@ -12,8 +12,11 @@ public class ObraRepository : IObraRepository
     public async Task<Obra?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => await _ctx.Obras.Include(o => o.Tareas).FirstOrDefaultAsync(o => o.Id == id, ct);
 
+    public async Task<Obra?> GetByIdIncludingDeletedAsync(Guid id, CancellationToken ct = default)
+        => await _ctx.Obras.IgnoreQueryFilters().Include(o => o.Tareas).FirstOrDefaultAsync(o => o.Id == id, ct);
+
     public async Task<Obra?> GetByCodigoAsync(string codigo, CancellationToken ct = default)
-        => await _ctx.Obras.FirstOrDefaultAsync(o => o.Codigo == codigo.ToUpper(), ct);
+        => await _ctx.Obras.FirstOrDefaultAsync(o => o.Codigo == codigo.Trim().ToUpper(), ct);
 
     public async Task<IEnumerable<Obra>> GetAllAsync(CancellationToken ct = default)
         => await _ctx.Obras.Include(o => o.Tareas).OrderBy(o => o.Codigo).ToListAsync(ct);
@@ -225,7 +228,8 @@ public class PresupuestoRepository : IPresupuestoRepository
 
     public async Task<int> GetNextVersionAsync(Guid obraId, CancellationToken ct = default)
     {
-        var max = await _ctx.Presupuestos.Where(p => p.ObraId == obraId).MaxAsync(p => (int?)p.Version, ct);
+        // Incluye eliminados: el índice único (ObraId, Version) también los cuenta.
+        var max = await _ctx.Presupuestos.IgnoreQueryFilters().Where(p => p.ObraId == obraId).MaxAsync(p => (int?)p.Version, ct);
         return (max ?? 0) + 1;
     }
 

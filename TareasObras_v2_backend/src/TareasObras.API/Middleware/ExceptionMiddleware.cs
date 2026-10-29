@@ -53,6 +53,15 @@ public class ExceptionMiddleware
                 message = ex.Message
             });
         }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "23505")
+        {
+            _logger.LogWarning("Violación de clave única: {Constraint}", pgEx.ConstraintName);
+            await WriteResponse(context, HttpStatusCode.Conflict, new
+            {
+                type = "Conflict",
+                message = "Ya existe un registro con esos datos (código o valor duplicado)."
+            });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error no controlado");

@@ -15,12 +15,35 @@ export interface ObraDetailDto extends ObraListDto {
   tareas: TareaDto[];
 }
 export interface CreateObraRequest {
-  codigo: string; nombre: string; descripcion?: string; direccion?: string; cliente?: string;
+  codigo?: string; nombre: string; descripcion?: string; direccion?: string; cliente?: string;
   fechaInicio: string; fechaFinPrevista?: string; presupuestoEstimado: number;
 }
 export interface UpdateObraRequest {
   nombre: string; descripcion?: string; direccion?: string; cliente?: string;
   fechaInicio: string; fechaFinPrevista?: string; presupuestoEstimado: number;
+}
+
+// ─── Numeración ────────────────────────────────────────────────────────────
+export interface DisponibilidadCodigo {
+  codigo: string;
+  disponible: boolean;
+  motivo?: 'Activa' | 'Eliminada' | null;
+  entidadId?: string | null;
+  nombre?: string | null;
+}
+
+export interface ConfiguracionNumeracionDto {
+  tipo: number;
+  formato: string;
+  relleno: number;
+  reinicioAnual: boolean;
+  ejemplo: string;
+}
+
+export interface UpdateConfiguracionNumeracionRequest {
+  formato: string;
+  relleno: number;
+  reinicioAnual: boolean;
 }
 
 // ─── Tareas ────────────────────────────────────────────────────────────────

@@ -5,6 +5,7 @@ namespace TareasObras.Application.Common.Interfaces;
 public interface IObraRepository
 {
     Task<Obra?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<Obra?> GetByIdIncludingDeletedAsync(Guid id, CancellationToken ct = default);
     Task<Obra?> GetByCodigoAsync(string codigo, CancellationToken ct = default);
     Task<IEnumerable<Obra>> GetAllAsync(CancellationToken ct = default);
     Task<IEnumerable<Obra>> GetFilteredAsync(string? search, string? estado, CancellationToken ct = default);

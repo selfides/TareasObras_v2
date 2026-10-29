@@ -20,4 +20,5 @@ export class ObrasService {
   update(id: string, data: UpdateObraRequest) { return this.http.put(`${this.base}/${id}`, data); }
   cambiarEstado(id: string, nuevoEstado: number) { return this.http.patch(`${this.base}/${id}/estado`, { nuevoEstado }); }
   delete(id: string) { return this.http.delete(`${this.base}/${id}`); }
+  restaurar(id: string) { return this.http.post<{ message: string }>(`${this.base}/${id}/restaurar`, {}); }
 }

@@ -1,4 +1,4 @@
-﻿using TareasObras.Domain.Common;
+using TareasObras.Domain.Common;
 using TareasObras.Domain.Enums;
 
 namespace TareasObras.Domain.Entities;
@@ -81,6 +81,12 @@ public class Obra : BaseEntity
     public void ActualizarPresupuestoReal(decimal importe)
     {
         PresupuestoReal += importe;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Restaurar()
+    {
+        IsDeleted = false;
         UpdatedAt = DateTime.UtcNow;
     }
 }

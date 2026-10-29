@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TareasObras.Application.Features.Obras.Commands.CambiarEstadoObra;
 using TareasObras.Application.Features.Obras.Commands.CreateObra;
 using TareasObras.Application.Features.Obras.Commands.DeleteObra;
+using TareasObras.Application.Features.Obras.Commands.RestaurarObra;
 using TareasObras.Application.Features.Obras.Commands.UpdateObra;
 using TareasObras.Application.Features.Obras.Queries.GetObraById;
 using TareasObras.Application.Features.Obras.Queries.GetObras;
@@ -77,6 +78,15 @@ namespace TareasObras.API.Controllers
         {
             var result = await _mediator.Send(new DeleteObraCommand(id), ct);
             return result ? NoContent() : NotFound();
+        }
+
+        /// <summary>Restaurar obra eliminada — solo Admin y Supervisor</summary>
+        [HttpPost("{id:guid}/restaurar")]
+        [Authorize(Roles = "Admin,Supervisor")]
+        public async Task<IActionResult> Restaurar(Guid id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new RestaurarObraCommand(id), ct);
+            return result ? Ok(new { message = "Obra restaurada correctamente." }) : NotFound();
         }
     }
 

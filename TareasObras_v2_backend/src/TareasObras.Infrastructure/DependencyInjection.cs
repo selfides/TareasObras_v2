@@ -77,6 +77,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<INumeracionService, NumeracionService>();
         services.AddHttpClient<IFacturaOcrService, GeminiFacturaOcrService>();
         services.AddHttpClient<IPresupuestoOcrService, GeminiPresupuestoOcrService>();
 

@@ -24,6 +24,7 @@ public class Presupuesto : BaseEntity
         return new Presupuesto
         {
             ObraId = obraId,
+            Numero = numero?.Trim(),
             Version = version,
             Fecha = fecha.Date,
             Descripcion = descripcion?.Trim(),

@@ -30,11 +30,18 @@ public class UpdatePresupuestoHandler : IRequestHandler<UpdatePresupuestoCommand
 public class CreatePresupuestoHandler : IRequestHandler<CreatePresupuestoCommand, Guid>
 {
     private readonly IUnitOfWork _uow;
-    public CreatePresupuestoHandler(IUnitOfWork uow) => _uow = uow;
+    private readonly INumeracionService _numeracion;
+    public CreatePresupuestoHandler(IUnitOfWork uow, INumeracionService numeracion)
+        => (_uow, _numeracion) = (uow, numeracion);
+
     public async Task<Guid> Handle(CreatePresupuestoCommand r, CancellationToken ct)
     {
+        var numero = string.IsNullOrWhiteSpace(r.Numero)
+            ? await _numeracion.ReservarAsync(Domain.Enums.TipoNumeracion.Presupuesto, null, ct)
+            : r.Numero.Trim();
+
         var version = await _uow.Presupuestos.GetNextVersionAsync(r.ObraId, ct);
-        var presupuesto = Presupuesto.Create(r.ObraId, r.Numero, version, r.Fecha, r.Descripcion);
+        var presupuesto = Presupuesto.Create(r.ObraId, numero, version, r.Fecha, r.Descripcion);
         await _uow.Presupuestos.AddAsync(presupuesto, ct);
         await _uow.SaveChangesAsync(ct);
 
@@ -173,10 +180,16 @@ public record ImportarPresupuestoEscaneadoCommand(
 public class ImportarPresupuestoEscaneadoHandler : IRequestHandler<ImportarPresupuestoEscaneadoCommand, Guid>
 {
     private readonly IUnitOfWork _uow;
-    public ImportarPresupuestoEscaneadoHandler(IUnitOfWork uow) => _uow = uow;
+    private readonly INumeracionService _numeracion;
+    public ImportarPresupuestoEscaneadoHandler(IUnitOfWork uow, INumeracionService numeracion)
+        => (_uow, _numeracion) = (uow, numeracion);
 
     public async Task<Guid> Handle(ImportarPresupuestoEscaneadoCommand r, CancellationToken ct)
     {
+        var numero = string.IsNullOrWhiteSpace(r.Numero)
+            ? await _numeracion.ReservarAsync(Domain.Enums.TipoNumeracion.Presupuesto, null, ct)
+            : r.Numero.Trim();
+
         var version = await _uow.Presupuestos.GetNextVersionAsync(r.ObraId, ct);
 
         var descripcionCompleta = r.Descripcion;
@@ -187,7 +200,7 @@ public class ImportarPresupuestoEscaneadoHandler : IRequestHandler<ImportarPresu
                 : $"{descripcionCompleta}\n\nCondiciones: {r.ObservacionesCondiciones}";
         }
 
-        var presupuesto = Presupuesto.Create(r.ObraId, r.Numero, version, r.Fecha, descripcionCompleta);
+        var presupuesto = Presupuesto.Create(r.ObraId, numero, version, r.Fecha, descripcionCompleta);
         if (r.AprobarInmediatamente)
         {
             presupuesto.Aprobar();
