@@ -33,6 +33,36 @@ AGY_BIN = "/root/.local/bin/agy"
 AGENTAPI_BIN = "/root/.gemini/antigravity/bin/agentapi"
 CONV_TAG_RE = re.compile(r"\[Conv:\s*([A-Za-z0-9_-]+)\]")
 
+DEFAULT_MODEL_ID = "gemini-pro-orchestrator-g1-pro"
+AVAILABLE_MODELS: dict[str, tuple[str, str]] = {
+    "1": ("gemini-pro-orchestrator-g1-pro", "Orchestrator (Argon) — Recomendado (elige subagentes automáticamente)"),
+    "orchestrator": ("gemini-pro-orchestrator-g1-pro", "Orchestrator (Argon)"),
+    "2": ("gemini-4-argon-high", "Gemini 4 Argon (High)"),
+    "argon-high": ("gemini-4-argon-high", "Gemini 4 Argon (High)"),
+    "3": ("gemini-4-argon-medium", "Gemini 4 Argon (Medium)"),
+    "argon": ("gemini-4-argon-medium", "Gemini 4 Argon (Medium)"),
+    "4": ("gemini-4-hydrogen-high", "Gemini 4 Hydrogen (High)"),
+    "hydrogen": ("gemini-4-hydrogen-high", "Gemini 4 Hydrogen (High)"),
+    "5": ("gemini-3.8-flash-high", "Gemini 3.8 Flash (High)"),
+    "flash": ("gemini-3.8-flash-high", "Gemini 3.8 Flash (High)"),
+    "6": ("claude-opus-5-5-high", "Claude Opus 5.5 (High)"),
+    "opus": ("claude-opus-5-5-high", "Claude Opus 5.5 (High)"),
+    "7": ("claude-sonnet-5-5-high", "Claude Sonnet 5.5 (High)"),
+    "sonnet": ("claude-sonnet-5-5-high", "Claude Sonnet 5.5 (High)"),
+}
+
+
+def _get_configured_model() -> str:
+    cfg = load_config()
+    return cfg.get("DEFAULT_MODEL", "").strip() or DEFAULT_MODEL_ID
+
+
+def _get_model_display_name(model_id: str) -> str:
+    for _, (mid, label) in AVAILABLE_MODELS.items():
+        if mid == model_id:
+            return label.split(" — ")[0]
+    return model_id
+
 TASKS_LOCK = threading.Lock()
 RUNNING_TASKS: dict[int, dict[str, Any]] = {}
 TASK_SEQ = 0
@@ -301,6 +331,7 @@ def _execute_cli_task(
 
     before_ts = _snapshot_state_timestamps()
     used_conv_id = conv_id or ""
+    selected_model = _get_configured_model()
     returncode = 1
     stdout = ""
     stderr = ""
@@ -312,6 +343,8 @@ def _execute_cli_task(
                 AGY_BIN,
                 "--conversation",
                 conv_id,
+                "--model",
+                selected_model,
                 "-p",
                 prompt,
                 "--dangerously-skip-permissions",
@@ -325,6 +358,8 @@ def _execute_cli_task(
                 )
                 fallback_cmd = [
                     AGY_BIN,
+                    "--model",
+                    selected_model,
                     "-p",
                     prompt,
                     "--dangerously-skip-permissions",
@@ -334,7 +369,14 @@ def _execute_cli_task(
                 )
                 used_conv_id = ""
         else:
-            cmd = [AGY_BIN, "-p", prompt, "--dangerously-skip-permissions"]
+            cmd = [
+                AGY_BIN,
+                "--model",
+                selected_model,
+                "-p",
+                prompt,
+                "--dangerously-skip-permissions",
+            ]
             returncode, stdout, stderr, was_stopped = _run_agy_subprocess(
                 task_id, cmd, workspace
             )
@@ -427,10 +469,13 @@ def _route_instruction(
 
 
 def _help_text() -> str:
+    current_model = _get_configured_model()
     return (
         "🤖 Control Remoto Antigravity (Telegram)\n\n"
+        f"🧠 Modelo activo: {_get_model_display_name(current_model)} ({current_model})\n\n"
         "Comandos disponibles:\n"
-        "• /status — Estado actual, sesión activa, IDE LS y git status\n"
+        "• /status — Estado actual, modelo, sesión activa, IDE LS y git status\n"
+        "• /model [nombre|número] — Ver o cambiar el modelo / orquestador\n"
         "• /list (o /conv) — Últimas 10 conversaciones\n"
         "• /use <id> — Seleccionar conversación activa por ID o prefijo\n"
         "• /new <instrucción> — Iniciar nueva tarea autónoma en /opt/tareas-obras\n"
@@ -440,6 +485,39 @@ def _help_text() -> str:
         "💬 Comunicación bidireccional:\n"
         "• Responde (Reply) a cualquier notificación con [Conv: ...] para continuar esa conversación.\n"
         "• Si envías texto libre sin responder a un mensaje concreto, se enviará a la conversación activa (o abrirá una nueva si no hay ninguna)."
+    )
+
+
+def _handle_model(token: str, chat_id: str, arg: str) -> None:
+    current = _get_configured_model()
+    choice = arg.strip().lower()
+    if not choice:
+        msg = (
+            f"🧠 Modelo actual: {_get_model_display_name(current)}\n"
+            f"ID técnico: {current}\n\n"
+            "Modelos disponibles (usa /model <número o alias>):\n"
+            "1. orchestrator — Orchestrator (Argon) ⭐ Recomendado\n"
+            "2. argon-high — Gemini 4 Argon (High)\n"
+            "3. argon — Gemini 4 Argon (Medium)\n"
+            "4. hydrogen — Gemini 4 Hydrogen (High)\n"
+            "5. flash — Gemini 3.8 Flash (High)\n"
+            "6. opus — Claude Opus 5.5 (High)\n"
+            "7. sonnet — Claude Sonnet 5.5 (High)"
+        )
+        send_telegram_message(token, chat_id, msg)
+        return
+
+    if choice in AVAILABLE_MODELS:
+        model_id, label = AVAILABLE_MODELS[choice]
+    else:
+        model_id = arg.strip()
+        label = _get_model_display_name(model_id)
+
+    save_config_value("DEFAULT_MODEL", model_id)
+    send_telegram_message(
+        token,
+        chat_id,
+        f"✅ Modelo cambiado a:\n🧠 {label}\n({model_id})",
     )
 
 
@@ -458,9 +536,11 @@ def _handle_status(token: str, chat_id: str, workspace: str) -> None:
     tasks_text = "\n".join(active_tasks) if active_tasks else "  (ninguna)"
     git_text = truncate_text(_get_git_status(workspace), 1200)
 
+    current_model = _get_configured_model()
     msg = (
         f"📊 Estado de Antigravity\n\n"
         f"📂 Workspace: {workspace}\n"
+        f"🧠 Modelo activo: {_get_model_display_name(current_model)} ({current_model})\n"
         f"🆔 Conversación activa: {active_cid}\n"
         f"🔌 IDE Language Server: {ls_line}\n\n"
         f"⚙️ Tareas en curso (bot):\n{tasks_text}\n\n"
@@ -595,6 +675,9 @@ def _process_message(message: dict[str, Any]) -> None:
     if cmd_name == "/status":
         _handle_status(token, chat_id, workspace)
         return
+    if cmd_name == "/model":
+        _handle_model(token, chat_id, cmd_arg)
+        return
     if cmd_name in ("/list", "/conv"):
         _handle_list(token, chat_id)
         return
@@ -702,7 +785,8 @@ def _process_message(message: dict[str, Any]) -> None:
 
 def _register_commands(token: str) -> None:
     commands = [
-        {"command": "status", "description": "Estado del agente, LS y git"},
+        {"command": "status", "description": "Estado del agente, modelo, LS y git"},
+        {"command": "model", "description": "Ver o cambiar el modelo / orquestador"},
         {"command": "list", "description": "Listar últimas conversaciones"},
         {"command": "use", "description": "Seleccionar conversación activa"},
         {"command": "new", "description": "Iniciar nueva tarea autónoma"},

@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>TareasObras.API</RootNamespace>
     <UserSecretsId>63e7d96d-41de-4365-923c-4d1c372b22f9</UserSecretsId>
+    <DefaultItemExcludes>$(DefaultItemExcludes);logs\**;uploads\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
