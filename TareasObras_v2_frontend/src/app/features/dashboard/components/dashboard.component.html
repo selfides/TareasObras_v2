@@ -65,6 +65,89 @@
     }
   </div>
 
+  <!-- Resumen Ejecutivo Financiero ERP (integrado con el sistema de tarjetas) -->
+  <div class="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
+    <div class="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-surface-100 dark:border-surface-800">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 flex items-center justify-center">
+          <i class="pi pi-wallet text-sm"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-semibold text-surface-900 dark:text-surface-100 text-sm">Control Presupuestario Global</h3>
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 border border-surface-200 dark:border-surface-700">
+              Ejercicio 2026
+            </span>
+          </div>
+          <p class="text-xs text-surface-400 dark:text-surface-500">Consolidado de presupuesto estimado frente a coste real ejecutado</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        @if (!loading()) {
+          <span [class]="'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ' + (resumenFinanciero().desviacionTotal > 0 ? 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60' : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60')">
+            <span [class]="'w-1.5 h-1.5 rounded-full ' + (resumenFinanciero().desviacionTotal > 0 ? 'bg-red-500' : 'bg-emerald-500')"></span>
+            {{ resumenFinanciero().desviacionTotal > 0 ? 'Con desviación' : 'Dentro de presupuesto' }}
+          </span>
+        }
+        <a routerLink="/obras" class="text-xs text-primary-600 dark:text-primary-400 hover:underline font-medium flex items-center gap-1">
+          <span>Detalle por obra</span>
+          <i class="pi pi-arrow-right text-[10px]"></i>
+        </a>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="pt-4">
+        <p-skeleton height="64px" />
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-5 pt-4 items-center">
+        <!-- Coste Real vs Estimado -->
+        <div class="md:col-span-4 md:border-r md:border-surface-100 dark:md:border-surface-800 md:pr-5 space-y-1">
+          <p class="text-xs font-medium text-surface-500 dark:text-surface-400">Coste Real Ejecutado</p>
+          <div class="flex items-baseline gap-2 flex-wrap">
+            <span class="text-2xl font-extrabold text-surface-900 dark:text-surface-50 font-mono tabular-nums tracking-tight">
+              {{ resumenFinanciero().totalReal | number:'1.2-2' }} €
+            </span>
+            <span class="text-xs font-mono tabular-nums text-surface-400 dark:text-surface-500">
+              / {{ resumenFinanciero().totalEstimado | number:'1.2-2' }} € est.
+            </span>
+          </div>
+        </div>
+
+        <!-- Desviación / Disponible -->
+        <div class="md:col-span-3 md:border-r md:border-surface-100 dark:md:border-surface-800 md:pr-5 space-y-1">
+          <p class="text-xs font-medium text-surface-500 dark:text-surface-400">
+            {{ resumenFinanciero().desviacionTotal > 0 ? 'Desviación Acumulada' : 'Margen Disponible' }}
+          </p>
+          <p [class]="'text-xl font-bold font-mono tabular-nums ' + (resumenFinanciero().desviacionTotal > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400')">
+            {{ resumenFinanciero().desviacionTotal > 0 ? '+' : '' }}{{ (resumenFinanciero().desviacionTotal > 0 ? resumenFinanciero().desviacionTotal : -resumenFinanciero().desviacionTotal) | number:'1.2-2' }} €
+          </p>
+        </div>
+
+        <!-- Barra de progreso de ejecución -->
+        <div class="md:col-span-5 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-medium text-surface-600 dark:text-surface-300">Porcentaje de Ejecución</span>
+            <span [class]="'font-mono tabular-nums font-bold ' + (resumenFinanciero().porcentajeEjecutado > 100 ? 'text-red-600 dark:text-red-400' : resumenFinanciero().porcentajeEjecutado > 85 ? 'text-amber-600 dark:text-amber-400' : 'text-primary-600 dark:text-primary-400')">
+              {{ resumenFinanciero().porcentajeEjecutado | number:'1.1-1' }}%
+            </span>
+          </div>
+          <div class="w-full bg-surface-100 dark:bg-surface-800 rounded-full h-2.5 overflow-hidden border border-surface-200/70 dark:border-surface-700/70">
+            <div [class]="'h-full rounded-full transition-all duration-500 ' + (resumenFinanciero().porcentajeEjecutado > 100 ? 'bg-red-500' : resumenFinanciero().porcentajeEjecutado > 85 ? 'bg-amber-500' : 'bg-primary-600')"
+                 [style.width.%]="resumenFinanciero().porcentajeEjecutado > 100 ? 100 : resumenFinanciero().porcentajeEjecutado"></div>
+          </div>
+          <div class="flex justify-between text-[10px] font-mono text-surface-400 dark:text-surface-500">
+            <span>0%</span>
+            <span>50%</span>
+            <span>100%</span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
   <!-- Fila de Alertas Operativas / Atención Requerida -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
