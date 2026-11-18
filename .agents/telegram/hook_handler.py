@@ -4,12 +4,17 @@
 from __future__ import annotations
 
 import datetime
+import errno
 import fcntl
 import json
 import os
 import re
+import signal
+import socket
+import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -19,7 +24,13 @@ BASE_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = BASE_DIR / "config.env"
 STATE_PATH = BASE_DIR / "state.json"
 LOCK_PATH = Path(tempfile.gettempdir()) / "antigravity-telegram-state.lock"
+BOT_SCRIPT_PATH = BASE_DIR / "telegram_bot.py"
+BOT_PID_PATH = BASE_DIR / "bot.pid"
+BOT_LOG_PATH = BASE_DIR / "bot.log"
+BOT_LOCK_PATH = BASE_DIR / "bot.lock"
 BRAIN_DIR = Path("/root/.gemini/antigravity/brain")
+CLI_BRAIN_DIR = Path("/root/.gemini/antigravity-cli/brain")
+BRAIN_DIRS = (BRAIN_DIR, CLI_BRAIN_DIR)
 
 ENV_KEYS = (
     "ANTIGRAVITY_LS_ADDRESS",
@@ -216,13 +227,305 @@ def _split_message(text: str, limit: int = 4000) -> list[str]:
     return chunks
 
 
+def is_running_in_sandbox() -> bool:
+    """Return True if running inside an isolated bwrap/container PID namespace."""
+    try:
+        comm = Path("/proc/1/comm").read_text(encoding="utf-8", errors="replace").strip()
+    except OSError:
+        return True
+    return comm not in ("systemd", "init")
+
+
+def check_ls_reachable(env_map: dict[str, Any]) -> tuple[bool, str]:
+    """Check whether the Antigravity Language Server address in env_map accepts TCP."""
+    addr = str(env_map.get("ANTIGRAVITY_LS_ADDRESS") or "").strip()
+    token = str(env_map.get("ANTIGRAVITY_CSRF_TOKEN") or "").strip()
+    if not addr or not token:
+        return False, "sin datos en state.json"
+    if ":" not in addr:
+        return False, f"dirección inválida ({addr})"
+    host, port_str = addr.rsplit(":", 1)
+    host = host.strip("[]") or "localhost"
+    try:
+        port = int(port_str)
+    except ValueError:
+        return False, f"puerto inválido ({addr})"
+    try:
+        with socket.create_connection((host, port), timeout=1.0):
+            return True, addr
+    except OSError:
+        return False, f"inaccesible ({addr})"
+
+
+def _parse_proc_environ(proc_dir: Path) -> dict[str, str]:
+    env_map: dict[str, str] = {}
+    try:
+        raw = (proc_dir / "environ").read_bytes()
+    except OSError:
+        return env_map
+    for item in raw.split(b"\x00"):
+        if b"=" not in item:
+            continue
+        k_bytes, v_bytes = item.split(b"=", 1)
+        key = k_bytes.decode("utf-8", errors="replace")
+        if key in ENV_KEYS:
+            val = v_bytes.decode("utf-8", errors="replace").strip()
+            if val:
+                env_map[key] = val
+    return env_map
+
+
+def _find_proc_listening_ports(proc_dir: Path) -> list[int]:
+    inodes: set[str] = set()
+    fd_dir = proc_dir / "fd"
+    try:
+        for fd_entry in fd_dir.iterdir():
+            try:
+                target = os.readlink(fd_entry)
+            except OSError:
+                continue
+            if target.startswith("socket:[") and target.endswith("]"):
+                inodes.add(target[8:-1])
+    except OSError:
+        return []
+
+    if not inodes:
+        return []
+
+    ports: list[int] = []
+    for tcp_name in ("tcp", "tcp6"):
+        tcp_path = proc_dir / "net" / tcp_name
+        try:
+            lines = tcp_path.read_text(encoding="utf-8", errors="replace").splitlines()[1:]
+        except OSError:
+            continue
+        for line in lines:
+            parts = line.split()
+            if len(parts) < 10:
+                continue
+            local_addr, state_hex, inode = parts[1], parts[3], parts[9]
+            if state_hex != "0A" or inode not in inodes or ":" not in local_addr:
+                continue
+            try:
+                port = int(local_addr.rsplit(":", 1)[1], 16)
+            except ValueError:
+                continue
+            if port > 0 and port not in ports:
+                ports.append(port)
+    return ports
+
+
+def discover_ls_env() -> dict[str, str]:
+    """Discover a live Antigravity Language Server environment from os.environ or /proc."""
+    os_env = {
+        key: os.environ.get(key, "").strip()
+        for key in ENV_KEYS
+        if os.environ.get(key, "").strip()
+    }
+    if os_env.get("ANTIGRAVITY_LS_ADDRESS") and os_env.get("ANTIGRAVITY_CSRF_TOKEN"):
+        ok, _ = check_ls_reachable(os_env)
+        if ok:
+            os_env.setdefault("ANTIGRAVITY_AGENTAPI_EXE", "/root/.gemini/bin/agy")
+            return os_env
+
+    if is_running_in_sandbox():
+        return {}
+
+    proc_root = Path("/proc")
+    if not proc_root.exists():
+        return {}
+
+    pids: list[int] = []
+    try:
+        for entry in proc_root.iterdir():
+            if entry.name.isdigit():
+                pids.append(int(entry.name))
+    except OSError:
+        return {}
+    pids.sort(reverse=True)
+
+    # 1. Scan /proc/<pid>/environ for child processes carrying LS env vars.
+    for pid in pids:
+        proc_dir = proc_root / str(pid)
+        candidate = _parse_proc_environ(proc_dir)
+        if candidate.get("ANTIGRAVITY_LS_ADDRESS") and candidate.get("ANTIGRAVITY_CSRF_TOKEN"):
+            ok, _ = check_ls_reachable(candidate)
+            if ok:
+                candidate.setdefault("ANTIGRAVITY_AGENTAPI_EXE", "/root/.gemini/bin/agy")
+                return candidate
+
+    # 2. Fallback: scan /proc/<pid>/cmdline for --csrf_token / -csrf_token on LS processes.
+    for pid in pids:
+        proc_dir = proc_root / str(pid)
+        try:
+            raw_cmd = (proc_dir / "cmdline").read_bytes()
+        except OSError:
+            continue
+        if not raw_cmd:
+            continue
+        args = [
+            part.decode("utf-8", errors="replace")
+            for part in raw_cmd.split(b"\x00")
+            if part
+        ]
+        csrf = ""
+        for idx, arg in enumerate(args):
+            if arg in ("--csrf_token", "-csrf_token") and idx + 1 < len(args):
+                csrf = args[idx + 1].strip()
+                break
+            if arg.startswith("--csrf_token=") or arg.startswith("-csrf_token="):
+                csrf = arg.split("=", 1)[1].strip()
+                break
+        if not csrf:
+            continue
+
+        ports = _find_proc_listening_ports(proc_dir)
+        if not ports:
+            continue
+
+        chosen_port: int | None = None
+        for port in ports:
+            try:
+                req = urllib.request.Request(
+                    f"http://localhost:{port}/healthz", method="GET"
+                )
+                with urllib.request.urlopen(req, timeout=1.0) as resp:
+                    if 200 <= resp.status < 400:
+                        chosen_port = port
+                        break
+            except Exception:
+                continue
+
+        if chosen_port is None:
+            for port in ports:
+                cand = {
+                    "ANTIGRAVITY_LS_ADDRESS": f"localhost:{port}",
+                    "ANTIGRAVITY_CSRF_TOKEN": csrf,
+                }
+                if check_ls_reachable(cand)[0]:
+                    chosen_port = port
+                    break
+
+        if chosen_port is not None:
+            candidate = _parse_proc_environ(proc_dir)
+            candidate["ANTIGRAVITY_LS_ADDRESS"] = f"localhost:{chosen_port}"
+            candidate["ANTIGRAVITY_CSRF_TOKEN"] = csrf
+            candidate.setdefault("ANTIGRAVITY_AGENTAPI_EXE", "/root/.gemini/bin/agy")
+            return candidate
+
+    return {}
+
+
+def is_bot_running() -> tuple[bool, int | None]:
+    """Check whether the Telegram bot daemon currently holds BOT_LOCK_PATH."""
+    BOT_LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    lock_fh = open(BOT_LOCK_PATH, "a+", encoding="utf-8")
+    try:
+        try:
+            fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as exc:
+            if isinstance(exc, BlockingIOError) or exc.errno in (errno.EACCES, errno.EAGAIN):
+                pid: int | None = None
+                try:
+                    raw = BOT_PID_PATH.read_text(encoding="utf-8").strip()
+                    if raw.isdigit():
+                        pid = int(raw)
+                except OSError:
+                    pass
+                return True, pid
+            raise
+        fcntl.flock(lock_fh.fileno(), fcntl.LOCK_UN)
+        return False, None
+    finally:
+        lock_fh.close()
+
+
+def _terminate_unlocked_bot_processes() -> None:
+    """Terminate any legacy telegram_bot.py processes not holding the daemon lock."""
+    proc_root = Path("/proc")
+    if not proc_root.exists():
+        return
+    self_pid = os.getpid()
+    killed_any = False
+    try:
+        for entry in proc_root.iterdir():
+            if not entry.name.isdigit():
+                continue
+            pid = int(entry.name)
+            if pid == self_pid:
+                continue
+            try:
+                raw_cmd = (entry / "cmdline").read_bytes()
+            except OSError:
+                continue
+            if not raw_cmd:
+                continue
+            args = [
+                part.decode("utf-8", errors="replace")
+                for part in raw_cmd.split(b"\x00")
+                if part
+            ]
+            if not args:
+                continue
+            exe_name = Path(args[0]).name.lower()
+            if "python" not in exe_name:
+                continue
+            if any(
+                Path(arg).name == "telegram_bot.py" or arg == str(BOT_SCRIPT_PATH)
+                for arg in args[1:]
+            ):
+                try:
+                    os.kill(pid, signal.SIGTERM)
+                    killed_any = True
+                except OSError:
+                    pass
+    except OSError:
+        return
+    if killed_any:
+        time.sleep(0.5)
+
+
+def ensure_bot_running(config: dict[str, str]) -> None:
+    """Ensure telegram_bot.py daemon is running on the host."""
+    if is_running_in_sandbox():
+        return
+    token = config.get("TELEGRAM_BOT_TOKEN", "").strip()
+    if not token or not BOT_SCRIPT_PATH.exists():
+        return
+
+    running, _ = is_bot_running()
+    if running:
+        return
+
+    _terminate_unlocked_bot_processes()
+
+    BOT_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(BOT_LOG_PATH, "a", encoding="utf-8") as log_fh:
+        proc = subprocess.Popen(
+            [sys.executable, str(BOT_SCRIPT_PATH)],
+            cwd=str(BASE_DIR),
+            stdin=subprocess.DEVNULL,
+            stdout=log_fh,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+            close_fds=True,
+        )
+    try:
+        _atomic_write_text(BOT_PID_PATH, f"{proc.pid}\n")
+    except OSError:
+        pass
+
+
 def extract_last_planner_response(transcript_path_str: str | None, conv_id: str) -> str:
     """Read the latest non-empty PLANNER_RESPONSE content from transcript.jsonl."""
     candidates: list[Path] = []
     if transcript_path_str:
         candidates.append(Path(transcript_path_str))
     if conv_id:
-        candidates.append(BRAIN_DIR / conv_id / ".system_generated" / "logs" / "transcript.jsonl")
+        for brain_root in BRAIN_DIRS:
+            candidates.append(
+                brain_root / conv_id / ".system_generated" / "logs" / "transcript.jsonl"
+            )
 
     transcript_path = next((p for p in candidates if p.exists()), None)
     if not transcript_path:
@@ -279,18 +582,192 @@ def _lookup_full_transcript_content(full_path: Path, step_index: Any) -> str:
     return ""
 
 
+def ls_rpc_request(
+    env_map: dict[str, Any],
+    method: str,
+    payload: dict[str, Any] | None = None,
+    timeout: float = 4.0,
+) -> dict[str, Any] | None:
+    """Call an Antigravity LanguageServerService Connect JSON RPC endpoint."""
+    addr = str(env_map.get("ANTIGRAVITY_LS_ADDRESS") or "").strip()
+    token = str(env_map.get("ANTIGRAVITY_CSRF_TOKEN") or "").strip()
+    if not addr or not token:
+        return None
+    url = f"http://{addr}/exa.language_server_pb.LanguageServerService/{method}"
+    data = json.dumps(payload or {}).encode("utf-8")
+    headers = {
+        "Content-Type": "application/json",
+        "Connect-Protocol-Version": "1",
+        "x-codeium-csrf-token": token,
+    }
+    req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if resp.status != 200:
+                return None
+            parsed = json.loads(resp.read().decode("utf-8"))
+            return parsed if isinstance(parsed, dict) else None
+    except Exception:
+        return None
+
+
+def _extract_client_configs(data: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(data, dict):
+        return []
+    for key in ("clientModelConfigs", "client_model_configs"):
+        val = data.get(key)
+        if isinstance(val, list):
+            return [m for m in val if isinstance(m, dict)]
+    for nested_key in ("cascadeModelConfigData", "cascade_model_config_data"):
+        nested = data.get(nested_key)
+        if isinstance(nested, dict):
+            res = _extract_client_configs(nested)
+            if res:
+                return res
+    return []
+
+
+def _extract_user_tier(user_status_resp: dict[str, Any] | None) -> str:
+    if not isinstance(user_status_resp, dict):
+        return ""
+    us = user_status_resp.get("userStatus") or user_status_resp.get("user_status")
+    if not isinstance(us, dict):
+        return ""
+    for key in ("g1Tier", "g1_tier", "userTier", "user_tier"):
+        val = us.get(key)
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+        if isinstance(val, dict):
+            for sub in ("name", "displayName", "display_name", "id", "tier"):
+                sval = val.get(sub)
+                if isinstance(sval, str) and sval.strip():
+                    return sval.strip()
+    ps = us.get("planStatus") or us.get("plan_status")
+    if isinstance(ps, dict):
+        pi = ps.get("planInfo") or ps.get("plan_info")
+        if isinstance(pi, dict):
+            for sub in ("planName", "plan_name", "teamsTier", "teams_tier"):
+                sval = pi.get(sub)
+                if isinstance(sval, str) and sval.strip():
+                    return sval.strip()
+    return ""
+
+
+def fetch_quota_snapshot(env_map: dict[str, Any]) -> dict[str, Any] | None:
+    """Fetch per-model remaining quota percentages from the live Language Server."""
+    model_cfg_resp = ls_rpc_request(env_map, "GetCascadeModelConfigData", {})
+    user_status_resp = ls_rpc_request(env_map, "GetUserStatus", {})
+
+    client_configs = _extract_client_configs(model_cfg_resp)
+    if not client_configs and isinstance(user_status_resp, dict):
+        us = user_status_resp.get("userStatus") or user_status_resp.get("user_status")
+        if isinstance(us, dict):
+            client_configs = _extract_client_configs(us)
+
+    user_tier = _extract_user_tier(user_status_resp)
+    models: list[dict[str, Any]] = []
+    for m in client_configs:
+        label = str(
+            m.get("label")
+            or m.get("displayName")
+            or m.get("display_name")
+            or m.get("modelId")
+            or m.get("model_id")
+            or ""
+        ).strip()
+        model_id = str(m.get("modelId") or m.get("model_id") or "").strip()
+        mor = m.get("modelOrAlias") or m.get("model_or_alias")
+        if not model_id and isinstance(mor, dict):
+            model_id = str(mor.get("model") or mor.get("alias") or "").strip()
+        disabled = bool(m.get("disabled", False))
+        q = m.get("quotaInfo") or m.get("quota_info")
+        if isinstance(q, dict):
+            reset_time = str(q.get("resetTime") or q.get("reset_time") or "").strip()
+            if "remainingFraction" in q or "remaining_fraction" in q:
+                raw_frac = (
+                    q.get("remainingFraction")
+                    if "remainingFraction" in q
+                    else q.get("remaining_fraction")
+                )
+                try:
+                    frac = float(raw_frac if raw_frac is not None else 0.0)
+                except (TypeError, ValueError):
+                    frac = 0.0
+            elif reset_time or disabled:
+                frac = 0.0
+            else:
+                frac = 1.0
+        else:
+            reset_time = ""
+            frac = 0.0 if disabled else 1.0
+
+        frac = max(0.0, min(1.0, frac))
+        remaining_pct = round(frac * 100.0, 1)
+        models.append(
+            {
+                "label": label or model_id or "(sin nombre)",
+                "modelId": model_id,
+                "disabled": disabled,
+                "remainingFraction": frac,
+                "remainingPct": remaining_pct,
+                "resetTime": reset_time,
+            }
+        )
+
+    if not models:
+        return None
+
+    return {
+        "updatedAt": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "userTier": user_tier,
+        "models": models,
+    }
+
+
 def record_hook_state(payload: dict[str, Any]) -> None:
     """Record Antigravity environment and conversation metadata into state.json."""
     conv_id = str(payload.get("conversationId") or "").strip()
     hook_event = str(payload.get("hookEventName") or "").strip()
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    existing_state = load_state()
+    existing_env = existing_state.get("env")
+    if not isinstance(existing_env, dict):
+        existing_env = {}
+    existing_ok = check_ls_reachable(existing_env)[0]
+    os_env = {
+        key: os.environ.get(key, "").strip()
+        for key in ENV_KEYS
+        if os.environ.get(key, "").strip()
+    }
+    has_newer_os_env = any(os_env.get(k) != existing_env.get(k) for k in os_env)
+    discovered_env: dict[str, str] = {}
+    if not existing_ok or has_newer_os_env:
+        discovered_env = discover_ls_env()
+
+    effective_env: dict[str, Any] = (
+        dict(discovered_env) if discovered_env else dict(existing_env)
+    )
+    if not discovered_env:
+        effective_env.update(os_env)
+
+    quota_snap: dict[str, Any] | None = None
+    if not is_running_in_sandbox() and check_ls_reachable(effective_env)[0]:
+        quota_snap = fetch_quota_snapshot(effective_env)
+
     def _mutate(state: dict[str, Any]) -> None:
         env_store = state.setdefault("env", {})
-        for key in ENV_KEYS:
-            val = os.environ.get(key, "").strip()
-            if val:
+        if discovered_env:
+            for key in ENV_KEYS:
+                val = discovered_env.get(key, "").strip()
+                if val:
+                    env_store[key] = val
+        else:
+            for key, val in os_env.items():
                 env_store[key] = val
+
+        if quota_snap is not None:
+            state["quotaSnapshot"] = quota_snap
 
         if conv_id:
             state["activeConversationId"] = conv_id
@@ -393,6 +870,7 @@ def main() -> int:
     try:
         record_hook_state(payload)
         config = load_config()
+        ensure_bot_running(config)
         if hook_event == "Stop":
             handle_stop_event(payload, config)
     except Exception as exc:

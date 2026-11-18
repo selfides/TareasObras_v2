@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import datetime
+import errno
+import fcntl
 import json
 import os
 import re
@@ -18,8 +20,15 @@ from pathlib import Path
 from typing import Any
 
 from hook_handler import (
+    BOT_LOCK_PATH,
+    BOT_PID_PATH,
     BRAIN_DIR,
+    BRAIN_DIRS,
+    CLI_BRAIN_DIR,
     ENV_KEYS,
+    check_ls_reachable,
+    discover_ls_env,
+    fetch_quota_snapshot,
     load_config,
     load_state,
     save_config_value,
@@ -27,29 +36,70 @@ from hook_handler import (
     set_active_conversation,
     telegram_api_request,
     truncate_text,
+    update_state,
 )
 
-AGY_BIN = "/root/.local/bin/agy"
+HOOK_SCRIPT_PATH = Path(__file__).resolve().parent / "hook_handler.py"
+AGY_BIN = (
+    "/root/.gemini/bin/agy"
+    if Path("/root/.gemini/bin/agy").exists()
+    else "/root/.local/bin/agy"
+)
 AGENTAPI_BIN = "/root/.gemini/antigravity/bin/agentapi"
 CONV_TAG_RE = re.compile(r"\[Conv:\s*([A-Za-z0-9_-]+)\]")
 
 DEFAULT_MODEL_ID = "gemini-pro-orchestrator-g1-pro"
-AVAILABLE_MODELS: dict[str, tuple[str, str]] = {
-    "1": ("gemini-pro-orchestrator-g1-pro", "Orchestrator (Argon) — Recomendado (elige subagentes automáticamente)"),
-    "orchestrator": ("gemini-pro-orchestrator-g1-pro", "Orchestrator (Argon)"),
-    "2": ("gemini-4-argon-high", "Gemini 4 Argon (High)"),
-    "argon-high": ("gemini-4-argon-high", "Gemini 4 Argon (High)"),
-    "3": ("gemini-4-argon-medium", "Gemini 4 Argon (Medium)"),
-    "argon": ("gemini-4-argon-medium", "Gemini 4 Argon (Medium)"),
-    "4": ("gemini-4-hydrogen-high", "Gemini 4 Hydrogen (High)"),
-    "hydrogen": ("gemini-4-hydrogen-high", "Gemini 4 Hydrogen (High)"),
-    "5": ("gemini-3.8-flash-high", "Gemini 3.8 Flash (High)"),
-    "flash": ("gemini-3.8-flash-high", "Gemini 3.8 Flash (High)"),
-    "6": ("claude-opus-5-5-high", "Claude Opus 5.5 (High)"),
-    "opus": ("claude-opus-5-5-high", "Claude Opus 5.5 (High)"),
-    "7": ("claude-sonnet-5-5-high", "Claude Sonnet 5.5 (High)"),
-    "sonnet": ("claude-sonnet-5-5-high", "Claude Sonnet 5.5 (High)"),
-}
+
+# List of all available models in Antigravity: (key_number, alias, model_id, display_label, is_recommended)
+MODEL_CATALOG: list[tuple[str, str, str, str, bool]] = [
+    # Orchestrator
+    ("1", "orchestrator", "gemini-pro-orchestrator-g1-pro", "Orchestrator (Argon)", True),
+    # Gemini 4 Argon
+    ("2", "argon-high", "gemini-4-argon-high", "Gemini 4 Argon (High)", False),
+    ("3", "argon", "gemini-4-argon-medium", "Gemini 4 Argon (Medium)", False),
+    ("4", "argon-low", "gemini-4-argon-low", "Gemini 4 Argon (Low)", False),
+    # Gemini 4 Hydrogen
+    ("5", "hydrogen-xhigh", "gemini-4-hydrogen-xhigh", "Gemini 4 Hydrogen (XHigh)", False),
+    ("6", "hydrogen", "gemini-4-hydrogen-high", "Gemini 4 Hydrogen (High)", False),
+    ("7", "hydrogen-medium", "gemini-4-hydrogen-medium", "Gemini 4 Hydrogen (Medium)", False),
+    ("8", "hydrogen-low", "gemini-4-hydrogen-low", "Gemini 4 Hydrogen (Low)", False),
+    # Gemini 3.8 Flash
+    ("9", "flash-high", "gemini-3.8-flash-high", "Gemini 3.8 Flash (High)", False),
+    ("10", "flash", "gemini-3.8-flash-medium", "Gemini 3.8 Flash (Medium)", False),
+    ("11", "flash-low", "gemini-3.8-flash-low", "Gemini 3.8 Flash (Low)", False),
+    # Claude Opus 5.5
+    ("12", "opus", "claude-opus-5-5-high", "Claude Opus 5.5 (High)", False),
+    ("13", "opus-medium", "claude-opus-5-5-medium", "Claude Opus 5.5 (Medium)", False),
+    ("14", "opus-low", "claude-opus-5-5-low", "Claude Opus 5.5 (Low)", False),
+    # Claude Sonnet 5.5
+    ("15", "sonnet", "claude-sonnet-5-5-high", "Claude Sonnet 5.5 (High)", False),
+    ("16", "sonnet-medium", "claude-sonnet-5-5-medium", "Claude Sonnet 5.5 (Medium)", False),
+    ("17", "sonnet-low", "claude-sonnet-5-5-low", "Claude Sonnet 5.5 (Low)", False),
+    # Open Source
+    ("18", "gpt-oss", "gpt-oss-120b-medium", "GPT-OSS 120B (Medium)", False),
+]
+
+AVAILABLE_MODELS: dict[str, tuple[str, str]] = {}
+for num, alias, mid, label, is_rec in MODEL_CATALOG:
+    rec_text = " — Recomendado (elige subagentes automáticamente)" if is_rec else ""
+    full_label = f"{label}{rec_text}"
+    AVAILABLE_MODELS[num] = (mid, full_label)
+    AVAILABLE_MODELS[alias] = (mid, label)
+    AVAILABLE_MODELS[mid] = (mid, label)
+    # Extra aliases for variants
+    if alias == "argon":
+        AVAILABLE_MODELS["argon-medium"] = (mid, label)
+    elif alias == "hydrogen":
+        AVAILABLE_MODELS["hydrogen-high"] = (mid, label)
+    elif alias == "flash":
+        AVAILABLE_MODELS["flash-medium"] = (mid, label)
+    elif alias == "opus":
+        AVAILABLE_MODELS["opus-high"] = (mid, label)
+    elif alias == "sonnet":
+        AVAILABLE_MODELS["sonnet-high"] = (mid, label)
+    elif alias == "gpt-oss":
+        AVAILABLE_MODELS["gpt-oss-120b"] = (mid, label)
+        AVAILABLE_MODELS["oss"] = (mid, label)
 
 
 def _get_configured_model() -> str:
@@ -80,24 +130,27 @@ def _short_id(conv_id: str) -> str:
     return conv_id[:8]
 
 
-def _check_ls_reachable(env_map: dict[str, str]) -> tuple[bool, str]:
-    addr = env_map.get("ANTIGRAVITY_LS_ADDRESS", "").strip()
-    token = env_map.get("ANTIGRAVITY_CSRF_TOKEN", "").strip()
-    if not addr or not token:
-        return False, "sin datos en state.json"
-    if ":" not in addr:
-        return False, f"dirección inválida ({addr})"
-    host, port_str = addr.rsplit(":", 1)
-    host = host.strip("[]") or "localhost"
-    try:
-        port = int(port_str)
-    except ValueError:
-        return False, f"puerto inválido ({addr})"
-    try:
-        with socket.create_connection((host, port), timeout=1.0):
-            return True, addr
-    except OSError:
-        return False, f"inaccesible ({addr})"
+def _get_valid_ls_env() -> tuple[bool, str, dict[str, str]]:
+    state = load_state()
+    env_map = state.get("env") if isinstance(state.get("env"), dict) else {}
+    reachable, detail = check_ls_reachable(env_map)
+    if reachable:
+        return True, detail, {str(k): str(v) for k, v in env_map.items()}
+
+    discovered = discover_ls_env()
+    if discovered:
+        def _mutate(st: dict[str, Any]) -> None:
+            env_store = st.setdefault("env", {})
+            for key in ENV_KEYS:
+                val = discovered.get(key, "").strip()
+                if val:
+                    env_store[key] = val
+
+        update_state(_mutate)
+        reachable, detail = check_ls_reachable(discovered)
+        return reachable, detail, discovered
+
+    return False, detail, {str(k): str(v) for k, v in env_map.items()}
 
 
 def _collect_recent_conversations(limit: int = 10) -> list[dict[str, str]]:
@@ -116,28 +169,36 @@ def _collect_recent_conversations(limit: int = 10) -> list[dict[str, str]]:
                 "source": "hook",
             }
 
-    if BRAIN_DIR.exists():
+    for brain_root in BRAIN_DIRS:
+        if not brain_root.exists():
+            continue
+        source_label = "cli-brain" if brain_root == CLI_BRAIN_DIR else "brain"
         try:
-            for entry in BRAIN_DIR.iterdir():
+            for entry in brain_root.iterdir():
                 if not entry.is_dir():
                     continue
                 cid = entry.name
                 if cid.startswith("."):
                     continue
+                try:
+                    mtime = entry.stat().st_mtime
+                    updated_at = datetime.datetime.fromtimestamp(
+                        mtime, tz=datetime.timezone.utc
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+                except OSError:
+                    updated_at = ""
                 if cid not in merged:
-                    try:
-                        mtime = entry.stat().st_mtime
-                        updated_at = datetime.datetime.fromtimestamp(
-                            mtime, tz=datetime.timezone.utc
-                        ).strftime("%Y-%m-%dT%H:%M:%SZ")
-                    except OSError:
-                        updated_at = ""
                     merged[cid] = {
                         "conversationId": cid,
                         "updatedAt": updated_at,
                         "lastUserInput": _read_first_user_input_from_brain(entry),
-                        "source": "brain",
+                        "source": source_label,
                     }
+                else:
+                    if not merged[cid].get("lastUserInput"):
+                        merged[cid]["lastUserInput"] = _read_first_user_input_from_brain(entry)
+                    if updated_at and updated_at > merged[cid].get("updatedAt", ""):
+                        merged[cid]["updatedAt"] = updated_at
         except OSError:
             pass
 
@@ -147,6 +208,60 @@ def _collect_recent_conversations(limit: int = 10) -> list[dict[str, str]]:
         reverse=True,
     )
     return items[:limit]
+
+
+def _find_transcript_path(conv_id: str) -> Path | None:
+    candidates: list[Path] = []
+    state = load_state()
+    info = (state.get("conversations") or {}).get(conv_id)
+    if isinstance(info, dict):
+        tp = str(info.get("transcriptPath") or "").strip()
+        if tp:
+            tp_path = Path(tp)
+            if tp_path.name == "transcript_full.jsonl":
+                candidates.append(tp_path.parent / "transcript.jsonl")
+            candidates.append(tp_path)
+    for brain_root in BRAIN_DIRS:
+        candidates.append(
+            brain_root / conv_id / ".system_generated" / "logs" / "transcript.jsonl"
+        )
+    return next((p for p in candidates if p.exists()), None)
+
+
+def _build_conversation_context(conv_id: str, max_turns: int = 6) -> str:
+    transcript_path = _find_transcript_path(conv_id)
+    if not transcript_path:
+        return ""
+    turns: list[tuple[str, str]] = []
+    try:
+        with open(transcript_path, "r", encoding="utf-8", errors="replace") as fh:
+            for raw in fh:
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    entry = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                etype = entry.get("type")
+                if etype not in ("USER_INPUT", "PLANNER_RESPONSE"):
+                    continue
+                content = entry.get("content")
+                if not isinstance(content, str) or not content.strip():
+                    continue
+                role = "Usuario" if etype == "USER_INPUT" else "Asistente"
+                turns.append((role, truncate_text(content, 600)))
+    except OSError:
+        return ""
+    if not turns:
+        return ""
+    recent = turns[-max_turns:]
+    lines = [
+        f"[Contexto reciente de la conversación {conv_id} (continuada en sesión CLI porque la sesión IDE no estaba accesible):]"
+    ]
+    for role, text in recent:
+        lines.append(f"{role}: {text}")
+    return "\n".join(lines)
 
 
 def _read_first_user_input_from_brain(conv_dir: Path) -> str:
@@ -207,9 +322,7 @@ def _get_git_status(workspace: str) -> str:
 
 
 def _try_agentapi_send(conv_id: str, text: str) -> tuple[bool, str]:
-    state = load_state()
-    env_map = state.get("env") if isinstance(state.get("env"), dict) else {}
-    reachable, detail = _check_ls_reachable(env_map)
+    reachable, detail, env_map = _get_valid_ls_env()
     if not reachable:
         return False, f"Language Server {detail}"
 
@@ -247,16 +360,38 @@ def _try_agentapi_send(conv_id: str, text: str) -> tuple[bool, str]:
     return True, "delivered"
 
 
+def _scan_cli_brain_mtimes() -> dict[str, float]:
+    mtimes: dict[str, float] = {}
+    if not CLI_BRAIN_DIR.exists():
+        return mtimes
+    try:
+        for entry in CLI_BRAIN_DIR.iterdir():
+            if not entry.is_dir() or entry.name.startswith("."):
+                continue
+            try:
+                tp = entry / ".system_generated" / "logs" / "transcript.jsonl"
+                mtime = entry.stat().st_mtime
+                if tp.exists():
+                    mtime = max(mtime, tp.stat().st_mtime)
+                mtimes[entry.name] = mtime
+            except OSError:
+                continue
+    except OSError:
+        pass
+    return mtimes
+
+
 def _snapshot_state_timestamps() -> dict[str, str]:
+    snap: dict[str, str] = {}
     state = load_state()
     convs = state.get("conversations", {})
-    if not isinstance(convs, dict):
-        return {}
-    return {
-        cid: str(info.get("updatedAt") or "")
-        for cid, info in convs.items()
-        if isinstance(info, dict)
-    }
+    if isinstance(convs, dict):
+        for cid, info in convs.items():
+            if isinstance(info, dict):
+                snap[f"state:{cid}"] = str(info.get("updatedAt") or "")
+    for cid, mtime in _scan_cli_brain_mtimes().items():
+        snap[f"cli:{cid}"] = f"{mtime:.6f}"
+    return snap
 
 
 def _detect_updated_conversation(before_ts: dict[str, str], fallback_conv_id: str) -> str:
@@ -268,15 +403,31 @@ def _detect_updated_conversation(before_ts: dict[str, str], fallback_conv_id: st
             if not isinstance(info, dict):
                 continue
             ts = str(info.get("updatedAt") or "")
-            if cid not in before_ts or ts > before_ts[cid]:
+            key = f"state:{cid}"
+            if key not in before_ts or ts > before_ts[key]:
                 changed.append((ts, cid))
         if changed:
             changed.sort(reverse=True)
             return changed[0][1]
+
+    cli_changed: list[tuple[float, str]] = []
+    for cid, mtime in _scan_cli_brain_mtimes().items():
+        key = f"cli:{cid}"
+        prev_raw = before_ts.get(key)
+        prev_mtime = float(prev_raw) if prev_raw is not None else -1.0
+        if key not in before_ts or mtime > prev_mtime + 1e-6:
+            cli_changed.append((mtime, cid))
+    if cli_changed:
+        cli_changed.sort(reverse=True)
+        return cli_changed[0][1]
+
+    if fallback_conv_id:
+        return fallback_conv_id
+    if isinstance(convs, dict):
         active = str(state.get("activeConversationId") or "").strip()
         if active:
             return active
-    return fallback_conv_id or "cli-session"
+    return "cli-session"
 
 
 def _run_agy_subprocess(
@@ -338,7 +489,7 @@ def _execute_cli_task(
     was_stopped = False
 
     try:
-        if conv_id:
+        if conv_id and (CLI_BRAIN_DIR / conv_id).is_dir():
             cmd = [
                 AGY_BIN,
                 "--conversation",
@@ -356,18 +507,43 @@ def _execute_cli_task(
                 _log(
                     f"Task #{task_id}: --conversation {conv_id} failed (rc={returncode}); falling back to new CLI session"
                 )
+                ctx = _build_conversation_context(conv_id)
+                fallback_prompt = (
+                    f"{ctx}\n\nNueva instrucción del usuario (desde Telegram):\n{prompt}"
+                    if ctx
+                    else prompt
+                )
                 fallback_cmd = [
                     AGY_BIN,
                     "--model",
                     selected_model,
                     "-p",
-                    prompt,
+                    fallback_prompt,
                     "--dangerously-skip-permissions",
                 ]
                 returncode, stdout, stderr, was_stopped = _run_agy_subprocess(
                     task_id, fallback_cmd, workspace
                 )
                 used_conv_id = ""
+        elif conv_id:
+            ctx = _build_conversation_context(conv_id)
+            bridged_prompt = (
+                f"{ctx}\n\nNueva instrucción del usuario (desde Telegram):\n{prompt}"
+                if ctx
+                else prompt
+            )
+            cmd = [
+                AGY_BIN,
+                "--model",
+                selected_model,
+                "-p",
+                bridged_prompt,
+                "--dangerously-skip-permissions",
+            ]
+            returncode, stdout, stderr, was_stopped = _run_agy_subprocess(
+                task_id, cmd, workspace
+            )
+            used_conv_id = ""
         else:
             cmd = [
                 AGY_BIN,
@@ -475,7 +651,8 @@ def _help_text() -> str:
         f"🧠 Modelo activo: {_get_model_display_name(current_model)} ({current_model})\n\n"
         "Comandos disponibles:\n"
         "• /status — Estado actual, modelo, sesión activa, IDE LS y git status\n"
-        "• /model [nombre|número] — Ver o cambiar el modelo / orquestador\n"
+        "• /cuota — Ver % de cuota restante por modelo (alias: /quota)\n"
+        "• /model [nombre|número] — Ver o cambiar el modelo / orquestador (alias: /models)\n"
         "• /list (o /conv) — Últimas 10 conversaciones\n"
         "• /use <id> — Seleccionar conversación activa por ID o prefijo\n"
         "• /new <instrucción> — Iniciar nueva tarea autónoma en /opt/tareas-obras\n"
@@ -488,23 +665,194 @@ def _help_text() -> str:
     )
 
 
+def _progress_bar(pct: float, width: int = 10) -> str:
+    clamped = max(0.0, min(100.0, float(pct)))
+    filled = max(0, min(width, int(round((clamped / 100.0) * width))))
+    if clamped >= 50.0:
+        fill_char = "🟩"
+    elif clamped >= 20.0:
+        fill_char = "🟨"
+    else:
+        fill_char = "🟥"
+    return (fill_char * filled) + ("⬜" * (width - filled))
+
+
+def _format_reset_time(reset_iso: str) -> str:
+    raw = reset_iso.strip()
+    if not raw:
+        return ""
+    try:
+        iso_norm = raw[:-1] + "+00:00" if raw.endswith("Z") else raw
+        dt = datetime.datetime.fromisoformat(iso_norm)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
+        dt_utc = dt.astimezone(datetime.timezone.utc)
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        if dt_utc > now_utc:
+            total_mins = max(1, int((dt_utc - now_utc).total_seconds() // 60))
+            hours, mins = divmod(total_mins, 60)
+            rel = f"en {hours}h {mins}m" if hours else f"en {mins}m"
+            return f"{rel} ({dt_utc.strftime('%H:%M UTC')})"
+        return dt_utc.strftime("%Y-%m-%d %H:%M UTC")
+    except Exception:
+        return raw
+
+
+def _get_quota_snapshot() -> tuple[dict[str, Any] | None, bool]:
+    ls_ok, _, env_map = _get_valid_ls_env()
+    if ls_ok:
+        snap = fetch_quota_snapshot(env_map)
+        if snap:
+            def _mutate(st: dict[str, Any]) -> None:
+                st["quotaSnapshot"] = snap
+
+            update_state(_mutate)
+            return snap, True
+
+    state = load_state()
+    cached = state.get("quotaSnapshot")
+    if isinstance(cached, dict) and cached.get("models"):
+        return cached, False
+    return None, False
+
+
+def _match_active_model(entry: dict[str, Any], active_model_id: str) -> bool:
+    mid = str(entry.get("modelId") or "").strip().lower()
+    label = str(entry.get("label") or "").strip().lower()
+    active_low = active_model_id.strip().lower()
+    display_low = _get_model_display_name(active_model_id).strip().lower()
+    if active_low and mid == active_low:
+        return True
+    if display_low and label == display_low:
+        return True
+    if display_low and (display_low in label or label in display_low):
+        return True
+    return False
+
+
+def _find_active_model_quota(
+    snap: dict[str, Any] | None, active_model_id: str
+) -> dict[str, Any] | None:
+    if not isinstance(snap, dict):
+        return None
+    models = snap.get("models")
+    if not isinstance(models, list):
+        return None
+    for entry in models:
+        if isinstance(entry, dict) and _match_active_model(entry, active_model_id):
+            return entry
+    return None
+
+
+def _format_quota_entry(entry: dict[str, Any], is_active: bool) -> str:
+    pct = float(entry.get("remainingPct", 0.0))
+    if pct >= 50.0:
+        icon = "🟢"
+    elif pct >= 20.0:
+        icon = "🟡"
+    else:
+        icon = "🔴"
+    label = str(entry.get("label") or entry.get("modelId") or "(sin nombre)")
+    star = " ⭐" if is_active else ""
+    bar = _progress_bar(pct)
+    line = f"{icon} {label}{star}: {pct:g}%\n   {bar}"
+    reset_time = str(entry.get("resetTime") or "").strip()
+    if reset_time:
+        line += f"\n   ⏳ Reinicio: {_format_reset_time(reset_time)}"
+    return line
+
+
+def _handle_quota(
+    token: str,
+    chat_id: str,
+    reply_to_message_id: int | None = None,
+) -> None:
+    snap, is_live = _get_quota_snapshot()
+    if not snap or not snap.get("models"):
+        send_telegram_message(
+            token,
+            chat_id,
+            (
+                "⚠️ No hay datos de cuota disponibles todavía.\n"
+                "El Language Server del IDE no está accesible y no existe caché guardada."
+            ),
+            reply_to_message_id=reply_to_message_id,
+        )
+        return
+
+    status_tag = (
+        "🟢 En tiempo real"
+        if is_live
+        else f"🕒 Caché ({snap.get('updatedAt') or '?'})"
+    )
+    lines = [
+        "📊 Cuota de uso de modelos (Antigravity)",
+        status_tag,
+    ]
+    user_tier = str(snap.get("userTier") or "").strip()
+    if user_tier:
+        lines.append(f"🏷 Plan: {user_tier}")
+
+    current_model = _get_configured_model()
+    models = [m for m in snap.get("models", []) if isinstance(m, dict)]
+    active_entries: list[dict[str, Any]] = []
+    other_entries: list[dict[str, Any]] = []
+    for m in models:
+        if _match_active_model(m, current_model):
+            active_entries.append(m)
+        else:
+            other_entries.append(m)
+
+    lines.append("")
+    if active_entries:
+        for entry in active_entries:
+            lines.append(_format_quota_entry(entry, is_active=True))
+    for entry in other_entries:
+        lines.append(_format_quota_entry(entry, is_active=False))
+
+    send_telegram_message(
+        token,
+        chat_id,
+        "\n".join(lines),
+        reply_to_message_id=reply_to_message_id,
+    )
+
+
 def _handle_model(token: str, chat_id: str, arg: str) -> None:
     current = _get_configured_model()
     choice = arg.strip().lower()
     if not choice:
-        msg = (
-            f"🧠 Modelo actual: {_get_model_display_name(current)}\n"
-            f"ID técnico: {current}\n\n"
-            "Modelos disponibles (usa /model <número o alias>):\n"
-            "1. orchestrator — Orchestrator (Argon) ⭐ Recomendado\n"
-            "2. argon-high — Gemini 4 Argon (High)\n"
-            "3. argon — Gemini 4 Argon (Medium)\n"
-            "4. hydrogen — Gemini 4 Hydrogen (High)\n"
-            "5. flash — Gemini 3.8 Flash (High)\n"
-            "6. opus — Claude Opus 5.5 (High)\n"
-            "7. sonnet — Claude Sonnet 5.5 (High)"
-        )
-        send_telegram_message(token, chat_id, msg)
+        lines = [
+            f"🧠 Modelo actual: {_get_model_display_name(current)}",
+            f"ID técnico: {current}\n",
+            "Modelos disponibles (usa /model <número o alias>):",
+            "⭐ Orquestador:",
+            " 1. orchestrator — Orchestrator (Argon) 🌟",
+            "\n💎 Familia Argon (Gemini 4):",
+            " 2. argon-high — Gemini 4 Argon (High)",
+            " 3. argon — Gemini 4 Argon (Medium)",
+            " 4. argon-low — Gemini 4 Argon (Low)",
+            "\n⚡ Familia Hydrogen (Gemini 4):",
+            " 5. hydrogen-xhigh — Gemini 4 Hydrogen (XHigh)",
+            " 6. hydrogen — Gemini 4 Hydrogen (High)",
+            " 7. hydrogen-medium — Gemini 4 Hydrogen (Medium)",
+            " 8. hydrogen-low — Gemini 4 Hydrogen (Low)",
+            "\n🚀 Familia Flash (Gemini 3.8):",
+            " 9. flash-high — Gemini 3.8 Flash (High)",
+            "10. flash — Gemini 3.8 Flash (Medium)",
+            "11. flash-low — Gemini 3.8 Flash (Low)",
+            "\n👑 Familia Claude 5.5:",
+            "12. opus — Claude Opus 5.5 (High)",
+            "13. opus-medium — Claude Opus 5.5 (Medium)",
+            "14. opus-low — Claude Opus 5.5 (Low)",
+            "15. sonnet — Claude Sonnet 5.5 (High)",
+            "16. sonnet-medium — Claude Sonnet 5.5 (Medium)",
+            "17. sonnet-low — Claude Sonnet 5.5 (Low)",
+            "\n🌐 Open Source:",
+            "18. gpt-oss — GPT-OSS 120B (Medium)",
+            "\n💡 Ejemplo: /model 10 o /model flash"
+        ]
+        send_telegram_message(token, chat_id, "\n".join(lines))
         return
 
     if choice in AVAILABLE_MODELS:
@@ -524,8 +872,7 @@ def _handle_model(token: str, chat_id: str, arg: str) -> None:
 def _handle_status(token: str, chat_id: str, workspace: str) -> None:
     state = load_state()
     active_cid = str(state.get("activeConversationId") or "").strip() or "(ninguna)"
-    env_map = state.get("env") if isinstance(state.get("env"), dict) else {}
-    ls_ok, ls_detail = _check_ls_reachable(env_map)
+    ls_ok, ls_detail, _ = _get_valid_ls_env()
     ls_line = f"🟢 Conectado ({ls_detail})" if ls_ok else f"🔴 No disponible ({ls_detail})"
 
     with TASKS_LOCK:
@@ -537,10 +884,18 @@ def _handle_status(token: str, chat_id: str, workspace: str) -> None:
     git_text = truncate_text(_get_git_status(workspace), 1200)
 
     current_model = _get_configured_model()
+    quota_snap, _ = _get_quota_snapshot()
+    active_quota = _find_active_model_quota(quota_snap, current_model)
+    quota_line = ""
+    if active_quota is not None:
+        pct = float(active_quota.get("remainingPct", 0.0))
+        quota_line = f"🔋 Cuota modelo activo: {pct:g}%\n"
+
     msg = (
         f"📊 Estado de Antigravity\n\n"
         f"📂 Workspace: {workspace}\n"
         f"🧠 Modelo activo: {_get_model_display_name(current_model)} ({current_model})\n"
+        f"{quota_line}"
         f"🆔 Conversación activa: {active_cid}\n"
         f"🔌 IDE Language Server: {ls_line}\n\n"
         f"⚙️ Tareas en curso (bot):\n{tasks_text}\n\n"
@@ -675,7 +1030,10 @@ def _process_message(message: dict[str, Any]) -> None:
     if cmd_name == "/status":
         _handle_status(token, chat_id, workspace)
         return
-    if cmd_name == "/model":
+    if cmd_name in ("/cuota", "/quota"):
+        _handle_quota(token, chat_id, reply_to_message_id=message_id)
+        return
+    if cmd_name in ("/model", "/models"):
         _handle_model(token, chat_id, cmd_arg)
         return
     if cmd_name in ("/list", "/conv"):
@@ -786,7 +1144,9 @@ def _process_message(message: dict[str, Any]) -> None:
 def _register_commands(token: str) -> None:
     commands = [
         {"command": "status", "description": "Estado del agente, modelo, LS y git"},
+        {"command": "cuota", "description": "Ver % de cuota restante por modelo"},
         {"command": "model", "description": "Ver o cambiar el modelo / orquestador"},
+        {"command": "models", "description": "Ver o cambiar el modelo / orquestador (alias)"},
         {"command": "list", "description": "Listar últimas conversaciones"},
         {"command": "use", "description": "Seleccionar conversación activa"},
         {"command": "new", "description": "Iniciar nueva tarea autónoma"},
@@ -800,53 +1160,112 @@ def _register_commands(token: str) -> None:
         _log(f"Warning: could not setMyCommands: {exc}")
 
 
+def _watched_mtimes(paths: tuple[Path, ...]) -> dict[Path, float]:
+    mtimes: dict[Path, float] = {}
+    for p in paths:
+        try:
+            mtimes[p] = p.stat().st_mtime
+        except OSError:
+            mtimes[p] = 0.0
+    return mtimes
+
+
 def main() -> int:
-    _log("Starting Antigravity Telegram Remote Control bot...")
+    BOT_LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    lock_fh = open(BOT_LOCK_PATH, "a+", encoding="utf-8")
+    try:
+        fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError as exc:
+        if isinstance(exc, BlockingIOError) or exc.errno in (errno.EACCES, errno.EAGAIN):
+            _log("Another telegram_bot.py instance already holds bot.lock; exiting.")
+            lock_fh.close()
+            return 0
+        lock_fh.close()
+        raise
+
+    try:
+        BOT_PID_PATH.write_text(f"{os.getpid()}\n", encoding="utf-8")
+    except OSError:
+        pass
+
+    bot_path = Path(__file__).resolve()
+    watched_files = (bot_path, HOOK_SCRIPT_PATH)
+    initial_mtimes = _watched_mtimes(watched_files)
+
+    _log(f"Starting Antigravity Telegram Remote Control bot (PID {os.getpid()})...")
     offset: int | None = None
     commands_registered = False
 
-    while True:
-        config = load_config()
-        token = config.get("TELEGRAM_BOT_TOKEN", "").strip()
-        if not token:
-            _log("TELEGRAM_BOT_TOKEN is empty in config.env. Waiting 5s...")
-            time.sleep(5)
-            continue
+    def _maybe_hot_reload() -> None:
+        current_mtimes = _watched_mtimes(watched_files)
+        if any(current_mtimes[p] > initial_mtimes[p] for p in watched_files):
+            with TASKS_LOCK:
+                no_running_tasks = len(RUNNING_TASKS) == 0
+            if no_running_tasks:
+                _log("Hot-reloading Telegram bot daemon after code update...")
+                try:
+                    fcntl.flock(lock_fh.fileno(), fcntl.LOCK_UN)
+                    lock_fh.close()
+                except OSError:
+                    pass
+                os.execv(sys.executable, [sys.executable, str(bot_path)])
 
-        if not commands_registered:
-            _register_commands(token)
-            commands_registered = True
+    try:
+        while True:
+            _maybe_hot_reload()
 
-        params: dict[str, Any] = {
-            "timeout": 30,
-            "allowed_updates": ["message"],
-        }
-        if offset is not None:
-            params["offset"] = offset
-
-        try:
-            resp = telegram_api_request(token, "getUpdates", params, timeout=40)
-            if not resp.get("ok"):
-                _log(f"getUpdates returned not ok: {resp}")
-                time.sleep(3)
+            config = load_config()
+            token = config.get("TELEGRAM_BOT_TOKEN", "").strip()
+            if not token:
+                _log("TELEGRAM_BOT_TOKEN is empty in config.env. Waiting 5s...")
+                time.sleep(5)
                 continue
-            updates = resp.get("result") or []
-            for upd in updates:
-                uid = upd.get("update_id")
-                if isinstance(uid, int):
-                    offset = uid + 1
-                msg = upd.get("message")
-                if isinstance(msg, dict):
-                    try:
-                        _process_message(msg)
-                    except Exception as exc:
-                        _log(f"Error processing message: {exc}")
-        except urllib.error.HTTPError as exc:
-            _log(f"Telegram HTTP error {exc.code}: {exc.reason}")
-            time.sleep(5)
-        except Exception as exc:
-            _log(f"Polling error: {exc}")
-            time.sleep(5)
+
+            if not commands_registered:
+                _register_commands(token)
+                commands_registered = True
+
+            params: dict[str, Any] = {
+                "timeout": 30,
+                "allowed_updates": ["message"],
+            }
+            if offset is not None:
+                params["offset"] = offset
+
+            try:
+                resp = telegram_api_request(token, "getUpdates", params, timeout=40)
+                if not resp.get("ok"):
+                    _log(f"getUpdates returned not ok: {resp}")
+                    time.sleep(3)
+                    continue
+                updates = resp.get("result") or []
+                for upd in updates:
+                    uid = upd.get("update_id")
+                    if isinstance(uid, int):
+                        offset = uid + 1
+                    msg = upd.get("message")
+                    if isinstance(msg, dict):
+                        try:
+                            _process_message(msg)
+                        except Exception as exc:
+                            _log(f"Error processing message: {exc}")
+            except urllib.error.HTTPError as exc:
+                _log(f"Telegram HTTP error {exc.code}: {exc.reason}")
+                time.sleep(5)
+            except Exception as exc:
+                _log(f"Polling error: {exc}")
+                time.sleep(5)
+
+            _maybe_hot_reload()
+    finally:
+        try:
+            fcntl.flock(lock_fh.fileno(), fcntl.LOCK_UN)
+        except OSError:
+            pass
+        try:
+            lock_fh.close()
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":

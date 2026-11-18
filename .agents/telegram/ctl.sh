@@ -15,15 +15,21 @@ load_env() {
   fi
 }
 
+in_sandbox() {
+  local comm
+  comm="$(cat /proc/1/comm 2>/dev/null || true)"
+  [[ "$comm" != "systemd" && "$comm" != "init" ]]
+}
+
 is_running() {
-  if [[ -f "$PID_FILE" ]]; then
-    local pid
-    pid="$(cat "$PID_FILE" 2>/dev/null || true)"
-    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
-      return 0
-    fi
-  fi
-  return 1
+  python3 - "$SCRIPT_DIR" <<'PYEOF'
+import sys
+sys.path.insert(0, sys.argv[1])
+from hook_handler import is_bot_running
+
+running, _ = is_bot_running()
+sys.exit(0 if running else 1)
+PYEOF
 }
 
 cmd_start() {
@@ -34,8 +40,18 @@ cmd_start() {
     exit 1
   fi
 
+  if in_sandbox; then
+    if is_running; then
+      touch "$BOT_SCRIPT"
+      echo "Ejecutando dentro de sandbox: el demonio en el host está activo (PID $(cat "$PID_FILE" 2>/dev/null || echo '?')). Se solicitó hot-reload automático."
+    else
+      echo "Ejecutando dentro de sandbox: no se lanzan procesos efímeros aquí; hook_handler.py auto-iniciará el bot en el host."
+    fi
+    return 0
+  fi
+
   if is_running; then
-    echo "El bot ya está en ejecución (PID $(cat "$PID_FILE"))."
+    echo "El bot ya está en ejecución (PID $(cat "$PID_FILE" 2>/dev/null || echo '?'))."
     return 0
   fi
 
@@ -44,7 +60,7 @@ cmd_start() {
   echo "$pid" >"$PID_FILE"
   sleep 1
 
-  if kill -0 "$pid" 2>/dev/null; then
+  if kill -0 "$pid" 2>/dev/null && is_running; then
     echo "Bot de Telegram iniciado en segundo plano (PID $pid)."
     echo "Logs: $LOG_FILE"
   else
@@ -56,8 +72,13 @@ cmd_start() {
 }
 
 cmd_stop() {
-  if ! [[ -f "$PID_FILE" ]]; then
-    echo "El bot no está en ejecución (no existe $PID_FILE)."
+  if in_sandbox; then
+    echo "Ejecutando dentro de sandbox: no se puede detener el demonio del host desde el entorno aislado; hook_handler.py lo gestiona en el host."
+    return 0
+  fi
+
+  if ! is_running && ! [[ -f "$PID_FILE" ]]; then
+    echo "El bot no está en ejecución."
     return 0
   fi
 
@@ -85,6 +106,15 @@ cmd_stop() {
 }
 
 cmd_restart() {
+  if in_sandbox; then
+    if is_running; then
+      touch "$BOT_SCRIPT"
+      echo "Ejecutando dentro de sandbox: se tocó telegram_bot.py para activar hot-reload en el demonio del host (PID $(cat "$PID_FILE" 2>/dev/null || echo '?'))."
+    else
+      echo "Ejecutando dentro de sandbox: no se reinicia aquí; hook_handler.py auto-iniciará el bot en el host."
+    fi
+    return 0
+  fi
   cmd_stop
   cmd_start
 }
@@ -141,7 +171,7 @@ cmd_status() {
   load_env
   echo "=== Antigravity Telegram Remote Control ==="
   if is_running; then
-    echo "Daemon: RUNNING (PID $(cat "$PID_FILE"))"
+    echo "Daemon: RUNNING (PID $(cat "$PID_FILE" 2>/dev/null || echo '?'))"
   else
     echo "Daemon: STOPPED"
   fi
