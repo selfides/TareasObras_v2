@@ -5,6 +5,16 @@
   <title>TareasObras</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    try {
+      const stored = localStorage.getItem('color-scheme') ?? localStorage.getItem('theme');
+      const scheme = stored === 'light' || stored === 'dark' ? stored : 'light dark';
+      document.querySelector('meta[name="color-scheme"]').content = scheme;
+      const isDark = scheme === 'dark' || (scheme === 'light dark' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', isDark);
+    } catch {}
+  </script>
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0f172a">
@@ -12,8 +22,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TareasObras">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="styles-OL5N7K56.css"></head>
+<link rel="stylesheet" href="styles-4ZQ7UPDK.css"></head>
 <body>
   <app-root></app-root>
-<link rel="modulepreload" href="chunk-AF2G2HFR.js"><link rel="modulepreload" href="chunk-FAPCSIHK.js"><link rel="modulepreload" href="chunk-ASQD6UXE.js"><link rel="modulepreload" href="chunk-4O3FVBGX.js"><link rel="modulepreload" href="chunk-CWUAB5SS.js"><link rel="modulepreload" href="chunk-SFAKL4EZ.js"><link rel="modulepreload" href="chunk-2DK2LJIJ.js"><link rel="modulepreload" href="chunk-OSQMNGTH.js"><script src="polyfills-5CFQRCPP.js" type="module"></script><script src="main-GJPRDUNY.js" type="module"></script></body>
+<link rel="modulepreload" href="chunk-AF2G2HFR.js"><link rel="modulepreload" href="chunk-FAPCSIHK.js"><link rel="modulepreload" href="chunk-ASQD6UXE.js"><link rel="modulepreload" href="chunk-4O3FVBGX.js"><link rel="modulepreload" href="chunk-CWUAB5SS.js"><link rel="modulepreload" href="chunk-SFAKL4EZ.js"><link rel="modulepreload" href="chunk-2DK2LJIJ.js"><link rel="modulepreload" href="chunk-OSQMNGTH.js"><script src="polyfills-5CFQRCPP.js" type="module"></script><script src="main-ATTSG7ST.js" type="module"></script></body>
 </html>

@@ -1,0 +1,26 @@
+{
+  "telegram-remote-control": {
+    "enabled": true,
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "python3 /opt/tareas-obras/.agents/telegram/hook_handler.py",
+        "timeout": 10
+      }
+    ],
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "python3 /opt/tareas-obras/.agents/telegram/hook_handler.py",
+        "timeout": 10
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python3 /opt/tareas-obras/.agents/telegram/hook_handler.py",
+        "timeout": 15
+      }
+    ]
+  }
+}

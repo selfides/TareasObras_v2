@@ -5,6 +5,16 @@
   <title>TareasObras</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    try {
+      const stored = localStorage.getItem('color-scheme') ?? localStorage.getItem('theme');
+      const scheme = stored === 'light' || stored === 'dark' ? stored : 'light dark';
+      document.querySelector('meta[name="color-scheme"]').content = scheme;
+      const isDark = scheme === 'dark' || (scheme === 'light dark' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', isDark);
+    } catch {}
+  </script>
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0f172a">

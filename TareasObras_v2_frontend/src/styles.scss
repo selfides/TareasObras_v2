@@ -7,32 +7,94 @@
 :root {
   --font-sans: 'Outfit', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  --surface-canvas-light: #f8fafc;
+  --surface-canvas-dark: #020617;
+  --text-canvas-light: #0f172a;
+  --text-canvas-dark: #f1f5f9;
+
+  --scrollbar-thumb-light: #64748b;
+  --scrollbar-thumb-dark: #94a3b8;
+  --scrollbar-track-light: #f1f5f9;
+  --scrollbar-track-dark: #1e293b;
+
+  --surface-canvas: var(--surface-canvas-light);
+  --text-canvas: var(--text-canvas-light);
+  --scrollbar-thumb: var(--scrollbar-thumb-light);
+  --scrollbar-track: var(--scrollbar-track-light);
+
+  color-scheme: light dark;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+
+  @media (prefers-color-scheme: dark) {
+    --surface-canvas: var(--surface-canvas-dark);
+    --text-canvas: var(--text-canvas-dark);
+    --scrollbar-thumb: var(--scrollbar-thumb-dark);
+    --scrollbar-track: var(--scrollbar-track-dark);
+  }
+
+  @supports (color: light-dark(white, black)) {
+    --surface-canvas: light-dark(var(--surface-canvas-light), var(--surface-canvas-dark));
+    --text-canvas: light-dark(var(--text-canvas-light), var(--text-canvas-dark));
+    --scrollbar-thumb: light-dark(var(--scrollbar-thumb-light), var(--scrollbar-thumb-dark));
+    --scrollbar-track: light-dark(var(--scrollbar-track-light), var(--scrollbar-track-dark));
+  }
+
+  &:has(> head > meta[name="color-scheme"][content="dark"]),
+  &.dark {
+    color-scheme: dark;
+    --surface-canvas: var(--surface-canvas-dark);
+    --text-canvas: var(--text-canvas-dark);
+    --scrollbar-thumb: var(--scrollbar-thumb-dark);
+    --scrollbar-track: var(--scrollbar-track-dark);
+  }
+
+  &:has(> head > meta[name="color-scheme"][content="light"]) {
+    color-scheme: light;
+    --surface-canvas: var(--surface-canvas-light);
+    --text-canvas: var(--text-canvas-light);
+    --scrollbar-thumb: var(--scrollbar-thumb-light);
+    --scrollbar-track: var(--scrollbar-track-light);
+  }
 }
 
-* { font-family: var(--font-sans); }
+* {
+  font-family: var(--font-sans);
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
 code, pre { font-family: var(--font-mono); }
 
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--surface-canvas);
+  color: var(--text-canvas);
   font-family: var(--font-sans);
 }
 
-.dark body, .dark html {
-  background-color: #020617;
-  color: #f1f5f9;
-}
+/* Legacy fallback for WebKit/Blink browsers without standard scrollbar-color */
+@supports not (scrollbar-color: auto) {
+  :root, * {
+    scrollbar-width: auto;
+  }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-.dark ::-webkit-scrollbar-track { background: #1e293b; }
-.dark ::-webkit-scrollbar-thumb { background: #475569; }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+}
 
 /* Animations */
 @keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }

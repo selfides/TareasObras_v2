@@ -39,3 +39,10 @@ out/
 
 # Project Context (Large files)
 contexto-proyecto-fullstack-*.md
+
+# Antigravity Telegram Remote Control (secrets & runtime state)
+.agents/telegram/config.env
+.agents/telegram/state.json
+.agents/telegram/*.log
+.agents/telegram/*.pid
+.agents/telegram/__pycache__/
