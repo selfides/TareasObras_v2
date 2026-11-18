@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -18,6 +18,7 @@ export class LoginComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
+  private hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
   theme = inject(ThemeService);
 
   loading = signal(false);
@@ -30,8 +31,25 @@ export class LoginComponent {
 
   toggleTheme() { this.theme.toggle(); }
 
+  isFieldInvalid(controlName: 'email' | 'password'): boolean {
+    const control = this.form.controls[controlName];
+    return control.invalid && control.touched;
+  }
+
+  clearServerError(): void {
+    if (this.error()) {
+      this.error.set('');
+    }
+  }
+
   submit() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      const firstInvalidId = this.form.controls.email.invalid ? '#email' : '#password';
+      const invalidInput = this.hostRef.nativeElement.querySelector<HTMLElement>(firstInvalidId);
+      invalidInput?.focus();
+      return;
+    }
     this.loading.set(true);
     this.error.set('');
     const { email, password } = this.form.value;
@@ -50,8 +68,8 @@ export class LoginComponent {
         }
         this.loading.set(false);
       },
-      error: (err) => {
-        this.error.set('Credenciales incorrectas. Verifica tu email y contraseña.');
+      error: () => {
+        this.error.set('Credenciales incorrectas. Verifica tu correo electrónico y contraseña.');
         this.loading.set(false);
       }
     });

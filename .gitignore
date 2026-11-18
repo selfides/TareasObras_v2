@@ -46,3 +46,6 @@ contexto-proyecto-fullstack-*.md
 .agents/telegram/*.log
 .agents/telegram/*.pid
 .agents/telegram/__pycache__/
+
+# Local SSH keys for GitHub
+.agents/ssh/
