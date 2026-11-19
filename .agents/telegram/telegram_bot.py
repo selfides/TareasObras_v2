@@ -54,29 +54,35 @@ DEFAULT_MODEL_ID = "gemini-pro-orchestrator-g1-pro"
 MODEL_CATALOG: list[tuple[str, str, str, str, bool]] = [
     # Orchestrator
     ("1", "orchestrator", "gemini-pro-orchestrator-g1-pro", "Orchestrator (Argon)", True),
+    ("2", "orchestrator-neon", "gemini-pro-orchestrator-neon", "Orchestrator (Neon)", False),
+    # Gemini 4 Neon
+    ("3", "neon-xhigh", "gemini-4-neon-xhigh", "Gemini 4 Neon (XHigh)", False),
+    ("4", "neon", "gemini-4-neon-high", "Gemini 4 Neon (High)", False),
+    ("5", "neon-medium", "gemini-4-neon-medium", "Gemini 4 Neon (Medium)", False),
+    ("6", "neon-low", "gemini-4-neon-low", "Gemini 4 Neon (Low)", False),
     # Gemini 4 Argon
-    ("2", "argon-high", "gemini-4-argon-high", "Gemini 4 Argon (High)", False),
-    ("3", "argon", "gemini-4-argon-medium", "Gemini 4 Argon (Medium)", False),
-    ("4", "argon-low", "gemini-4-argon-low", "Gemini 4 Argon (Low)", False),
+    ("7", "argon-high", "gemini-4-argon-high", "Gemini 4 Argon (High)", False),
+    ("8", "argon", "gemini-4-argon-medium", "Gemini 4 Argon (Medium)", False),
+    ("9", "argon-low", "gemini-4-argon-low", "Gemini 4 Argon (Low)", False),
     # Gemini 4 Hydrogen
-    ("5", "hydrogen-xhigh", "gemini-4-hydrogen-xhigh", "Gemini 4 Hydrogen (XHigh)", False),
-    ("6", "hydrogen", "gemini-4-hydrogen-high", "Gemini 4 Hydrogen (High)", False),
-    ("7", "hydrogen-medium", "gemini-4-hydrogen-medium", "Gemini 4 Hydrogen (Medium)", False),
-    ("8", "hydrogen-low", "gemini-4-hydrogen-low", "Gemini 4 Hydrogen (Low)", False),
+    ("10", "hydrogen-xhigh", "gemini-4-hydrogen-xhigh", "Gemini 4 Hydrogen (XHigh)", False),
+    ("11", "hydrogen", "gemini-4-hydrogen-high", "Gemini 4 Hydrogen (High)", False),
+    ("12", "hydrogen-medium", "gemini-4-hydrogen-medium", "Gemini 4 Hydrogen (Medium)", False),
+    ("13", "hydrogen-low", "gemini-4-hydrogen-low", "Gemini 4 Hydrogen (Low)", False),
     # Gemini 3.8 Flash
-    ("9", "flash-high", "gemini-3.8-flash-high", "Gemini 3.8 Flash (High)", False),
-    ("10", "flash", "gemini-3.8-flash-medium", "Gemini 3.8 Flash (Medium)", False),
-    ("11", "flash-low", "gemini-3.8-flash-low", "Gemini 3.8 Flash (Low)", False),
+    ("14", "flash-high", "gemini-3.8-flash-high", "Gemini 3.8 Flash (High)", False),
+    ("15", "flash", "gemini-3.8-flash-medium", "Gemini 3.8 Flash (Medium)", False),
+    ("16", "flash-low", "gemini-3.8-flash-low", "Gemini 3.8 Flash (Low)", False),
     # Claude Opus 5.5
-    ("12", "opus", "claude-opus-5-5-high", "Claude Opus 5.5 (High)", False),
-    ("13", "opus-medium", "claude-opus-5-5-medium", "Claude Opus 5.5 (Medium)", False),
-    ("14", "opus-low", "claude-opus-5-5-low", "Claude Opus 5.5 (Low)", False),
+    ("17", "opus", "claude-opus-5-5-high", "Claude Opus 5.5 (High)", False),
+    ("18", "opus-medium", "claude-opus-5-5-medium", "Claude Opus 5.5 (Medium)", False),
+    ("19", "opus-low", "claude-opus-5-5-low", "Claude Opus 5.5 (Low)", False),
     # Claude Sonnet 5.5
-    ("15", "sonnet", "claude-sonnet-5-5-high", "Claude Sonnet 5.5 (High)", False),
-    ("16", "sonnet-medium", "claude-sonnet-5-5-medium", "Claude Sonnet 5.5 (Medium)", False),
-    ("17", "sonnet-low", "claude-sonnet-5-5-low", "Claude Sonnet 5.5 (Low)", False),
+    ("20", "sonnet", "claude-sonnet-5-5-high", "Claude Sonnet 5.5 (High)", False),
+    ("21", "sonnet-medium", "claude-sonnet-5-5-medium", "Claude Sonnet 5.5 (Medium)", False),
+    ("22", "sonnet-low", "claude-sonnet-5-5-low", "Claude Sonnet 5.5 (Low)", False),
     # Open Source
-    ("18", "gpt-oss", "gpt-oss-120b-medium", "GPT-OSS 120B (Medium)", False),
+    ("23", "gpt-oss", "gpt-oss-120b-medium", "GPT-OSS 120B (Medium)", False),
 ]
 
 AVAILABLE_MODELS: dict[str, tuple[str, str]] = {}
@@ -87,7 +93,9 @@ for num, alias, mid, label, is_rec in MODEL_CATALOG:
     AVAILABLE_MODELS[alias] = (mid, label)
     AVAILABLE_MODELS[mid] = (mid, label)
     # Extra aliases for variants
-    if alias == "argon":
+    if alias == "neon":
+        AVAILABLE_MODELS["neon-high"] = (mid, label)
+    elif alias == "argon":
         AVAILABLE_MODELS["argon-medium"] = (mid, label)
     elif alias == "hydrogen":
         AVAILABLE_MODELS["hydrogen-high"] = (mid, label)
@@ -322,6 +330,9 @@ def _get_git_status(workspace: str) -> str:
 
 
 def _try_agentapi_send(conv_id: str, text: str) -> tuple[bool, str]:
+    if (CLI_BRAIN_DIR / conv_id).is_dir():
+        return False, "conversación de CLI (se ejecutará con agy CLI)"
+
     reachable, detail, env_map = _get_valid_ls_env()
     if not reachable:
         return False, f"Language Server {detail}"
@@ -334,6 +345,24 @@ def _try_agentapi_send(conv_id: str, text: str) -> tuple[bool, str]:
         val = str(env_map.get(key) or "").strip()
         if val:
             child_env[key] = val
+
+    # Verify the trajectory actually exists in the IDE Language Server before sending;
+    # otherwise agentapi send-message silently queues into undelivered/ and returns ok.
+    try:
+        meta_proc = subprocess.run(
+            [AGENTAPI_BIN, "get-conversation-metadata", conv_id],
+            env=child_env,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if meta_proc.returncode != 0:
+            return False, f"sesión no encontrada en IDE LS (exit {meta_proc.returncode})"
+        meta_parsed = json.loads(meta_proc.stdout.strip() or "{}")
+        if isinstance(meta_parsed, dict) and meta_parsed.get("error"):
+            return False, f"sesión no existe en IDE LS ({meta_parsed['error']})"
+    except Exception as exc:
+        return False, f"error verificando sesión en IDE LS: {exc}"
 
     try:
         proc = subprocess.run(
@@ -620,6 +649,7 @@ def _route_instruction(
     if not force_cli_new and target_conv_id:
         ok, detail = _try_agentapi_send(target_conv_id, text)
         if ok:
+            _log(f"agentapi send-message delivered to IDE session {target_conv_id}")
             send_telegram_message(
                 token,
                 chat_id,
@@ -828,29 +858,35 @@ def _handle_model(token: str, chat_id: str, arg: str) -> None:
             "Modelos disponibles (usa /model <número o alias>):",
             "⭐ Orquestador:",
             " 1. orchestrator — Orchestrator (Argon) 🌟",
+            " 2. orchestrator-neon — Orchestrator (Neon)",
+            "\n✨ Familia Neon (Gemini 4):",
+            " 3. neon-xhigh — Gemini 4 Neon (XHigh)",
+            " 4. neon — Gemini 4 Neon (High)",
+            " 5. neon-medium — Gemini 4 Neon (Medium)",
+            " 6. neon-low — Gemini 4 Neon (Low)",
             "\n💎 Familia Argon (Gemini 4):",
-            " 2. argon-high — Gemini 4 Argon (High)",
-            " 3. argon — Gemini 4 Argon (Medium)",
-            " 4. argon-low — Gemini 4 Argon (Low)",
+            " 7. argon-high — Gemini 4 Argon (High)",
+            " 8. argon — Gemini 4 Argon (Medium)",
+            " 9. argon-low — Gemini 4 Argon (Low)",
             "\n⚡ Familia Hydrogen (Gemini 4):",
-            " 5. hydrogen-xhigh — Gemini 4 Hydrogen (XHigh)",
-            " 6. hydrogen — Gemini 4 Hydrogen (High)",
-            " 7. hydrogen-medium — Gemini 4 Hydrogen (Medium)",
-            " 8. hydrogen-low — Gemini 4 Hydrogen (Low)",
+            "10. hydrogen-xhigh — Gemini 4 Hydrogen (XHigh)",
+            "11. hydrogen — Gemini 4 Hydrogen (High)",
+            "12. hydrogen-medium — Gemini 4 Hydrogen (Medium)",
+            "13. hydrogen-low — Gemini 4 Hydrogen (Low)",
             "\n🚀 Familia Flash (Gemini 3.8):",
-            " 9. flash-high — Gemini 3.8 Flash (High)",
-            "10. flash — Gemini 3.8 Flash (Medium)",
-            "11. flash-low — Gemini 3.8 Flash (Low)",
+            "14. flash-high — Gemini 3.8 Flash (High)",
+            "15. flash — Gemini 3.8 Flash (Medium)",
+            "16. flash-low — Gemini 3.8 Flash (Low)",
             "\n👑 Familia Claude 5.5:",
-            "12. opus — Claude Opus 5.5 (High)",
-            "13. opus-medium — Claude Opus 5.5 (Medium)",
-            "14. opus-low — Claude Opus 5.5 (Low)",
-            "15. sonnet — Claude Sonnet 5.5 (High)",
-            "16. sonnet-medium — Claude Sonnet 5.5 (Medium)",
-            "17. sonnet-low — Claude Sonnet 5.5 (Low)",
+            "17. opus — Claude Opus 5.5 (High)",
+            "18. opus-medium — Claude Opus 5.5 (Medium)",
+            "19. opus-low — Claude Opus 5.5 (Low)",
+            "20. sonnet — Claude Sonnet 5.5 (High)",
+            "21. sonnet-medium — Claude Sonnet 5.5 (Medium)",
+            "22. sonnet-low — Claude Sonnet 5.5 (Low)",
             "\n🌐 Open Source:",
-            "18. gpt-oss — GPT-OSS 120B (Medium)",
-            "\n💡 Ejemplo: /model 10 o /model flash"
+            "23. gpt-oss — GPT-OSS 120B (Medium)",
+            "\n💡 Ejemplo: /model 5 o /model neon-medium"
         ]
         send_telegram_message(token, chat_id, "\n".join(lines))
         return
@@ -1155,6 +1191,13 @@ def _register_commands(token: str) -> None:
         {"command": "help", "description": "Mostrar ayuda"},
     ]
     try:
+        # Remove any stale private-chat scope override so default commands apply uniformly.
+        telegram_api_request(
+            token,
+            "deleteMyCommands",
+            {"scope": {"type": "all_private_chats"}},
+            timeout=10,
+        )
         telegram_api_request(token, "setMyCommands", {"commands": commands}, timeout=10)
     except Exception as exc:
         _log(f"Warning: could not setMyCommands: {exc}")
