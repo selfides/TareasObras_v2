@@ -356,6 +356,7 @@ export interface FichajeActivoDto {
   tareaTitulo?: string;
   fecha: string;
   horaInicio: string;
+  timestampInicio?: string;
   minutosTranscurridos: number;
   latitudInicio?: number;
   longitudInicio?: number;

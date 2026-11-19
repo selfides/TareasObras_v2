@@ -57,6 +57,22 @@ public class OperarioPortalController : ControllerBase
         return null;
     }
 
+    private static DateTime ToUtcTimestamp(DateTime? value)
+    {
+        if (!value.HasValue)
+            return DateTime.UtcNow;
+
+        return value.Value.Kind switch
+        {
+            DateTimeKind.Utc => value.Value,
+            DateTimeKind.Local => value.Value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
+        };
+    }
+
+    private static DateTime ToUtcDate(DateTime value)
+        => DateTime.SpecifyKind(value.Date, DateTimeKind.Utc);
+
     [HttpGet("me")]
     public async Task<IActionResult> GetMe([FromQuery] Guid? operarioId, CancellationToken ct)
     {
@@ -114,13 +130,27 @@ public class OperarioPortalController : ControllerBase
         if (operario == null)
             return NotFound(new { mensaje = "Operario no encontrado" });
 
-        var hoy = DateTime.Today;
+        var hoyUtc = ToUtcDate(DateTime.UtcNow);
         var fichajeActivo = await _uow.RegistrosHoras.GetFichajeActivoAsync(operario.Id, ct);
-        var registrosHoy = (await _uow.RegistrosHoras.GetByOperarioAsync(operario.Id, hoy, hoy, ct)).ToList();
+        var registrosHoy = (await _uow.RegistrosHoras.GetByOperarioAsync(operario.Id, hoyUtc, hoyUtc, ct)).ToList();
 
         var totalHorasHoy = registrosHoy.Where(r => !r.EnCurso).Sum(r => r.Horas);
 
-        var ahora = DateTime.Now.TimeOfDay;
+        var ahoraUtc = DateTime.UtcNow;
+        var minutosTranscurridos = 0;
+        if (fichajeActivo != null)
+        {
+            if (fichajeActivo.TimestampInicioDispositivo.HasValue)
+            {
+                var inicioUtc = ToUtcTimestamp(fichajeActivo.TimestampInicioDispositivo);
+                minutosTranscurridos = (int)Math.Max(0, (ahoraUtc - inicioUtc).TotalMinutes);
+            }
+            else
+            {
+                minutosTranscurridos = (int)Math.Max(0, (ahoraUtc.TimeOfDay - fichajeActivo.HoraInicio).TotalMinutes);
+            }
+        }
+
         var fichajeActivoDto = fichajeActivo == null ? null : new
         {
             id = fichajeActivo.Id,
@@ -129,9 +159,10 @@ public class OperarioPortalController : ControllerBase
             obraCodigo = fichajeActivo.Obra?.Codigo ?? "",
             tareaId = fichajeActivo.TareaId,
             tareaTitulo = fichajeActivo.Tarea?.Titulo,
-            fecha = fichajeActivo.Fecha,
+            fecha = fichajeActivo.Fecha.ToString("yyyy-MM-dd"),
             horaInicio = fichajeActivo.HoraInicio.ToString(@"hh\:mm"),
-            minutosTranscurridos = (int)Math.Max(0, (ahora - fichajeActivo.HoraInicio).TotalMinutes),
+            timestampInicio = fichajeActivo.TimestampInicioDispositivo,
+            minutosTranscurridos,
             latitudInicio = fichajeActivo.LatitudInicio,
             longitudInicio = fichajeActivo.LongitudInicio,
             observaciones = fichajeActivo.Observaciones
@@ -152,7 +183,7 @@ public class OperarioPortalController : ControllerBase
         return Ok(new
         {
             operarioId = operario.Id,
-            fecha = hoy.ToString("yyyy-MM-dd"),
+            fecha = hoyUtc.ToString("yyyy-MM-dd"),
             hayFichajeActivo = fichajeActivo != null,
             fichajeActivo = fichajeActivoDto,
             totalHorasHoy,
@@ -182,9 +213,9 @@ public class OperarioPortalController : ControllerBase
         if (obra == null)
             return BadRequest(new { mensaje = "La obra seleccionada no existe." });
 
-        var timestampLocal = req.TimestampDispositivo ?? DateTime.Now;
-        var horaInicio = timestampLocal.TimeOfDay;
-        var fecha = timestampLocal.Date;
+        var timestampUtc = ToUtcTimestamp(req.TimestampDispositivo);
+        var horaInicio = timestampUtc.TimeOfDay;
+        var fechaUtc = ToUtcDate(timestampUtc);
         var costeHora = operario.Categoria?.CosteHoraBase ?? 0m;
 
         var nuevoRegistro = RegistroHoras.IniciarFichaje(
@@ -192,12 +223,12 @@ public class OperarioPortalController : ControllerBase
             operarioId: operario.Id,
             categoriaOperarioId: operario.CategoriaOperarioId,
             tareaId: req.TareaId,
-            fecha: fecha,
+            fecha: fechaUtc,
             horaInicio: horaInicio,
             costeHoraAplicado: costeHora,
             latitud: req.Latitud,
             longitud: req.Longitud,
-            timestampDispositivo: timestampLocal,
+            timestampDispositivo: timestampUtc,
             sincronizadoOffline: req.SincronizadoOffline ?? false,
             observaciones: req.Observaciones
         );
@@ -215,7 +246,8 @@ public class OperarioPortalController : ControllerBase
             obraId = nuevoRegistro.ObraId,
             obraNombre = obra.Nombre,
             horaInicio = nuevoRegistro.HoraInicio.ToString(@"hh\:mm"),
-            fecha = nuevoRegistro.Fecha.ToString("yyyy-MM-dd")
+            fecha = nuevoRegistro.Fecha.ToString("yyyy-MM-dd"),
+            timestampInicio = nuevoRegistro.TimestampInicioDispositivo
         });
     }
 
@@ -241,11 +273,11 @@ public class OperarioPortalController : ControllerBase
             return BadRequest(new { mensaje = "No se ha encontrado ninguna jornada activa en curso para registrar la salida." });
         }
 
-        var timestampLocal = req.TimestampDispositivo ?? DateTime.Now;
-        var horaFin = timestampLocal.TimeOfDay;
+        var timestampUtc = ToUtcTimestamp(req.TimestampDispositivo);
+        var horaFin = timestampUtc.TimeOfDay;
 
-        // Si la hora de fin es anterior a la hora de inicio por cambio de día, asegurar que al menos sea igual
-        if (horaFin < registro.HoraInicio && timestampLocal.Date == registro.Fecha)
+        // Si la hora de fin es anterior a la hora de inicio en el mismo día, asegurar que al menos sea igual
+        if (horaFin < registro.HoraInicio && timestampUtc.Date == registro.Fecha.Date)
         {
             horaFin = registro.HoraInicio;
         }
@@ -254,7 +286,7 @@ public class OperarioPortalController : ControllerBase
             horaFin: horaFin,
             latitud: req.Latitud,
             longitud: req.Longitud,
-            timestampDispositivo: timestampLocal,
+            timestampDispositivo: timestampUtc,
             observacionesAdicionales: req.ObservacionesAdicionales
         );
 
@@ -286,8 +318,8 @@ public class OperarioPortalController : ControllerBase
         if (operario == null)
             return NotFound(new { mensaje = "Operario no encontrado" });
 
-        var fechaDesde = desde ?? DateTime.Today.AddDays(-30);
-        var fechaHasta = hasta ?? DateTime.Today;
+        var fechaDesde = ToUtcDate(desde ?? DateTime.UtcNow.Date.AddDays(-30));
+        var fechaHasta = ToUtcDate(hasta ?? DateTime.UtcNow.Date);
 
         var registros = await _uow.RegistrosHoras.GetByOperarioAsync(operario.Id, fechaDesde, fechaHasta, ct);
         var lista = registros.Select(r => new
@@ -334,6 +366,7 @@ public class OperarioPortalController : ControllerBase
             return NotFound(new { mensaje = "Operario no encontrado" });
 
         var resultados = new List<SyncBatchItemResult>();
+        var syncedEntryIds = new Dictionary<string, Guid>();
 
         foreach (var item in request.Items)
         {
@@ -341,31 +374,50 @@ public class OperarioPortalController : ControllerBase
             {
                 if (item.Tipo.Equals("ENTRADA", StringComparison.OrdinalIgnoreCase))
                 {
-                    var obra = await _uow.Obras.GetByIdAsync(item.ObraId, ct);
+                    if (!item.ObraId.HasValue)
+                    {
+                        resultados.Add(new SyncBatchItemResult(item.LocalId, false, null, "ObraId es obligatorio"));
+                        continue;
+                    }
+
+                    var obra = await _uow.Obras.GetByIdAsync(item.ObraId.Value, ct);
                     if (obra == null)
                     {
                         resultados.Add(new SyncBatchItemResult(item.LocalId, false, null, "Obra no encontrada"));
                         continue;
                     }
 
-                    var ts = item.TimestampInicio ?? item.Fecha;
+                    var fechaUtc = ToUtcDate(item.Fecha);
+                    var activoExistente = await _uow.RegistrosHoras.GetFichajeActivoAsync(operario.Id, ct);
+                    if (activoExistente != null &&
+                        activoExistente.ObraId == item.ObraId.Value &&
+                        activoExistente.Fecha.Date == fechaUtc.Date)
+                    {
+                        syncedEntryIds[item.LocalId] = activoExistente.Id;
+                        resultados.Add(new SyncBatchItemResult(item.LocalId, true, activoExistente.Id, null));
+                        continue;
+                    }
+
+                    var tsInicio = ToUtcTimestamp(item.TimestampInicio);
+                    var horaInicio = item.HoraInicio ?? tsInicio.TimeOfDay;
                     var reg = RegistroHoras.IniciarFichaje(
-                        obraId: item.ObraId,
+                        obraId: item.ObraId.Value,
                         operarioId: operario.Id,
                         categoriaOperarioId: operario.CategoriaOperarioId,
                         tareaId: item.TareaId,
-                        fecha: item.Fecha.Date,
-                        horaInicio: item.HoraInicio,
+                        fecha: fechaUtc,
+                        horaInicio: horaInicio,
                         costeHoraAplicado: operario.Categoria?.CosteHoraBase ?? 0m,
                         latitud: item.LatitudInicio,
                         longitud: item.LongitudInicio,
-                        timestampDispositivo: ts,
+                        timestampDispositivo: tsInicio,
                         sincronizadoOffline: true,
                         observaciones: item.Observaciones
                     );
 
                     await _uow.RegistrosHoras.AddAsync(reg, ct);
                     await _uow.SaveChangesAsync(ct);
+                    syncedEntryIds[item.LocalId] = reg.Id;
                     resultados.Add(new SyncBatchItemResult(item.LocalId, true, reg.Id, null));
                 }
                 else if (item.Tipo.Equals("SALIDA", StringComparison.OrdinalIgnoreCase))
@@ -378,20 +430,31 @@ public class OperarioPortalController : ControllerBase
                     else
                     {
                         reg = await _uow.RegistrosHoras.GetFichajeActivoAsync(operario.Id, ct);
+                        if (reg == null && syncedEntryIds.Count > 0)
+                        {
+                            reg = await _uow.RegistrosHoras.GetByIdAsync(syncedEntryIds.Values.Last(), ct);
+                        }
                     }
 
-                    if (reg == null)
+                    if (reg == null || reg.OperarioId != operario.Id)
                     {
-                        resultados.Add(new SyncBatchItemResult(item.LocalId, false, null, "No se encontró el registro para finalizar"));
+                        resultados.Add(new SyncBatchItemResult(item.LocalId, false, null, "No se encontró el registro activo para finalizar"));
                         continue;
                     }
 
-                    var horaFin = item.HoraFin ?? item.HoraInicio;
+                    if (!reg.EnCurso)
+                    {
+                        resultados.Add(new SyncBatchItemResult(item.LocalId, true, reg.Id, null));
+                        continue;
+                    }
+
+                    var tsFin = ToUtcTimestamp(item.TimestampFin);
+                    var horaFin = item.HoraFin ?? tsFin.TimeOfDay;
                     reg.FinalizarFichaje(
                         horaFin: horaFin,
                         latitud: item.LatitudFin,
                         longitud: item.LongitudFin,
-                        timestampDispositivo: item.TimestampFin,
+                        timestampDispositivo: tsFin,
                         observacionesAdicionales: item.Observaciones
                     );
 
@@ -401,35 +464,46 @@ public class OperarioPortalController : ControllerBase
                 }
                 else if (item.Tipo.Equals("COMPLETO", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (!item.ObraId.HasValue)
+                    {
+                        resultados.Add(new SyncBatchItemResult(item.LocalId, false, null, "ObraId es obligatorio"));
+                        continue;
+                    }
+
                     // Fichaje que empezó y terminó offline
-                    var obra = await _uow.Obras.GetByIdAsync(item.ObraId, ct);
+                    var obra = await _uow.Obras.GetByIdAsync(item.ObraId.Value, ct);
                     if (obra == null)
                     {
                         resultados.Add(new SyncBatchItemResult(item.LocalId, false, null, "Obra no encontrada"));
                         continue;
                     }
 
+                    var tsInicio = ToUtcTimestamp(item.TimestampInicio);
+                    var tsFin = ToUtcTimestamp(item.TimestampFin);
+                    var fechaUtc = ToUtcDate(item.Fecha);
+                    var horaInicio = item.HoraInicio ?? tsInicio.TimeOfDay;
+                    var horaFin = item.HoraFin ?? tsFin.TimeOfDay;
+
                     var reg = RegistroHoras.IniciarFichaje(
-                        obraId: item.ObraId,
+                        obraId: item.ObraId.Value,
                         operarioId: operario.Id,
                         categoriaOperarioId: operario.CategoriaOperarioId,
                         tareaId: item.TareaId,
-                        fecha: item.Fecha.Date,
-                        horaInicio: item.HoraInicio,
+                        fecha: fechaUtc,
+                        horaInicio: horaInicio,
                         costeHoraAplicado: operario.Categoria?.CosteHoraBase ?? 0m,
                         latitud: item.LatitudInicio,
                         longitud: item.LongitudInicio,
-                        timestampDispositivo: item.TimestampInicio,
+                        timestampDispositivo: tsInicio,
                         sincronizadoOffline: true,
                         observaciones: item.Observaciones
                     );
 
-                    var horaFin = item.HoraFin ?? item.HoraInicio;
                     reg.FinalizarFichaje(
                         horaFin: horaFin,
                         latitud: item.LatitudFin,
                         longitud: item.LongitudFin,
-                        timestampDispositivo: item.TimestampFin,
+                        timestampDispositivo: tsFin,
                         observacionesAdicionales: null
                     );
 
@@ -483,10 +557,10 @@ public record SyncBatchItem(
     string LocalId,
     string Tipo, // "ENTRADA", "SALIDA", "COMPLETO"
     Guid? ServerId,
-    Guid ObraId,
+    Guid? ObraId,
     Guid? TareaId,
     DateTime Fecha,
-    TimeSpan HoraInicio,
+    TimeSpan? HoraInicio,
     TimeSpan? HoraFin,
     decimal? LatitudInicio,
     decimal? LongitudInicio,

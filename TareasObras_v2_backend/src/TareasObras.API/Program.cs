@@ -28,10 +28,38 @@ try
     builder.Services.AddEndpointsApiExplorer();
 
     // ─── CORS ─────────────────────────────────────────────────────────────
+    var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+    var allowedOrigins = new HashSet<string>(configuredOrigins, StringComparer.OrdinalIgnoreCase)
+    {
+        "http://localhost:4200",
+        "https://tu-dominio.com"
+    };
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("Frontend", policy =>
-            policy.WithOrigins("http://localhost:4200", "https://tu-dominio.com")
+            policy.SetIsOriginAllowed(origin =>
+                  {
+                      if (string.IsNullOrWhiteSpace(origin)) return false;
+                      if (allowedOrigins.Contains(origin)) return true;
+                      if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
+
+                      var host = uri.Host;
+                      if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || host == "127.0.0.1")
+                          return true;
+
+                      if (System.Net.IPAddress.TryParse(host, out var ip) &&
+                          ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                      {
+                          var bytes = ip.GetAddressBytes();
+                          // Redes privadas RFC1918 (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+                          return bytes[0] == 10 ||
+                                 (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) ||
+                                 (bytes[0] == 192 && bytes[1] == 168);
+                      }
+
+                      return false;
+                  })
                   .AllowAnyHeader()
                   .AllowAnyMethod());
     });

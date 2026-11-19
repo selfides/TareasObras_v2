@@ -203,8 +203,8 @@ import { DocumentCropperComponent } from './document-cropper.component';
               (onClick)="enviarExpress()">
             </p-button>
 
-            <!-- Si es Supervisor/Admin, opción de abrir imputación completa -->
-            @if (puedeImputarDirecto()) {
+            <!-- Si es Supervisor/Admin y el contenedor tiene asistente, opción de abrir imputación completa -->
+            @if (puedeImputarDirecto() && permitirImputacionDirecta()) {
               <p-button 
                 label="Revisar e Imputar Ahora" 
                 icon="pi pi-sparkles" 
@@ -230,6 +230,7 @@ export class TicketCapturaModalComponent {
 
   visible = input<boolean>(false);
   obraIdDefecto = input<string | undefined>(undefined);
+  permitirImputacionDirecta = input<boolean>(false);
   onVisibleChange = output<boolean>();
   onTicketEnviado = output<TicketPendienteDto>();
   onAbrirAsistenteCompleto = output<{ file: File; obraId: string }>();
@@ -268,6 +269,28 @@ export class TicketCapturaModalComponent {
         if (!this.obraSeleccionadaId() && list.length > 0) {
           this.obraSeleccionadaId.set(list[0].id);
         }
+      },
+      error: async () => {
+        try {
+          const cached = await this.offlineDb.obtenerObrasCache();
+          const mapped = cached.map(c => ({
+            id: c.id,
+            codigo: c.codigo,
+            nombre: c.nombre,
+            direccion: c.direccion,
+            cliente: c.cliente,
+            estado: 2,
+            estadoNombre: c.estado || 'En Curso',
+            presupuestoEstimado: 0,
+            presupuestoReal: 0,
+            totalTareas: 0,
+            tareasPendientes: 0
+          } as ObraListDto));
+          this.obras.set(mapped);
+          if (!this.obraSeleccionadaId() && mapped.length > 0) {
+            this.obraSeleccionadaId.set(mapped[0].id);
+          }
+        } catch {}
       }
     });
   }

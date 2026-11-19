@@ -171,8 +171,12 @@ public class RegistroHorasRepository : IRegistroHorasRepository
             .Where(r => r.ObraId == obraId).OrderByDescending(r => r.Fecha).ToListAsync(ct);
 
     public async Task<IEnumerable<Domain.Entities.RegistroHoras>> GetByFechaAsync(DateTime fecha, CancellationToken ct = default)
-        => await _ctx.RegistrosHoras.Include(r => r.Operario).Include(r => r.Categoria).Include(r => r.Obra).Include(r => r.Tarea)
-            .Where(r => r.Fecha.Date == fecha.Date).OrderByDescending(r => r.Fecha).ToListAsync(ct);
+    {
+        var inicio = DateTime.SpecifyKind(fecha.Date, DateTimeKind.Utc);
+        var fin = inicio.AddDays(1);
+        return await _ctx.RegistrosHoras.Include(r => r.Operario).Include(r => r.Categoria).Include(r => r.Obra).Include(r => r.Tarea)
+            .Where(r => r.Fecha >= inicio && r.Fecha < fin).OrderByDescending(r => r.Fecha).ToListAsync(ct);
+    }
 
     public async Task<Domain.Entities.RegistroHoras?> GetFichajeActivoAsync(Guid operarioId, CancellationToken ct = default)
         => await _ctx.RegistrosHoras
@@ -190,10 +194,16 @@ public class RegistroHorasRepository : IRegistroHorasRepository
             .Where(r => r.OperarioId == operarioId);
 
         if (desde.HasValue)
-            query = query.Where(r => r.Fecha >= desde.Value.Date);
+        {
+            var desdeUtc = DateTime.SpecifyKind(desde.Value.Date, DateTimeKind.Utc);
+            query = query.Where(r => r.Fecha >= desdeUtc);
+        }
 
         if (hasta.HasValue)
-            query = query.Where(r => r.Fecha <= hasta.Value.Date);
+        {
+            var hastaExclusivoUtc = DateTime.SpecifyKind(hasta.Value.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(r => r.Fecha < hastaExclusivoUtc);
+        }
 
         return await query.OrderByDescending(r => r.Fecha).ThenByDescending(r => r.HoraInicio).ToListAsync(ct);
     }

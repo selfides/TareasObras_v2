@@ -1,18 +1,25 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, from, of, throwError } from 'rxjs';
+import { Observable, firstValueFrom, from, of, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import {
   OperarioPerfilDto,
   OperarioEstadoHoyDto,
   FicharEntradaRequest,
   FicharSalidaRequest,
-  MisHorasResponseDto
+  MisHorasResponseDto,
+  RegistroHoyDto
 } from '../models';
-import { OfflineDbService, FichajeOfflineItem, TicketOfflineItem } from './offline-db.service';
+import { OfflineDbService, FichajeOfflineItem } from './offline-db.service';
 import { FacturasService } from './facturas.service';
 
 const API_URL = '/api/operario';
+const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface SyncResult {
+  exitosos: number;
+  fallidos: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -108,6 +115,40 @@ export class OperarioPortalService {
     );
   }
 
+  private isValidGuid(id?: string | null): boolean {
+    return !!id && GUID_REGEX.test(id.trim());
+  }
+
+  private getTimestampIso(ts?: string): string {
+    if (ts) {
+      const parsed = Date.parse(ts);
+      if (!Number.isNaN(parsed)) {
+        return new Date(parsed).toISOString();
+      }
+    }
+    return new Date().toISOString();
+  }
+
+  private calcularHorasEntre(item: FichajeOfflineItem): number {
+    if (item.timestampInicio && item.timestampFin) {
+      const ini = Date.parse(item.timestampInicio);
+      const fin = Date.parse(item.timestampFin);
+      if (!Number.isNaN(ini) && !Number.isNaN(fin) && fin >= ini) {
+        return Math.round(((fin - ini) / 3600000) * 100) / 100;
+      }
+    }
+    if (item.horaInicio && item.horaFin) {
+      const [hi, mi] = item.horaInicio.split(':').map(Number);
+      const [hf, mf] = item.horaFin.split(':').map(Number);
+      if (!Number.isNaN(hi) && !Number.isNaN(mi) && !Number.isNaN(hf) && !Number.isNaN(mf)) {
+        let mins = (hf * 60 + mf) - (hi * 60 + mi);
+        if (mins < 0) mins += 24 * 60;
+        return Math.round((mins / 60) * 100) / 100;
+      }
+    }
+    return 0;
+  }
+
   getEstadoHoy(operarioId?: string): Observable<OperarioEstadoHoyDto> {
     const params = operarioId ? `?operarioId=${operarioId}` : '';
     return this.http.get<OperarioEstadoHoyDto>(`${API_URL}/estado-hoy${params}`).pipe(
@@ -117,17 +158,21 @@ export class OperarioPortalService {
 
   ficharEntrada(req: FicharEntradaRequest, operarioId?: string, obraNombre?: string): Observable<any> {
     const params = operarioId ? `?operarioId=${operarioId}` : '';
+    const payload: FicharEntradaRequest = {
+      ...req,
+      timestampDispositivo: this.getTimestampIso(req.timestampDispositivo)
+    };
 
     if (!this.isOnline()) {
-      return from(this.guardarFichajeEntradaOffline(req, obraNombre));
+      return from(this.guardarFichajeEntradaOffline(payload, obraNombre));
     }
 
-    return this.http.post(`${API_URL}/fichar-entrada${params}`, req).pipe(
+    return this.http.post(`${API_URL}/fichar-entrada${params}`, payload).pipe(
       tap(() => this.vibrar([50, 40, 50])),
       catchError(err => {
-        // Si hay corte de red durante la llamada, guardar offline
+        // Si hay corte de red o fallo del servidor durante la llamada, guardar offline
         if (err.status === 0 || err.status >= 500) {
-          return from(this.guardarFichajeEntradaOffline(req, obraNombre));
+          return from(this.guardarFichajeEntradaOffline(payload, obraNombre));
         }
         return throwError(() => err);
       })
@@ -136,20 +181,63 @@ export class OperarioPortalService {
 
   ficharSalida(req: FicharSalidaRequest, operarioId?: string): Observable<any> {
     const params = operarioId ? `?operarioId=${operarioId}` : '';
+    const timestampDispositivo = this.getTimestampIso(req.timestampDispositivo);
+    const reqConTs: FicharSalidaRequest = {
+      ...req,
+      timestampDispositivo
+    };
 
     if (!this.isOnline()) {
-      return from(this.guardarFichajeSalidaOffline(req));
+      return from(this.guardarFichajeSalidaOffline(reqConTs));
     }
 
-    return this.http.post(`${API_URL}/fichar-salida${params}`, req).pipe(
+    if (req.registroHorasId && !this.isValidGuid(req.registroHorasId)) {
+      return from(this.ficharSalidaDesdeOfflineAsync(reqConTs, params));
+    }
+
+    const payload: FicharSalidaRequest = {
+      ...reqConTs,
+      registroHorasId: this.isValidGuid(req.registroHorasId) ? req.registroHorasId : undefined
+    };
+
+    return this.http.post(`${API_URL}/fichar-salida${params}`, payload).pipe(
       tap(() => this.vibrar([80, 50, 80])),
       catchError(err => {
         if (err.status === 0 || err.status >= 500) {
-          return from(this.guardarFichajeSalidaOffline(req));
+          return from(this.guardarFichajeSalidaOffline(reqConTs));
         }
         return throwError(() => err);
       })
     );
+  }
+
+  private async ficharSalidaDesdeOfflineAsync(req: FicharSalidaRequest, params: string): Promise<any> {
+    await this.sincronizarPendientesSiHayRed();
+
+    const pendientes = await this.offlineDb.obtenerFichajesPendientes();
+    const siguePendiente = pendientes.some(
+      p => p.tipo === 'ENTRADA' && (p.id === req.registroHorasId || !this.isValidGuid(req.registroHorasId))
+    );
+
+    if (siguePendiente) {
+      return await this.guardarFichajeSalidaOffline(req);
+    }
+
+    const payload: FicharSalidaRequest = {
+      ...req,
+      registroHorasId: undefined
+    };
+
+    try {
+      const res = await firstValueFrom(this.http.post(`${API_URL}/fichar-salida${params}`, payload));
+      this.vibrar([80, 50, 80]);
+      return res;
+    } catch (err: any) {
+      if (err?.status === 0 || err?.status >= 500) {
+        return await this.guardarFichajeSalidaOffline(req);
+      }
+      throw err;
+    }
   }
 
   getMisHoras(desde?: string, hasta?: string, operarioId?: string): Observable<MisHorasResponseDto> {
@@ -172,18 +260,18 @@ export class OperarioPortalService {
 
   // Persistencia local en caso de desconexión
   private async guardarFichajeEntradaOffline(req: FicharEntradaRequest, obraNombre?: string): Promise<any> {
-    const ahora = new Date();
+    const timestampIso = this.getTimestampIso(req.timestampDispositivo);
     const item: FichajeOfflineItem = {
       id: `offline-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       tipo: 'ENTRADA',
       obraId: req.obraId,
       obraNombre: obraNombre || 'Obra actual',
       tareaId: req.tareaId,
-      fecha: ahora.toISOString().split('T')[0],
-      horaInicio: ahora.toTimeString().substring(0, 8),
+      fecha: timestampIso.split('T')[0],
+      horaInicio: timestampIso.substring(11, 19),
       latitudInicio: req.latitud,
       longitudInicio: req.longitud,
-      timestampInicio: ahora.toISOString(),
+      timestampInicio: timestampIso,
       observaciones: req.observaciones,
       creadoEn: Date.now(),
       intentos: 0
@@ -202,19 +290,56 @@ export class OperarioPortalService {
   }
 
   private async guardarFichajeSalidaOffline(req: FicharSalidaRequest): Promise<any> {
-    const ahora = new Date();
+    const timestampIso = this.getTimestampIso(req.timestampDispositivo);
+    const horaFin = timestampIso.substring(11, 19);
+
+    const pendientes = await this.offlineDb.obtenerFichajesPendientes();
+    const entradaLocal =
+      (req.registroHorasId
+        ? pendientes.find(p => p.tipo === 'ENTRADA' && p.id === req.registroHorasId)
+        : undefined) ??
+      [...pendientes].reverse().find(p => p.tipo === 'ENTRADA');
+
+    if (entradaLocal) {
+      const obsCombinadas = [entradaLocal.observaciones, req.observacionesAdicionales]
+        .filter((s): s is string => !!s && s.trim().length > 0)
+        .map(s => s.trim())
+        .join(' | ') || undefined;
+
+      const actualizado: FichajeOfflineItem = {
+        ...entradaLocal,
+        tipo: 'COMPLETO',
+        horaFin,
+        latitudFin: req.latitud,
+        longitudFin: req.longitud,
+        timestampFin: timestampIso,
+        observaciones: obsCombinadas
+      };
+
+      await this.offlineDb.guardarFichajeOffline(actualizado);
+      await this.actualizarContadorPendientes();
+      this.vibrar([150, 50, 150]);
+
+      return {
+        mensaje: 'Jornada completada y guardada en el dispositivo (modo offline). Se sincronizará automáticamente al recuperar la conexión.',
+        guardadoOffline: true,
+        horaFin: horaFin.substring(0, 5),
+        horasTotales: this.calcularHorasEntre(actualizado)
+      };
+    }
+
     const item: FichajeOfflineItem = {
       id: `offline-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       tipo: 'SALIDA',
-      serverId: req.registroHorasId,
+      serverId: this.isValidGuid(req.registroHorasId) ? req.registroHorasId : undefined,
       obraId: '',
-      fecha: ahora.toISOString().split('T')[0],
+      fecha: timestampIso.split('T')[0],
       horaInicio: '',
-      horaFin: ahora.toTimeString().substring(0, 8),
+      horaFin,
       latitudFin: req.latitud,
       longitudFin: req.longitud,
-      timestampInicio: ahora.toISOString(),
-      timestampFin: ahora.toISOString(),
+      timestampInicio: timestampIso,
+      timestampFin: timestampIso,
       observaciones: req.observacionesAdicionales,
       creadoEn: Date.now(),
       intentos: 0
@@ -227,7 +352,7 @@ export class OperarioPortalService {
     return {
       mensaje: 'Fichaje de salida guardado en el dispositivo (modo offline). Se calcularán las horas exactas en la central al sincronizar.',
       guardadoOffline: true,
-      horaFin: item.horaFin?.substring(0, 5)
+      horaFin: horaFin.substring(0, 5)
     };
   }
 
@@ -263,10 +388,39 @@ export class OperarioPortalService {
     const pendientes = await this.offlineDb.obtenerFichajesPendientes();
     const entradas = pendientes.filter(p => p.tipo === 'ENTRADA');
     const salidas = pendientes.filter(p => p.tipo === 'SALIDA');
+    const completosHoy = pendientes.filter(p => p.tipo === 'COMPLETO' && p.fecha === hoy);
 
     // Si hay una entrada offline sin salida offline
     const tieneEntradaActiva = entradas.length > salidas.length;
     const ultimaEntrada = entradas[entradas.length - 1];
+
+    const registros: RegistroHoyDto[] = completosHoy.map(c => ({
+      id: c.id,
+      obraId: c.obraId,
+      obraNombre: c.obraNombre || 'Obra offline',
+      horaInicio: (c.horaInicio || '').substring(0, 5),
+      horaFin: (c.horaFin || '').substring(0, 5),
+      horas: this.calcularHorasEntre(c),
+      enCurso: false,
+      observaciones: c.observaciones
+    }));
+
+    if (tieneEntradaActiva && ultimaEntrada && ultimaEntrada.fecha === hoy) {
+      registros.unshift({
+        id: ultimaEntrada.id,
+        obraId: ultimaEntrada.obraId,
+        obraNombre: ultimaEntrada.obraNombre || 'Obra offline',
+        horaInicio: (ultimaEntrada.horaInicio || '').substring(0, 5),
+        horaFin: '',
+        horas: 0,
+        enCurso: true,
+        observaciones: ultimaEntrada.observaciones
+      });
+    }
+
+    const totalHorasHoy = Math.round(
+      registros.filter(r => !r.enCurso).reduce((acc, r) => acc + r.horas, 0) * 100
+    ) / 100;
 
     return {
       operarioId: '',
@@ -279,25 +433,32 @@ export class OperarioPortalService {
         obraCodigo: '',
         fecha: ultimaEntrada.fecha,
         horaInicio: ultimaEntrada.horaInicio.substring(0, 5),
-        minutosTranscurridos: 0,
+        timestampInicio: ultimaEntrada.timestampInicio,
+        minutosTranscurridos: Math.max(0, Math.floor((Date.now() - Date.parse(ultimaEntrada.timestampInicio)) / 60000) || 0),
         latitudInicio: ultimaEntrada.latitudInicio,
         longitudInicio: ultimaEntrada.longitudInicio,
         observaciones: ultimaEntrada.observaciones
       } : null,
-      totalHorasHoy: 0,
-      registros: []
+      totalHorasHoy,
+      registros
     };
   }
 
-  async sincronizarPendientesSiHayRed(): Promise<void> {
-    if (!this.isOnline() || this.sincronizando()) return;
+  async sincronizarPendientesSiHayRed(): Promise<SyncResult> {
+    if (!this.isOnline() || this.sincronizando()) {
+      return { exitosos: 0, fallidos: 0 };
+    }
 
     const pendientes = await this.offlineDb.obtenerFichajesPendientes();
     const ticketsOffline = await this.offlineDb.obtenerTicketsOfflinePendientes();
 
-    if (pendientes.length === 0 && ticketsOffline.length === 0) return;
+    if (pendientes.length === 0 && ticketsOffline.length === 0) {
+      return { exitosos: 0, fallidos: 0 };
+    }
 
     this.sincronizando.set(true);
+    let exitosos = 0;
+    let fallidos = 0;
 
     try {
       // 1. Sincronizar Fichajes
@@ -305,12 +466,12 @@ export class OperarioPortalService {
         const itemsPayload = pendientes.map(p => ({
           localId: p.id,
           tipo: p.tipo,
-          serverId: p.serverId,
-          obraId: p.obraId,
-          tareaId: p.tareaId,
+          serverId: this.isValidGuid(p.serverId) ? p.serverId : undefined,
+          obraId: this.isValidGuid(p.obraId) ? p.obraId : undefined,
+          tareaId: this.isValidGuid(p.tareaId) ? p.tareaId : undefined,
           fecha: p.fecha,
-          horaInicio: p.horaInicio,
-          horaFin: p.horaFin,
+          horaInicio: p.horaInicio || undefined,
+          horaFin: p.horaFin || undefined,
           latitudInicio: p.latitudInicio,
           longitudInicio: p.longitudInicio,
           latitudFin: p.latitudFin,
@@ -320,11 +481,14 @@ export class OperarioPortalService {
           observaciones: p.observaciones
         }));
 
-        const res = await this.http.post<any>(`${API_URL}/sincronizar-batch`, { items: itemsPayload }).toPromise();
+        const res = await firstValueFrom(this.http.post<any>(`${API_URL}/sincronizar-batch`, { items: itemsPayload }));
         if (res && res.resultados) {
           for (const r of res.resultados) {
             if (r.success) {
+              exitosos++;
               await this.offlineDb.eliminarFichajeOffline(r.localId);
+            } else {
+              fallidos++;
             }
           }
         }
@@ -335,9 +499,11 @@ export class OperarioPortalService {
         for (const t of ticketsOffline) {
           try {
             const file = this.base64ToFile(t.archivoBase64, t.nombreArchivo);
-            await this.facturasSvc.subirTicketPendiente(file, t.obraId, 'Sincronizado offline desde el móvil', true).toPromise();
+            await firstValueFrom(this.facturasSvc.subirTicketPendiente(file, t.obraId, 'Sincronizado offline desde el móvil', true));
             await this.offlineDb.eliminarTicketOffline(t.id);
+            exitosos++;
           } catch (err) {
+            fallidos++;
             console.error('Error sincronizando ticket offline', err);
           }
         }
@@ -345,10 +511,12 @@ export class OperarioPortalService {
 
       await this.actualizarContadorPendientes();
     } catch {
-      // Reintentará en el próximo ciclo
+      fallidos += pendientes.length + ticketsOffline.length;
     } finally {
       this.sincronizando.set(false);
     }
+
+    return { exitosos, fallidos };
   }
 
   private base64ToFile(base64: string, filename: string): File {

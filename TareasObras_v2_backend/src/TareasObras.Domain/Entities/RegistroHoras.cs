@@ -32,6 +32,22 @@ public class RegistroHoras : BaseEntity
 
     private RegistroHoras() { }
 
+    private static DateTime NormalizeUtcDate(DateTime value)
+        => DateTime.SpecifyKind(value.Date, DateTimeKind.Utc);
+
+    private static DateTime NormalizeUtcTimestamp(DateTime? value)
+    {
+        if (!value.HasValue)
+            return DateTime.UtcNow;
+
+        return value.Value.Kind switch
+        {
+            DateTimeKind.Utc => value.Value,
+            DateTimeKind.Local => value.Value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
+        };
+    }
+
     public static RegistroHoras IniciarFichaje(
         Guid obraId,
         Guid operarioId,
@@ -52,7 +68,7 @@ public class RegistroHoras : BaseEntity
             OperarioId = operarioId,
             CategoriaOperarioId = categoriaOperarioId,
             TareaId = tareaId,
-            Fecha = fecha.Date,
+            Fecha = NormalizeUtcDate(fecha),
             HoraInicio = horaInicio,
             HoraFin = horaInicio,
             Horas = 0,
@@ -60,7 +76,7 @@ public class RegistroHoras : BaseEntity
             EnCurso = true,
             LatitudInicio = latitud,
             LongitudInicio = longitud,
-            TimestampInicioDispositivo = timestampDispositivo ?? DateTime.UtcNow,
+            TimestampInicioDispositivo = NormalizeUtcTimestamp(timestampDispositivo),
             SincronizadoOffline = sincronizadoOffline,
             Observaciones = observaciones?.Trim()
         };
@@ -73,12 +89,27 @@ public class RegistroHoras : BaseEntity
         DateTime? timestampDispositivo = null,
         string? observacionesAdicionales = null)
     {
+        var endTimestampUtc = NormalizeUtcTimestamp(timestampDispositivo);
+        TimeSpan duracion;
+        if (horaFin >= HoraInicio)
+        {
+            duracion = horaFin - HoraInicio;
+        }
+        else if (endTimestampUtc.Date > Fecha.Date)
+        {
+            duracion = (TimeSpan.FromHours(24) - HoraInicio) + horaFin;
+        }
+        else
+        {
+            duracion = TimeSpan.Zero;
+        }
+
         HoraFin = horaFin;
-        Horas = Math.Max(0, Math.Round((decimal)(horaFin - HoraInicio).TotalHours, 2));
+        Horas = Math.Max(0, Math.Round((decimal)duracion.TotalHours, 2));
         EnCurso = false;
         LatitudFin = latitud;
         LongitudFin = longitud;
-        TimestampFinDispositivo = timestampDispositivo ?? DateTime.UtcNow;
+        TimestampFinDispositivo = endTimestampUtc;
         if (!string.IsNullOrWhiteSpace(observacionesAdicionales))
         {
             Observaciones = string.IsNullOrWhiteSpace(Observaciones)
@@ -97,7 +128,7 @@ public class RegistroHoras : BaseEntity
             OperarioId = operarioId,
             CategoriaOperarioId = categoriaOperarioId,
             TareaId = tareaId,
-            Fecha = fecha.Date,
+            Fecha = NormalizeUtcDate(fecha),
             HoraInicio = horaInicio,
             HoraFin = horaFin,
             Horas = Math.Round((decimal)(horaFin - horaInicio).TotalHours, 2),
@@ -109,7 +140,7 @@ public class RegistroHoras : BaseEntity
     public void Update(Guid? tareaId, DateTime fecha, TimeSpan horaInicio, TimeSpan horaFin, decimal costeHoraAplicado, string? observaciones)
     {
         TareaId = tareaId;
-        Fecha = fecha.Date;
+        Fecha = NormalizeUtcDate(fecha);
         HoraInicio = horaInicio;
         HoraFin = horaFin;
         Horas = Math.Round((decimal)(horaFin - horaInicio).TotalHours, 2);

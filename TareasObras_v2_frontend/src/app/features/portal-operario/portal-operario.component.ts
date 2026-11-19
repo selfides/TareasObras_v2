@@ -127,6 +127,15 @@ import { TicketCapturaModalComponent } from '../facturas/components/ticket-captu
                     <i class="pi pi-stopwatch text-xl animate-pulse"></i>
                   </div>
                 </div>
+
+                <!-- Observaciones opcionales al finalizar -->
+                <div class="mt-3">
+                  <input
+                    type="text"
+                    [(ngModel)]="observacionesSalida"
+                    placeholder="Notas o incidencias al salir (opcional)..."
+                    class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition" />
+                </div>
               </div>
             } @else {
               <!-- SELECTOR DE OBRA PARA NUEVA ENTRADA -->
@@ -218,7 +227,12 @@ import { TicketCapturaModalComponent } from '../facturas/components/ticket-captu
                 </span>
               </div>
 
-              @if (estadoHoy()?.registros?.length === 0) {
+              @if (cargandoEstado()) {
+                <div class="text-center py-4 text-xs text-slate-400">
+                  <i class="pi pi-spin pi-spinner text-slate-400 text-lg mb-1 block"></i>
+                  Comprobando registros de hoy...
+                </div>
+              } @else if (!estadoHoy()?.registros?.length) {
                 <div class="text-center py-4 text-xs text-slate-400">
                   <i class="pi pi-clock text-slate-500 text-lg mb-1 block"></i>
                   Aún no has finalizado ninguna jornada hoy.
@@ -330,7 +344,7 @@ import { TicketCapturaModalComponent } from '../facturas/components/ticket-captu
             <div class="space-y-2.5">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block px-1">Partes Registrados</span>
 
-              @if (misHoras()?.registros?.length === 0) {
+              @if (!misHoras()?.registros?.length) {
                 <div class="p-8 text-center text-xs text-slate-500 bg-slate-800/50 rounded-2xl border border-slate-800">
                   No hay jornadas registradas en este período.
                 </div>
@@ -529,10 +543,12 @@ export class PortalOperarioComponent implements OnInit, OnDestroy {
   readonly misHoras = signal<MisHorasResponseDto | null>(null);
   readonly modalTicketVisible = signal<boolean>(false);
   readonly cargandoAccion = signal<boolean>(false);
+  readonly cargandoEstado = signal<boolean>(true);
 
   // Campos de formulario
   obraSeleccionadaId: string | null = null;
   observacionesEntrada: string = '';
+  observacionesSalida: string = '';
 
   // Cronómetro local
   private timerInterval: any = null;
@@ -559,21 +575,42 @@ export class PortalOperarioComponent implements OnInit, OnDestroy {
 
     // Actualizar timer de jornada en curso cada segundo
     this.timerInterval = setInterval(() => {
-      const activo = this.estadoHoy()?.fichajeActivo;
-      if (activo && activo.horaInicio) {
-        const [h, m] = activo.horaInicio.split(':').map(Number);
-        const ahora = new Date();
-        const inicio = new Date();
-        inicio.setHours(h, m, 0, 0);
-        const diffSeg = Math.max(0, Math.floor((ahora.getTime() - inicio.getTime()) / 1000));
-        this.tiempoTranscurridoSegundos.set(diffSeg);
-      }
+      this.recalcularTiempoTranscurrido();
     }, 1000);
   }
 
   ngOnDestroy(): void {
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
+    }
+  }
+
+  private recalcularTiempoTranscurrido(): void {
+    const activo = this.estadoHoy()?.fichajeActivo;
+    if (!activo) {
+      this.tiempoTranscurridoSegundos.set(0);
+      return;
+    }
+
+    if (activo.timestampInicio) {
+      const inicioMs = Date.parse(activo.timestampInicio);
+      if (!Number.isNaN(inicioMs)) {
+        this.tiempoTranscurridoSegundos.set(Math.max(0, Math.floor((Date.now() - inicioMs) / 1000)));
+        return;
+      }
+    }
+
+    if (activo.fecha && activo.horaInicio) {
+      const fechaSolo = String(activo.fecha).split('T')[0];
+      const inicioUtcMs = Date.parse(`${fechaSolo}T${activo.horaInicio}:00Z`);
+      if (!Number.isNaN(inicioUtcMs)) {
+        this.tiempoTranscurridoSegundos.set(Math.max(0, Math.floor((Date.now() - inicioUtcMs) / 1000)));
+        return;
+      }
+    }
+
+    if (typeof activo.minutosTranscurridos === 'number') {
+      this.tiempoTranscurridoSegundos.set(Math.max(0, activo.minutosTranscurridos * 60));
     }
   }
 
@@ -585,7 +622,7 @@ export class PortalOperarioComponent implements OnInit, OnDestroy {
     }
   }
 
-  cargarDatosIniciales(): void {
+  async cargarDatosIniciales(): Promise<void> {
     this.portalService.getMe().subscribe({
       next: p => {
         this.perfil.set(p);
@@ -598,18 +635,30 @@ export class PortalOperarioComponent implements OnInit, OnDestroy {
       }
     });
 
+    if (this.portalService.isOnline()) {
+      const pendientes = await this.portalService.actualizarContadorPendientes();
+      if (pendientes > 0) {
+        await this.portalService.sincronizarPendientesSiHayRed();
+      }
+    }
+
     this.recargarEstadoHoy();
   }
 
   recargarEstadoHoy(): void {
+    this.cargandoEstado.set(true);
     this.portalService.getEstadoHoy().subscribe({
       next: estado => {
         this.estadoHoy.set(estado);
+        this.cargandoEstado.set(false);
         if (estado.fichajeActivo) {
           this.obraSeleccionadaId = estado.fichajeActivo.obraId;
         }
+        this.recalcularTiempoTranscurrido();
       },
-      error: _err => {}
+      error: _err => {
+        this.cargandoEstado.set(false);
+      }
     });
   }
 
@@ -650,7 +699,7 @@ export class PortalOperarioComponent implements OnInit, OnDestroy {
         this.messageService.add({
           severity: 'error',
           summary: 'Error al fichar',
-          detail: err?.error?.mensaje || 'No se ha podido registrar la entrada.'
+          detail: err?.error?.mensaje || err?.error?.message || err?.error?.title || 'No se ha podido registrar la entrada.'
         });
       }
     });
@@ -665,15 +714,18 @@ export class PortalOperarioComponent implements OnInit, OnDestroy {
     this.portalService.ficharSalida({
       registroHorasId: activo?.id,
       latitud: coords?.latitud,
-      longitud: coords?.longitud
+      longitud: coords?.longitud,
+      observacionesAdicionales: this.observacionesSalida?.trim() || undefined
     }).subscribe({
       next: res => {
         this.cargandoAccion.set(false);
+        this.observacionesSalida = '';
         this.tiempoTranscurridoSegundos.set(0);
+        const horasTexto = res.horasTotales !== undefined ? ` Horas: ${res.horasTotales}h` : '';
         this.messageService.add({
           severity: 'success',
           summary: '¡Jornada finalizada!',
-          detail: res.mensaje || `Salida registrada con éxito. Horas: ${res.horasTotales || ''}h`
+          detail: res.mensaje ? `${res.mensaje}${horasTexto}` : `Salida registrada con éxito.${horasTexto}`
         });
         this.recargarEstadoHoy();
         this.cargarMisHoras();
@@ -683,7 +735,7 @@ export class PortalOperarioComponent implements OnInit, OnDestroy {
         this.messageService.add({
           severity: 'error',
           summary: 'Error al fichar salida',
-          detail: err?.error?.mensaje || 'No se ha podido registrar la salida.'
+          detail: err?.error?.mensaje || err?.error?.message || err?.error?.title || 'No se ha podido registrar la salida.'
         });
       }
     });
@@ -703,12 +755,32 @@ export class PortalOperarioComponent implements OnInit, OnDestroy {
   }
 
   async sincronizarManualmente(): Promise<void> {
-    await this.portalService.sincronizarPendientesSiHayRed();
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Sincronización',
-      detail: 'Comprobación con la central completada.'
-    });
+    const res = await this.portalService.sincronizarPendientesSiHayRed();
+    if (res.fallidos > 0 && res.exitosos === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Sincronización incompleta',
+        detail: `No se pudieron sincronizar ${res.fallidos} elemento(s). Reinténtalo más tarde.`
+      });
+    } else if (res.fallidos > 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Sincronización parcial',
+        detail: `${res.exitosos} enviado(s), ${res.fallidos} pendiente(s) por error del servidor.`
+      });
+    } else if (res.exitosos > 0) {
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Sincronización completada',
+        detail: `${res.exitosos} elemento(s) sincronizado(s) con la central.`
+      });
+    } else {
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Sin pendientes',
+        detail: 'Todos los registros están sincronizados con la central.'
+      });
+    }
     this.recargarEstadoHoy();
   }
 
